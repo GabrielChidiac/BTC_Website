@@ -1,0 +1,378 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Brand palette */
+  --color-bg-base: #FFF8F0;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-elevated: #FFF9F3;
+  --color-accent: #F7931A;
+  --color-accent-hover: #E8850F;
+  --color-accent-contrast: #FFFFFF;
+  --color-text-primary: #2D2D34;
+  --color-text-secondary: #5C5C66;
+  --color-text-muted: #9C9CA6;
+  --color-border: #E8E4DF;
+
+  /* Blue accent */
+  --color-blue: #3B82F6;
+  --color-blue-soft: #93C5FD;
+
+  /* Glow system — strong enough to see */
+  --color-accent-glow: rgba(247, 147, 26, 0.15);
+  --color-accent-glow-strong: rgba(247, 147, 26, 0.25);
+  --color-accent-glow-intense: rgba(247, 147, 26, 0.40);
+
+  /* Typography */
+  --font-heading: var(--font-space-grotesk);
+  --font-body: var(--font-ibm-plex-sans);
+}
+
+/* ─── Animated gradient positions ──────────────────────────────────────────── */
+
+@property --mesh-x1 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 30%;
+}
+@property --mesh-y1 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+@property --mesh-x2 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 80%;
+}
+@property --mesh-y2 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 80%;
+}
+@property --mesh-x3 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 10%;
+}
+@property --mesh-y3 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 50%;
+}
+
+body {
+  background: linear-gradient(135deg, #FFF5EB 0%, #FEF0DD 20%, #F8F2FF 50%, #EBF2FF 75%, #E4EDFF 100%);
+  background-attachment: fixed;
+  color: var(--color-text-primary);
+  font-family: var(--font-body), system-ui, sans-serif;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), system-ui, sans-serif;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+/* ─── Interactive card system ──────────────────────────────────────────────── */
+
+.card-interactive {
+  transition:
+    transform 0.25s cubic-bezier(0.33, 1, 0.68, 1),
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 32px rgba(247, 147, 26, 0.15),
+    0 0 0 1px rgba(247, 147, 26, 0.20);
+  border-color: rgba(247, 147, 26, 0.35);
+}
+
+/* ─── Glass card ───────────────────────────────────────────────────────────── */
+
+.card-glass {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.82) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(247, 147, 26, 0.06);
+}
+
+/* ─── Shimmer border (animated gradient edge) ──────────────────────────────── */
+
+.shimmer-border {
+  position: relative;
+  border: none !important;
+}
+
+.shimmer-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--shimmer-angle, 0deg),
+    transparent 0%,
+    rgba(59, 130, 246, 0.4) 8%,
+    rgba(247, 147, 26, 0.8) 15%,
+    rgba(251, 191, 36, 0.5) 22%,
+    transparent 30%,
+    transparent 70%,
+    rgba(59, 130, 246, 0.3) 78%,
+    rgba(247, 147, 26, 0.6) 85%,
+    transparent 92%
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  animation: shimmerRotate 4s linear infinite;
+}
+
+@property --shimmer-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes shimmerRotate {
+  to { --shimmer-angle: 360deg; }
+}
+
+/* ─── Glow card system ─────────────────────────────────────────────────────── */
+
+.glow-card {
+  box-shadow:
+    0 0 30px rgba(247, 147, 26, 0.12),
+    0 4px 16px rgba(0, 0, 0, 0.06);
+  border-color: rgba(247, 147, 26, 0.25);
+}
+
+.glow-card-hover:hover {
+  box-shadow:
+    0 0 40px rgba(247, 147, 26, 0.22),
+    0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: rgba(247, 147, 26, 0.40);
+}
+
+/* ─── Urgency pulse ────────────────────────────────────────────────────────── */
+
+.pulse-urgent {
+  animation: urgentPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes urgentPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(247, 147, 26, 0);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(247, 147, 26, 0.25);
+  }
+}
+
+/* ─── Section divider ──────────────────────────────────────────────────────── */
+
+.section-divider {
+  height: 2px;
+  max-width: 60%;
+  margin: 2.5rem auto;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(59, 130, 246, 0.25) 25%,
+    rgba(247, 147, 26, 0.40) 50%,
+    rgba(59, 130, 246, 0.25) 75%,
+    transparent 100%
+  );
+  box-shadow: 0 0 12px rgba(247, 147, 26, 0.20);
+}
+
+/* ─── Bitcoin Hero animations ──────────────────────────────────────────────── */
+
+@keyframes coinFloat {
+  0%, 100% { transform: translateY(0px) rotateY(0deg); }
+  25% { transform: translateY(-8px) rotateY(90deg); }
+  50% { transform: translateY(0px) rotateY(180deg); }
+  75% { transform: translateY(8px) rotateY(270deg); }
+}
+
+@keyframes coinGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.08); }
+}
+
+@keyframes pulseRing {
+  0% { opacity: 0.3; transform: scale(0.95); }
+  50% { opacity: 0.1; transform: scale(1.15); }
+  100% { opacity: 0; transform: scale(1.3); }
+}
+
+/* Hero stagger entrance for badges */
+@keyframes badgeFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.badge-stagger {
+  opacity: 0;
+  animation: badgeFadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Hero sentiment text fade-in */
+@keyframes textReveal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.text-reveal {
+  opacity: 0;
+  animation: textReveal 0.6s ease forwards;
+  animation-delay: 1.3s;
+}
+
+/* ─── Scroll reveal ────────────────────────────────────────────────────────── */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.97);
+}
+
+.reveal.visible {
+  animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.reveal-left.visible {
+  animation: fadeInLeft 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.reveal-scale.visible {
+  animation: fadeInScale 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ─── Reduced motion ───────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal-left, .reveal-scale {
+    opacity: 1;
+    transform: none;
+  }
+  .reveal.visible, .reveal-left.visible, .reveal-scale.visible {
+    animation: none;
+  }
+  .badge-stagger, .text-reveal {
+    opacity: 1;
+    animation: none;
+  }
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── Animated mesh background ─────────────────────────────────────────────── */
+
+@keyframes meshDrift {
+  0% {
+    --mesh-x1: 30%; --mesh-y1: 0%;
+    --mesh-x2: 80%; --mesh-y2: 80%;
+    --mesh-x3: 10%; --mesh-y3: 50%;
+  }
+  33% {
+    --mesh-x1: 60%; --mesh-y1: 10%;
+    --mesh-x2: 20%; --mesh-y2: 70%;
+    --mesh-x3: 80%; --mesh-y3: 30%;
+  }
+  66% {
+    --mesh-x1: 40%; --mesh-y1: 20%;
+    --mesh-x2: 70%; --mesh-y2: 40%;
+    --mesh-x3: 20%; --mesh-y3: 70%;
+  }
+  100% {
+    --mesh-x1: 30%; --mesh-y1: 0%;
+    --mesh-x2: 80%; --mesh-y2: 80%;
+    --mesh-x3: 10%; --mesh-y3: 50%;
+  }
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    /* Warm orange blob — drifts */
+    radial-gradient(
+      ellipse 900px 700px at var(--mesh-x1) var(--mesh-y1),
+      rgba(247, 147, 26, 0.22) 0%,
+      rgba(247, 147, 26, 0.08) 40%,
+      transparent 70%
+    ),
+    /* Cool blue blob — drifts opposite */
+    radial-gradient(
+      ellipse 1000px 800px at var(--mesh-x2) var(--mesh-y2),
+      rgba(59, 130, 246, 0.18) 0%,
+      rgba(59, 130, 246, 0.06) 40%,
+      transparent 65%
+    ),
+    /* Warm amber accent — smaller */
+    radial-gradient(
+      ellipse 600px 500px at var(--mesh-x3) var(--mesh-y3),
+      rgba(251, 191, 36, 0.12) 0%,
+      transparent 50%
+    ),
+    /* Cool blue wisp — static top-right */
+    radial-gradient(
+      ellipse 700px 600px at 85% 10%,
+      rgba(147, 197, 253, 0.15) 0%,
+      transparent 60%
+    );
+  pointer-events: none;
+  z-index: 0;
+  animation: meshDrift 30s ease-in-out infinite;
+}
+
+/* Dot grid pattern overlay */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(circle, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}

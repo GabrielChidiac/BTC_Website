@@ -1,0 +1,220 @@
+// ─── Result type for all API wrappers ───────────────────────────────────────
+
+export type Result<T> =
+  | { data: T; error: null }
+  | { data: null; error: string };
+
+// ─── Chat types ─────────────────────────────────────────────────────────────
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+// ─── Briefing sub-types ─────────────────────────────────────────────────────
+
+export interface TopStory {
+  headline: string;
+  source: string;
+  url: string;
+  summary: string; // 2-3 sentences, written for sophisticated investors
+  sentiment: "bullish" | "bearish" | "neutral";
+  tags: string[];
+}
+
+export interface MarketSnapshot {
+  price_usd: number;
+  change_24h_pct: number;
+  change_7d_pct: number;
+  market_cap_usd: number;
+  volume_24h_usd: number;
+  dominance_pct: number;
+}
+
+export interface TechnicalSignals {
+  rsi_14: number;
+  sma_50: number;
+  sma_200: number;
+  support_level: number;
+  resistance_level: number;
+  signal_summary: string;
+}
+
+export interface AssetComparison {
+  name: string; // "S&P 500" | "Gold" | "DXY"
+  ticker: string;
+  change_24h_pct: number | null;
+  change_ytd_pct: number | null;
+  change_1y_pct: number | null;
+  btc_relative_24h_pct: number | null;
+  btc_relative_ytd_pct: number | null;
+}
+
+export interface NetworkHealth {
+  hashrate_eh_s: number;
+  difficulty: number;
+  block_height: number;
+  mempool_tx_count: number;
+  mempool_size_mb: number;
+  fee_fast_sat_vb: number;
+  fee_medium_sat_vb: number;
+  fee_slow_sat_vb: number;
+  halving_progress_pct: number;
+  blocks_until_halving: number;
+}
+
+export interface DailyDiff {
+  price_change: string;
+  sentiment_shift: string;
+  key_changes: string[];
+}
+
+export interface CountdownEvent {
+  name: string;
+  date: string; // ISO date or "TBD"
+  days_away: number | null;
+  description: string;
+}
+
+// ─── Executive-grade content sections ───────────────────────────────────────
+
+export interface RegulatoryUpdate {
+  headline: string;
+  region: string;
+  summary: string;
+  impact: "positive" | "negative" | "neutral";
+  source: string;
+  url: string;
+}
+
+export interface AdoptionUpdate {
+  headline: string;
+  category: "corporate" | "institutional" | "merchant" | "country" | "infrastructure";
+  summary: string;
+  source: string;
+  url: string;
+}
+
+export interface InstitutionalFlows {
+  etf_net_flow_usd: number | null;
+  etf_total_aum_usd: number | null;
+  etf_flow_trend: string;
+  notable_moves: string[];
+}
+
+export interface MacroContext {
+  narrative: string;
+  btc_correlation_note: string;
+  key_macro_events: string[];
+}
+
+export interface SupplyDynamics {
+  exchange_reserve_trend: string;
+  long_term_holder_pct: number | null;
+  supply_narrative: string;
+}
+
+export interface ExpertInsight {
+  expert_name: string;
+  role: string;
+  quote_or_summary: string;
+  source: string;
+  date: string;
+}
+
+export interface NarrativeConsensus {
+  score: number; // -100 to +100
+  label: string;
+  rationale: string;
+}
+
+// ─── Master Briefing type ───────────────────────────────────────────────────
+
+export interface BriefingJSON {
+  date: string;
+  top_stories: TopStory[];
+  market_snapshot: MarketSnapshot;
+  technical_signals: TechnicalSignals;
+  btc_vs_everything: AssetComparison[];
+  network_health: NetworkHealth;
+  daily_diff: DailyDiff;
+  countdown_events: CountdownEvent[];
+  looking_ahead: string;
+  regulatory: RegulatoryUpdate[];
+  adoption: AdoptionUpdate[];
+  narrative_consensus: NarrativeConsensus;
+  macro_context: MacroContext;
+  // Populated by enrichment (Perplexity), not AI brain
+  institutional_flows: InstitutionalFlows;
+  supply_dynamics: SupplyDynamics;
+  expert_insights: ExpertInsight[];
+}
+
+// ─── Collector output types ─────────────────────────────────────────────────
+
+export interface RawArticle {
+  title: string;
+  url: string;
+  source: string;
+  published_at: string;
+  description?: string;
+}
+
+export interface NewsCollectorOutput {
+  articles: RawArticle[];
+}
+
+export interface MarketCollectorOutput {
+  price: {
+    usd: number;
+    change_24h_pct: number;
+    change_7d_pct: number;
+    market_cap_usd: number;
+    volume_24h_usd: number;
+  };
+  dominance_pct: number;
+  technical: {
+    rsi_14: number;
+    sma_50: number;
+    sma_200: number;
+  };
+  network: {
+    hashrate_eh_s: number;
+    difficulty: number;
+    block_height: number;
+    mempool_tx_count: number;
+    mempool_size_mb: number;
+    fee_fast_sat_vb: number;
+    fee_medium_sat_vb: number;
+    fee_slow_sat_vb: number;
+  };
+  comparisons: {
+    sp500_change_24h_pct: number | null;
+    sp500_change_ytd_pct: number | null;
+    sp500_change_1y_pct: number | null;
+    gold_price_usd: number | null;
+    gold_change_ytd_pct: number | null;
+    gold_change_1y_pct: number | null;
+    dxy_change_24h_pct: number | null;
+    dxy_change_ytd_pct: number | null;
+    dxy_change_1y_pct: number | null;
+  };
+  btc_change_ytd_pct: number | null;
+  btc_change_1y_pct: number | null;
+}
+
+// ─── Database row types ─────────────────────────────────────────────────────
+
+export interface DailyBriefingRow {
+  date: string;
+  content: BriefingJSON;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubscriberRow {
+  id: string;
+  email: string;
+  status: "active" | "unsubscribed";
+  created_at: string;
+}
