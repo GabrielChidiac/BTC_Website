@@ -283,6 +283,58 @@ h1, h2, h3, h4, h5, h6 {
   animation: fadeInScale 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* ─── Expandable card system ───────────────────────────────────────────────── */
+
+.expandable-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.2s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.expandable-content[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+
+.expandable-inner {
+  overflow: hidden;
+}
+
+/* Chevron rotation */
+.expand-chevron {
+  transition: transform 0.35s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+[data-open="true"] .expand-chevron {
+  transform: rotate(180deg);
+}
+
+/* Hover peek removed — content shows instantly on expand */
+
+/* ─── Bar chart grow animation ─────────────────────────────────────────────── */
+
+.bar-grow {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.7s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.bar-grow.visible {
+  transform: scaleX(1);
+}
+
+/* ─── Section label (intelligence report framing) ──────────────────────────── */
+
+.section-number {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.1em;
+}
+
+/* ─── Sentiment gauge needle animation ─────────────────────────────────────── */
+
+@keyframes gaugeNeedleIn {
+  from { transform: rotate(-90deg); }
+}
+
 /* ─── Reduced motion ───────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
@@ -296,6 +348,14 @@ h1, h2, h3, h4, h5, h6 {
   .badge-stagger, .text-reveal {
     opacity: 1;
     animation: none;
+  }
+  .expandable-content,
+  .expand-chevron,
+  .bar-grow {
+    transition: none;
+  }
+  .bar-grow {
+    transform: scaleX(1);
   }
   * {
     animation-duration: 0.01ms !important;

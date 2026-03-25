@@ -1,22 +1,18 @@
 import type { AssetComparison } from "@/lib/types";
 import { formatPctChange } from "@/lib/utils";
 
-function pctColor(pct: number): string {
-  return pct >= 0 ? "text-emerald-700" : "text-red-700";
-}
+function PctCell({ pct }: { pct: number | null | undefined }) {
+  if (pct == null) return <span className="text-[var(--color-text-muted)]">—</span>;
 
-function PctCell({ label, pct }: { label: string; pct: number | null | undefined }) {
+  const isPositive = pct >= 0;
   return (
-    <div className="mt-2">
-      <p className="text-xs text-[var(--color-text-muted)]">{label}</p>
-      <p
-        className={`font-[family-name:var(--font-heading)] text-sm font-bold ${
-          pct != null ? pctColor(pct) : "text-[var(--color-text-muted)]"
-        }`}
-      >
-        {pct != null ? formatPctChange(pct) : "N/A"}
-      </p>
-    </div>
+    <span
+      className={`font-[family-name:var(--font-heading)] text-sm font-bold tabular-nums ${
+        isPositive ? "text-emerald-700" : "text-red-700"
+      }`}
+    >
+      {formatPctChange(pct)}
+    </span>
   );
 }
 
@@ -25,41 +21,60 @@ export function BtcVsEverything({
 }: {
   comparisons: AssetComparison[];
 }) {
+  if (!comparisons || comparisons.length === 0) return null;
+
   return (
-    <section className="mt-10">
-      <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-text-primary)] mb-4">
+    <div>
+      <h3 className="font-[family-name:var(--font-heading)] text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-3">
         BTC vs Everything
-      </h2>
+      </h3>
 
-      <div className="relative">
-        <div className="flex gap-3 overflow-x-auto pb-1">
-          {comparisons.map((asset) => (
-            <div
-              key={asset.ticker}
-              className="flex-1 min-w-[160px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4"
-            >
-              <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
-                {asset.name}
-              </p>
-              <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
-                {asset.ticker}
-              </p>
-
-              <PctCell label="24h" pct={asset.change_24h_pct} />
-              <PctCell label="YTD" pct={asset.change_ytd_pct} />
-              <PctCell label="1Y" pct={asset.change_1y_pct} />
-
-              <div className="mt-3 pt-2 border-t border-[var(--color-border)]">
-                <p className="text-xs text-[var(--color-text-muted)]">BTC outperformance</p>
-                <PctCell label="24h" pct={asset.btc_relative_24h_pct} />
-                <PctCell label="YTD" pct={asset.btc_relative_ytd_pct} />
-              </div>
-            </div>
-          ))}
-        </div>
-        {/* Scroll fade indicator for mobile */}
-        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[var(--color-bg-base)] to-transparent sm:hidden" />
+      <div className="overflow-x-auto -mx-1">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-[var(--color-border)]">
+              <th className="pb-2 pr-4 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
+                Asset
+              </th>
+              <th className="pb-2 pr-4 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider text-right">
+                24h
+              </th>
+              <th className="pb-2 pr-4 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider text-right">
+                YTD
+              </th>
+              <th className="pb-2 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider text-right">
+                BTC Edge
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {comparisons.map((asset) => (
+              <tr
+                key={asset.ticker}
+                className="border-b border-[var(--color-border)]/50 last:border-0"
+              >
+                <td className="py-2.5 pr-4">
+                  <span className="font-[family-name:var(--font-heading)] text-sm font-bold text-[var(--color-text-primary)]">
+                    {asset.ticker}
+                  </span>
+                  <span className="ml-1.5 text-xs text-[var(--color-text-muted)] hidden sm:inline">
+                    {asset.name}
+                  </span>
+                </td>
+                <td className="py-2.5 pr-4 text-right">
+                  <PctCell pct={asset.change_24h_pct} />
+                </td>
+                <td className="py-2.5 pr-4 text-right">
+                  <PctCell pct={asset.change_ytd_pct} />
+                </td>
+                <td className="py-2.5 text-right">
+                  <PctCell pct={asset.btc_relative_ytd_pct} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-    </section>
+    </div>
   );
 }

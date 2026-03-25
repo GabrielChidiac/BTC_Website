@@ -1,23 +1,30 @@
-import { ALPHA_VANTAGE_BASE } from "@/lib/constants";
 import type { Result } from "@/lib/types";
-import yahooFinance from "yahoo-finance2";
+import YahooFinance from "yahoo-finance2";
 
-interface SP500Data {
+const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
+
+interface AssetData {
   change_24h_pct: number;
   change_ytd_pct: number | null;
   change_1y_pct: number | null;
 }
 
-export async function fetchSP500(): Promise<Result<SP500Data>> {
+/**
+ * Generic Yahoo Finance fetcher — works for any ticker.
+ * Returns 24h change from quote(), YTD and 1Y from chart().
+ */
+async function fetchYahooAsset(
+  ticker: string,
+  label: string
+): Promise<Result<AssetData>> {
   try {
-    const quote = await yahooFinance.quote("^GSPC") as Record<string, unknown>;
+    const quote = (await yahooFinance.quote(ticker)) as Record<string, unknown>;
     const change = quote.regularMarketChangePercent as number | undefined;
 
     if (change === undefined || change === null) {
-      return { data: null, error: "[comparison] S&P 500 change percent unavailable" };
+      return { data: null, error: `[comparison] ${label} change percent unavailable` };
     }
 
-    // YTD: compute from fiftyTwoWeekLow data or use regularMarketPrice vs Jan 1
     const currentPrice = quote.regularMarketPrice as number | undefined;
     let ytdPct: number | null = null;
     let oneYearPct: number | null = null;
@@ -29,11 +36,11 @@ export async function fetchSP500(): Promise<Result<SP500Data>> {
         const oneYearAgo = new Date(now);
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-        const historical = await yahooFinance.chart("^GSPC", {
+        const historical = (await yahooFinance.chart(ticker, {
           period1: oneYearAgo,
           period2: now,
           interval: "1mo",
-        }) as { quotes: { close: number; date: Date }[] };
+        })) as { quotes: { close: number; date: Date }[] };
 
         if (historical.quotes && historical.quotes.length > 0) {
           const firstClose = historical.quotes[0].close;
@@ -61,40 +68,35 @@ export async function fetchSP500(): Promise<Result<SP500Data>> {
       error: null,
     };
   } catch (e) {
-    return { data: null, error: `[comparison] fetchSP500: ${(e as Error).message}` };
+    return {
+      data: null,
+      error: `[comparison] fetch${label}: ${(e as Error).message}`,
+    };
   }
 }
 
-export async function fetchDXY(): Promise<Result<{ change_24h_pct: number }>> {
-  try {
-    const key = process.env.ALPHA_VANTAGE_API_KEY;
-    if (!key) {
-      return { data: null, error: "[comparison] ALPHA_VANTAGE_API_KEY env var is not set" };
-    }
+// ── Individual asset fetchers ─────────────────────────────────────────────
 
-    const url = `${ALPHA_VANTAGE_BASE}?function=GLOBAL_QUOTE&symbol=DX-Y.NYB&apikey=${key}`;
-    const res = await fetch(url);
+export function fetchSP500(): Promise<Result<AssetData>> {
+  return fetchYahooAsset("^GSPC", "SP500");
+}
 
-    if (!res.ok) {
-      return { data: null, error: `[comparison] Alpha Vantage returned ${res.status}` };
-    }
+export function fetchNASDAQ(): Promise<Result<AssetData>> {
+  return fetchYahooAsset("^NDX", "NASDAQ");
+}
 
-    const json = await res.json();
-    const globalQuote = json["Global Quote"];
+export function fetchGold(): Promise<Result<AssetData>> {
+  return fetchYahooAsset("GC=F", "Gold");
+}
 
-    if (!globalQuote || !globalQuote["10. change percent"]) {
-      return { data: null, error: "[comparison] DXY data missing from Alpha Vantage response" };
-    }
+export function fetchDXY(): Promise<Result<AssetData>> {
+  return fetchYahooAsset("DX-Y.NYB", "DXY");
+}
 
-    const raw = globalQuote["10. change percent"] as string;
-    const changePct = parseFloat(raw.replace("%", ""));
+export function fetchETH(): Promise<Result<AssetData>> {
+  return fetchYahooAsset("ETH-USD", "ETH");
+}
 
-    if (isNaN(changePct)) {
-      return { data: null, error: `[comparison] Could not parse DXY change percent: ${raw}` };
-    }
-
-    return { data: { change_24h_pct: changePct }, error: null };
-  } catch (e) {
-    return { data: null, error: `[comparison] fetchDXY: ${(e as Error).message}` };
-  }
+export function fetchSOL(): Promise<Result<AssetData>> {
+  return fetchYahooAsset("SOL-USD", "SOL");
 }

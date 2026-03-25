@@ -4,11 +4,17 @@ import {
   fetchBtcPrice,
   fetchGlobalData,
   fetchHistoricalPrices,
-  fetchGoldPrice,
 } from "@/trigger/lib/coingecko";
 import { fetchMempoolData } from "@/trigger/lib/mempool";
 import { calculateIndicators } from "@/trigger/lib/technical-indicators";
-import { fetchSP500, fetchDXY } from "@/trigger/lib/comparison";
+import {
+  fetchSP500,
+  fetchNASDAQ,
+  fetchGold,
+  fetchDXY,
+  fetchETH,
+  fetchSOL,
+} from "@/trigger/lib/comparison";
 
 export const marketCollector = task({
   id: "market-collector",
@@ -20,18 +26,24 @@ export const marketCollector = task({
       btcPriceResult,
       globalDataResult,
       historicalResult,
-      goldResult,
       mempoolResult,
       sp500Result,
+      nasdaqResult,
+      goldResult,
       dxyResult,
+      ethResult,
+      solResult,
     ] = await Promise.allSettled([
       fetchBtcPrice(),
       fetchGlobalData(),
       fetchHistoricalPrices(365),
-      fetchGoldPrice(),
       fetchMempoolData(),
       fetchSP500(),
+      fetchNASDAQ(),
+      fetchGold(),
       fetchDXY(),
+      fetchETH(),
+      fetchSOL(),
     ]);
 
     // ── Step 2: Unwrap results ──────────────────────────────────────────────
@@ -59,10 +71,13 @@ export const marketCollector = task({
     const btcPrice = unwrap(btcPriceResult, "btcPrice");
     const globalData = unwrap(globalDataResult, "globalData");
     const closingPrices = unwrap(historicalResult, "historicalPrices");
-    const gold = unwrap(goldResult, "gold");
     const mempool = unwrap(mempoolResult, "mempool");
     const sp500 = unwrap(sp500Result, "sp500");
+    const nasdaq = unwrap(nasdaqResult, "nasdaq");
+    const gold = unwrap(goldResult, "gold");
     const dxy = unwrap(dxyResult, "dxy");
+    const eth = unwrap(ethResult, "eth");
+    const sol = unwrap(solResult, "sol");
 
     // ── Step 3: Compute technical indicators ────────────────────────────────
     let technical = { rsi_14: 0, sma_50: 0, sma_200: 0 };
@@ -125,12 +140,21 @@ export const marketCollector = task({
         sp500_change_24h_pct: sp500?.change_24h_pct ?? null,
         sp500_change_ytd_pct: sp500?.change_ytd_pct ?? null,
         sp500_change_1y_pct: sp500?.change_1y_pct ?? null,
-        gold_price_usd: gold?.gold_price_usd ?? null,
-        gold_change_ytd_pct: null, // Gold YTD not available from CoinGecko simple endpoint
-        gold_change_1y_pct: null,
+        nasdaq_change_24h_pct: nasdaq?.change_24h_pct ?? null,
+        nasdaq_change_ytd_pct: nasdaq?.change_ytd_pct ?? null,
+        nasdaq_change_1y_pct: nasdaq?.change_1y_pct ?? null,
+        gold_change_24h_pct: gold?.change_24h_pct ?? null,
+        gold_change_ytd_pct: gold?.change_ytd_pct ?? null,
+        gold_change_1y_pct: gold?.change_1y_pct ?? null,
         dxy_change_24h_pct: dxy?.change_24h_pct ?? null,
-        dxy_change_ytd_pct: null, // Alpha Vantage free tier only returns daily change
-        dxy_change_1y_pct: null,
+        dxy_change_ytd_pct: dxy?.change_ytd_pct ?? null,
+        dxy_change_1y_pct: dxy?.change_1y_pct ?? null,
+        eth_change_24h_pct: eth?.change_24h_pct ?? null,
+        eth_change_ytd_pct: eth?.change_ytd_pct ?? null,
+        eth_change_1y_pct: eth?.change_1y_pct ?? null,
+        sol_change_24h_pct: sol?.change_24h_pct ?? null,
+        sol_change_ytd_pct: sol?.change_ytd_pct ?? null,
+        sol_change_1y_pct: sol?.change_1y_pct ?? null,
       },
       btc_change_ytd_pct: btcYtdPct,
       btc_change_1y_pct: btc1yPct,

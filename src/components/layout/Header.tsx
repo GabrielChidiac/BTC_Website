@@ -1,27 +1,44 @@
 import Link from "next/link";
-import { formatDisplayDate } from "@/lib/utils";
 import { Container } from "./Container";
 import { MobileNav } from "./MobileNav";
 
 const navLinks = [
-  { href: "/", label: "Home" },
+  { href: "/", label: "Briefing" },
   { href: "/experts", label: "Experts" },
-  { href: "/chat", label: "Chat" },
+  { href: "/chat", label: "Ask AI" },
   { href: "/archive", label: "Archive" },
 ] as const;
+
+function formatBriefingDate(isoDate: string): string {
+  return new Date(isoDate + "T12:00:00Z")
+    .toLocaleDateString("en-US", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    })
+    .toUpperCase();
+}
 
 export function Header({ date }: { date?: string }) {
   return (
     <header className="sticky top-0 z-50 bg-[var(--color-bg-base)]/80 backdrop-blur-md">
-      <Container className="flex h-14 items-center justify-between">
-        {/* Logo */}
+      <Container wide className="flex h-14 items-center justify-between">
+        {/* Logo — intelligence report framing */}
         <Link
           href="/"
-          className="font-[family-name:var(--font-heading)] text-xl font-bold tracking-tight hover:opacity-80 transition-opacity shrink-0"
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0"
         >
-          <span style={{ textShadow: "0 0 20px rgba(247, 147, 26, 0.15)" }}>
+          <span
+            className="font-[family-name:var(--font-heading)] text-lg font-bold tracking-tight"
+            style={{ textShadow: "0 0 20px rgba(247, 147, 26, 0.15)" }}
+          >
             BTC{" "}
             <span className="text-[var(--color-accent)]">Today</span>
+          </span>
+          <span className="hidden sm:block h-3.5 w-px bg-[var(--color-border)]" />
+          <span className="hidden sm:block font-[family-name:var(--font-heading)] section-number text-[10px] font-medium text-[var(--color-text-muted)] tracking-[0.12em]">
+            DAILY INTELLIGENCE BRIEFING
           </span>
         </Link>
 
@@ -43,9 +60,9 @@ export function Header({ date }: { date?: string }) {
           {date && (
             <time
               dateTime={date}
-              className="hidden sm:block text-sm text-[var(--color-text-muted)]"
+              className="hidden sm:block font-[family-name:var(--font-heading)] section-number text-[10px] font-medium text-[var(--color-text-muted)] tracking-[0.1em]"
             >
-              {formatDisplayDate(date)}
+              {formatBriefingDate(date)}
             </time>
           )}
           <MobileNav />

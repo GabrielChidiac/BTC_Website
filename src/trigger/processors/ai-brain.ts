@@ -128,7 +128,7 @@ The root JSON object must have these exact keys:
   "top_stories": TopStory[],           // 3-5 most significant stories for institutional investors
   "market_snapshot": MarketSnapshot,
   "technical_signals": TechnicalSignals,
-  "btc_vs_everything": AssetComparison[], // Exactly 3: S&P 500, Gold, DXY
+  "btc_vs_everything": AssetComparison[], // Exactly 6: S&P 500, NASDAQ-100, Gold, DXY, Ethereum, Solana
   "network_health": NetworkHealth,
   "daily_diff": DailyDiff,
   "countdown_events": CountdownEvent[], // 2-4 upcoming events (halvings, ETF deadlines, conferences, protocol upgrades)
@@ -151,6 +151,80 @@ Rules:
 - Pass through numerical market/network data exactly as provided. Do not round or alter.
 - Never use em dashes or en dashes. Use commas, periods, or semicolons instead.
 - Return ONLY the JSON object.`;
+
+// ─── Comparison builder (shared by fallback and AI paths) ──────────────────
+
+function buildComparisons(
+  market: MarketCollectorOutput | null,
+  btcChange: number
+): import("@/lib/types").AssetComparison[] {
+  const c = market?.comparisons;
+  const btcYtd = market?.btc_change_ytd_pct ?? null;
+
+  function relativeDay(assetPct: number | null | undefined): number | null {
+    return assetPct != null ? btcChange - assetPct : null;
+  }
+  function relativeYtd(assetPct: number | null | undefined): number | null {
+    return btcYtd != null && assetPct != null ? btcYtd - assetPct : null;
+  }
+
+  return [
+    {
+      name: "S&P 500",
+      ticker: "SPX",
+      change_24h_pct: c?.sp500_change_24h_pct ?? null,
+      change_ytd_pct: c?.sp500_change_ytd_pct ?? null,
+      change_1y_pct: c?.sp500_change_1y_pct ?? null,
+      btc_relative_24h_pct: relativeDay(c?.sp500_change_24h_pct),
+      btc_relative_ytd_pct: relativeYtd(c?.sp500_change_ytd_pct),
+    },
+    {
+      name: "NASDAQ-100",
+      ticker: "QQQ",
+      change_24h_pct: c?.nasdaq_change_24h_pct ?? null,
+      change_ytd_pct: c?.nasdaq_change_ytd_pct ?? null,
+      change_1y_pct: c?.nasdaq_change_1y_pct ?? null,
+      btc_relative_24h_pct: relativeDay(c?.nasdaq_change_24h_pct),
+      btc_relative_ytd_pct: relativeYtd(c?.nasdaq_change_ytd_pct),
+    },
+    {
+      name: "Gold",
+      ticker: "XAU",
+      change_24h_pct: c?.gold_change_24h_pct ?? null,
+      change_ytd_pct: c?.gold_change_ytd_pct ?? null,
+      change_1y_pct: c?.gold_change_1y_pct ?? null,
+      btc_relative_24h_pct: relativeDay(c?.gold_change_24h_pct),
+      btc_relative_ytd_pct: relativeYtd(c?.gold_change_ytd_pct),
+    },
+    {
+      name: "DXY",
+      ticker: "DXY",
+      change_24h_pct: c?.dxy_change_24h_pct ?? null,
+      change_ytd_pct: c?.dxy_change_ytd_pct ?? null,
+      change_1y_pct: c?.dxy_change_1y_pct ?? null,
+      btc_relative_24h_pct: relativeDay(c?.dxy_change_24h_pct),
+      btc_relative_ytd_pct: relativeYtd(c?.dxy_change_ytd_pct),
+    },
+    {
+      name: "Ethereum",
+      ticker: "ETH",
+      change_24h_pct: c?.eth_change_24h_pct ?? null,
+      change_ytd_pct: c?.eth_change_ytd_pct ?? null,
+      change_1y_pct: c?.eth_change_1y_pct ?? null,
+      btc_relative_24h_pct: relativeDay(c?.eth_change_24h_pct),
+      btc_relative_ytd_pct: relativeYtd(c?.eth_change_ytd_pct),
+    },
+    {
+      name: "Solana",
+      ticker: "SOL",
+      change_24h_pct: c?.sol_change_24h_pct ?? null,
+      change_ytd_pct: c?.sol_change_ytd_pct ?? null,
+      change_1y_pct: c?.sol_change_1y_pct ?? null,
+      btc_relative_24h_pct: relativeDay(c?.sol_change_24h_pct),
+      btc_relative_ytd_pct: relativeYtd(c?.sol_change_ytd_pct),
+    },
+  ];
+}
 
 // ─── Fallback briefing builder ─────────────────────────────────────────────
 
@@ -180,44 +254,7 @@ function buildFallbackBriefing(
       resistance_level: 0,
       signal_summary: market ? "Data available but AI analysis failed" : "Market data unavailable",
     },
-    btc_vs_everything: [
-      {
-        name: "S&P 500",
-        ticker: "SPX",
-        change_24h_pct: market?.comparisons.sp500_change_24h_pct ?? null,
-        change_ytd_pct: market?.comparisons.sp500_change_ytd_pct ?? null,
-        change_1y_pct: market?.comparisons.sp500_change_1y_pct ?? null,
-        btc_relative_24h_pct:
-          market?.comparisons.sp500_change_24h_pct != null
-            ? btcChange - market.comparisons.sp500_change_24h_pct
-            : null,
-        btc_relative_ytd_pct:
-          market?.btc_change_ytd_pct != null && market?.comparisons.sp500_change_ytd_pct != null
-            ? market.btc_change_ytd_pct - market.comparisons.sp500_change_ytd_pct
-            : null,
-      },
-      {
-        name: "Gold",
-        ticker: "XAU",
-        change_24h_pct: null,
-        change_ytd_pct: market?.comparisons.gold_change_ytd_pct ?? null,
-        change_1y_pct: market?.comparisons.gold_change_1y_pct ?? null,
-        btc_relative_24h_pct: null,
-        btc_relative_ytd_pct: null,
-      },
-      {
-        name: "DXY",
-        ticker: "DXY",
-        change_24h_pct: market?.comparisons.dxy_change_24h_pct ?? null,
-        change_ytd_pct: market?.comparisons.dxy_change_ytd_pct ?? null,
-        change_1y_pct: market?.comparisons.dxy_change_1y_pct ?? null,
-        btc_relative_24h_pct:
-          market?.comparisons.dxy_change_24h_pct != null
-            ? btcChange - market.comparisons.dxy_change_24h_pct
-            : null,
-        btc_relative_ytd_pct: null,
-      },
-    ],
+    btc_vs_everything: buildComparisons(market, btcChange),
     network_health: {
       hashrate_eh_s: market?.network.hashrate_eh_s ?? 0,
       difficulty: market?.network.difficulty ?? 0,
@@ -303,10 +340,16 @@ function buildUserPrompt(
 - Progress: ${halving.progressPct.toFixed(2)}%
 - Blocks Remaining: ${halving.blocksRemaining}`);
 
+    const fmt = (v: number | null, suffix = "%") =>
+      v != null ? v.toFixed(2) + suffix : "N/A";
+
     sections.push(`## Asset Comparisons
-- S&P 500: 24h ${market.comparisons.sp500_change_24h_pct != null ? market.comparisons.sp500_change_24h_pct + "%" : "N/A"}, YTD ${market.comparisons.sp500_change_ytd_pct != null ? market.comparisons.sp500_change_ytd_pct.toFixed(2) + "%" : "N/A"}, 1Y ${market.comparisons.sp500_change_1y_pct != null ? market.comparisons.sp500_change_1y_pct.toFixed(2) + "%" : "N/A"}
-- Gold Price (USD): ${market.comparisons.gold_price_usd != null ? market.comparisons.gold_price_usd : "N/A"}
-- DXY: 24h ${market.comparisons.dxy_change_24h_pct != null ? market.comparisons.dxy_change_24h_pct + "%" : "N/A"}`);
+- S&P 500: 24h ${fmt(market.comparisons.sp500_change_24h_pct)}, YTD ${fmt(market.comparisons.sp500_change_ytd_pct)}, 1Y ${fmt(market.comparisons.sp500_change_1y_pct)}
+- NASDAQ-100: 24h ${fmt(market.comparisons.nasdaq_change_24h_pct)}, YTD ${fmt(market.comparisons.nasdaq_change_ytd_pct)}, 1Y ${fmt(market.comparisons.nasdaq_change_1y_pct)}
+- Gold: 24h ${fmt(market.comparisons.gold_change_24h_pct)}, YTD ${fmt(market.comparisons.gold_change_ytd_pct)}, 1Y ${fmt(market.comparisons.gold_change_1y_pct)}
+- DXY: 24h ${fmt(market.comparisons.dxy_change_24h_pct)}, YTD ${fmt(market.comparisons.dxy_change_ytd_pct)}, 1Y ${fmt(market.comparisons.dxy_change_1y_pct)}
+- Ethereum: 24h ${fmt(market.comparisons.eth_change_24h_pct)}, YTD ${fmt(market.comparisons.eth_change_ytd_pct)}, 1Y ${fmt(market.comparisons.eth_change_1y_pct)}
+- Solana: 24h ${fmt(market.comparisons.sol_change_24h_pct)}, YTD ${fmt(market.comparisons.sol_change_ytd_pct)}, 1Y ${fmt(market.comparisons.sol_change_1y_pct)}`);
   } else {
     sections.push("## Market Data\nMarket data unavailable.");
   }

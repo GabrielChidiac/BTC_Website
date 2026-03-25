@@ -75,21 +75,21 @@ export function TechnicalSignals({
         {/* Support / Resistance */}
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
           <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
-            Price Floor
+            Est. Support
           </p>
           <p className="mt-1 font-[family-name:var(--font-heading)] text-lg font-bold text-emerald-700">
             {formatUSD(signals.support_level, 0)}
           </p>
-          <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Where buyers tend to step in</p>
+          <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">AI-estimated level</p>
         </div>
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
           <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
-            Price Ceiling
+            Est. Resistance
           </p>
           <p className="mt-1 font-[family-name:var(--font-heading)] text-lg font-bold text-red-700">
             {formatUSD(signals.resistance_level, 0)}
           </p>
-          <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Where sellers tend to appear</p>
+          <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">AI-estimated level</p>
         </div>
 
         {/* Signal summary */}

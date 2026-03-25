@@ -87,21 +87,4 @@ export async function fetchHistoricalPrices(days: number): Promise<Result<number
   }
 }
 
-export async function fetchGoldPrice(): Promise<Result<{ gold_price_usd: number }>> {
-  try {
-    const res = await cgFetch("/simple/price?ids=bitcoin&vs_currencies=usd,xau");
-    if (!res.ok) {
-      return { data: null, error: `[coingecko] fetchGoldPrice failed with status ${res.status}` };
-    }
-
-    const json = await res.json();
-    const btcUsd: number = json.bitcoin.usd;
-    const btcXau: number = json.bitcoin.xau;
-
-    const goldPriceUsd = btcUsd / btcXau;
-
-    return { data: { gold_price_usd: goldPriceUsd }, error: null };
-  } catch (e) {
-    return { data: null, error: `[coingecko] ${(e as Error).message}` };
-  }
-}
+// Gold price now fetched via Yahoo Finance (GC=F) in comparison.ts
