@@ -45,3 +45,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE
+.idea/
+.vscode/
+
+# editor swap/backup
+*.swp
+*.swo
+*.bak
+
+# claude code
+.claude/
