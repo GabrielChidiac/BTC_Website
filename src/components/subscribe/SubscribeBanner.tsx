@@ -11,6 +11,24 @@ export function SubscribeBanner() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
+  const [visible, setVisible] = useState(true);
+
+  // Hide on scroll down
+  useEffect(() => {
+    let lastY = window.scrollY;
+    function onScroll() {
+      const y = window.scrollY;
+      if (y > 80 && y > lastY) {
+        setVisible(false);
+        setOpen(false);
+      } else if (y < 40) {
+        setVisible(true);
+      }
+      lastY = y;
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Close on Escape
   useEffect(() => {
@@ -50,7 +68,10 @@ export function SubscribeBanner() {
   return (
     <>
       {/* Trigger bar — sits above the header */}
-      <div className="sticky top-0 z-[60]">
+      <div
+        className="sticky top-0 z-[60] transition-transform duration-300 ease-out"
+        style={{ transform: visible ? "translateY(0)" : "translateY(-100%)" }}
+      >
         <button
           onClick={() => setOpen(!open)}
           className="group flex w-full items-center justify-center gap-2 bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline-none"
