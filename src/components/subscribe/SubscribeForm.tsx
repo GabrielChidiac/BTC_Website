@@ -6,6 +6,7 @@ import { MotionButton } from "@/components/ui/MotionButton";
 type Status = "idle" | "loading" | "success" | "error";
 
 export function SubscribeForm() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
@@ -18,7 +19,7 @@ export function SubscribeForm() {
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, name: name.trim() }),
       });
 
       const data = await res.json();
@@ -65,6 +66,15 @@ export function SubscribeForm() {
         onSubmit={handleSubmit}
         className="flex flex-col gap-2"
       >
+        <input
+          type="text"
+          required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="First name"
+          aria-label="First name"
+          className="h-10 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 transition-colors"
+        />
         <div className="flex items-center gap-2">
           <input
             type="email"

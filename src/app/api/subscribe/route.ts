@@ -21,6 +21,13 @@ export async function POST(request: Request) {
   const email = body.email?.trim().toLowerCase();
   const name = body.name?.trim() || null;
 
+  if (!name) {
+    return NextResponse.json(
+      { success: false, error: "First name is required" },
+      { status: 400 }
+    );
+  }
+
   if (!email || !EMAIL_RE.test(email)) {
     return NextResponse.json(
       { success: false, error: "Invalid email" },
