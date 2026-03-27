@@ -6,6 +6,7 @@ import { MotionButton } from "@/components/ui/MotionButton";
 type Status = "idle" | "loading" | "success" | "error";
 
 export function SubscribeForm() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
@@ -18,7 +19,7 @@ export function SubscribeForm() {
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, name: name.trim() || undefined }),
       });
 
       const data = await res.json();
@@ -63,27 +64,37 @@ export function SubscribeForm() {
     <div className="w-full max-w-sm">
       <form
         onSubmit={handleSubmit}
-        className="flex items-center gap-2"
+        className="flex flex-col gap-2"
       >
         <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => {
-            setEmail(e.target.value);
-            if (status === "error") setStatus("idle");
-          }}
-          placeholder="you@example.com"
-          aria-label="Email address"
-          className="h-10 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 transition-colors"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="First name (optional)"
+          aria-label="First name"
+          className="h-10 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 transition-colors"
         />
-        <MotionButton
-          type="submit"
-          disabled={status === "loading"}
-          className="h-10 shrink-0 rounded-lg bg-[var(--color-accent)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 disabled:opacity-60"
-        >
-          {status === "loading" ? "..." : "Subscribe"}
-        </MotionButton>
+        <div className="flex items-center gap-2">
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (status === "error") setStatus("idle");
+            }}
+            placeholder="you@example.com"
+            aria-label="Email address"
+            className="h-10 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 transition-colors"
+          />
+          <MotionButton
+            type="submit"
+            disabled={status === "loading"}
+            className="h-10 shrink-0 rounded-lg bg-[var(--color-accent)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 disabled:opacity-60"
+          >
+            {status === "loading" ? "..." : "Subscribe"}
+          </MotionButton>
+        </div>
       </form>
       {status === "error" && (
         <p className="mt-2 text-xs text-red-600">{message}</p>

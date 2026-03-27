@@ -11,7 +11,7 @@ interface SendDigestPayload {
 }
 
 const BATCH_SIZE = 100; // Resend batch limit per call
-const FROM_ADDRESS = "BTC Today <digest@btctoday.dev>";
+const FROM_ADDRESS = "BTC Today <hello@btctoday.co>";
 
 export const sendDigestTask = task({
   id: "send-digest",
@@ -29,7 +29,7 @@ export const sendDigestTask = task({
     const supabase = createServiceClient();
     const { data: subscribers, error } = await supabase
       .from("subscribers")
-      .select("email")
+      .select("email, name")
       .eq("status", "active");
 
     if (error) {
@@ -38,6 +38,7 @@ export const sendDigestTask = task({
     }
 
     const activeEmails = subscribers.map((s) => s.email);
+    const nameByEmail = new Map(subscribers.map((s) => [s.email, s.name as string | null]));
 
     if (activeEmails.length === 0) {
       logger.info("No active subscribers — skipping email digest");
@@ -52,8 +53,8 @@ export const sendDigestTask = task({
 
     const subject = `BTC Today — $${market_snapshot.price_usd.toLocaleString("en-US")} (${market_snapshot.change_24h_pct >= 0 ? "+" : ""}${market_snapshot.change_24h_pct.toFixed(2)}%)`;
 
-    // Render React Email template to HTML
-    const htmlBody = await render(DailyDigest({ briefing, siteUrl }));
+    // Render React Email template to HTML (with placeholders for per-subscriber values)
+    const htmlTemplate = await render(DailyDigest({ briefing, siteUrl, name: "%%NAME%%" }));
 
     // Plain text fallback for clients that don't render HTML
     const storySummaries = top_stories
@@ -61,7 +62,7 @@ export const sendDigestTask = task({
       .map((s, i) => `${i + 1}. ${s.headline} (${s.source})\n   ${s.summary}`)
       .join("\n\n");
 
-    const textBody = `BTC Today — ${date}
+    const textTemplate = `BTC Today — ${date}
 
 Market: $${market_snapshot.price_usd.toLocaleString("en-US")} | 24h: ${market_snapshot.change_24h_pct >= 0 ? "+" : ""}${market_snapshot.change_24h_pct.toFixed(2)}% | 7d: ${market_snapshot.change_7d_pct >= 0 ? "+" : ""}${market_snapshot.change_7d_pct.toFixed(2)}%
 
@@ -71,7 +72,36 @@ ${storySummaries || "No stories today."}
 
 Read the full briefing: ${siteUrl}/archive/${date}
 
+Chat with our AI: %%CHAT_URL%%
+
 — BTC Today`;
+
+    // Step 3.5: Generate per-subscriber chat magic link tokens
+    const chatTokens = new Map<string, string>();
+    const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    for (const email of activeEmails) {
+      const bytes = new Uint8Array(32);
+      crypto.getRandomValues(bytes);
+      chatTokens.set(email, Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join(""));
+    }
+
+    // Batch insert all magic link tokens
+    const tokenRows = activeEmails.map((email) => ({
+      email,
+      code: `magic:${chatTokens.get(email)}`,
+      expires_at: tokenExpiry.toISOString(),
+    }));
+
+    const { error: tokenError } = await supabase
+      .from("verification_codes")
+      .insert(tokenRows);
+
+    if (tokenError) {
+      logger.warn("Failed to create chat tokens — emails will send without chat links", {
+        error: tokenError.message,
+      });
+    }
 
     // Step 4: Send in batches via Resend
     const resend = new Resend(resendKey);
@@ -81,13 +111,32 @@ Read the full briefing: ${siteUrl}/archive/${date}
     for (let i = 0; i < activeEmails.length; i += BATCH_SIZE) {
       const batch = activeEmails.slice(i, i + BATCH_SIZE);
 
-      const batchPayload = batch.map((email) => ({
-        from: FROM_ADDRESS,
-        to: email,
-        subject,
-        html: htmlBody,
-        text: textBody,
-      }));
+      const batchPayload = batch.map((email) => {
+        const token = chatTokens.get(email);
+        const chatUrl = token
+          ? `${siteUrl}/chat?token=${token}&email=${encodeURIComponent(email)}`
+          : `${siteUrl}/chat`;
+        const subscriberName = nameByEmail.get(email);
+
+        let html = htmlTemplate.replace(/%%CHAT_URL%%/g, chatUrl);
+        let text = textTemplate.replace(/%%CHAT_URL%%/g, chatUrl);
+
+        if (subscriberName) {
+          html = html.replace(/%%NAME%%/g, subscriberName);
+          text = `Hi ${subscriberName},\n\n${text}`;
+        } else {
+          html = html.replace(/Good morning, %%NAME%%\./g, "Good morning.");
+          text = text.replace(/%%NAME%%/g, "");
+        }
+
+        return {
+          from: FROM_ADDRESS,
+          to: email,
+          subject,
+          html,
+          text,
+        };
+      });
 
       try {
         const result = await resend.batch.send(batchPayload);

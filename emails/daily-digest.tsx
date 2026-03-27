@@ -84,6 +84,7 @@ function sentimentDot(sentiment: "bullish" | "bearish" | "neutral"): string {
 interface DailyDigestProps {
   briefing: BriefingJSON;
   siteUrl: string;
+  name?: string;
 }
 
 // ─── Preview defaults for React Email dev server ──────────────────────────────
@@ -217,11 +218,13 @@ const previewBriefing: BriefingJSON = {
 
 export default function DailyDigest({
   briefing = previewBriefing,
-  siteUrl = "https://btctoday.dev",
+  siteUrl = "https://btctoday.co",
+  name,
 }: DailyDigestProps) {
   const { market_snapshot: mkt, top_stories, daily_diff, regulatory, adoption } = briefing;
   const stories = top_stories.slice(0, 3);
   const briefingUrl = `${siteUrl}/archive/${briefing.date}`;
+  const greeting = name ? `Good morning, ${name}.` : "Good morning.";
 
   return (
     <Html lang="en" dir="ltr">
@@ -250,6 +253,11 @@ export default function DailyDigest({
           </Section>
 
           <Hr style={styles.hr} />
+
+          {/* ── Greeting ─────────────────────────────────────────────── */}
+          <Section style={{ padding: "16px 0 0" }}>
+            <Text style={styles.greeting}>{greeting}</Text>
+          </Section>
 
           {/* ── Daily Diff Banner ──────────────────────────────────── */}
           <Section style={styles.diffBanner}>
@@ -402,6 +410,12 @@ export default function DailyDigest({
             <Link href={briefingUrl} style={styles.ctaButton}>
               Read Full Briefing
             </Link>
+            <Text style={styles.ctaChatText}>
+              Or ask our AI about today&apos;s data:
+            </Text>
+            <Link href="%%CHAT_URL%%" style={styles.ctaChatButton}>
+              Chat with AI
+            </Link>
           </Section>
 
           <Hr style={styles.hr} />
@@ -415,7 +429,7 @@ export default function DailyDigest({
             </Text>
             <Text style={styles.footerLinks}>
               <Link href={siteUrl} style={styles.footerLink}>
-                btctoday.dev
+                btctoday.co
               </Link>
               {" / "}
               <Link href={`${siteUrl}/archive`} style={styles.footerLink}>
@@ -480,6 +494,15 @@ const styles = {
     borderTopWidth: "1px",
     borderTopStyle: "solid" as const,
     margin: "0",
+  } as React.CSSProperties,
+
+  greeting: {
+    fontFamily: headingStack,
+    fontSize: "15px",
+    fontWeight: "500",
+    color: colors.textSecondary,
+    margin: "0",
+    lineHeight: "1.5",
   } as React.CSSProperties,
 
   diffBanner: {
@@ -642,6 +665,27 @@ const styles = {
     textDecoration: "none",
     padding: "12px 32px",
     borderRadius: "8px",
+    letterSpacing: "0.01em",
+  } as React.CSSProperties,
+
+  ctaChatText: {
+    fontSize: "13px",
+    color: colors.textMuted,
+    margin: "20px 0 12px",
+    lineHeight: "1.6",
+  } as React.CSSProperties,
+
+  ctaChatButton: {
+    display: "inline-block" as const,
+    backgroundColor: "transparent",
+    color: colors.accent,
+    fontFamily: headingStack,
+    fontSize: "13px",
+    fontWeight: "600",
+    textDecoration: "none",
+    padding: "10px 28px",
+    borderRadius: "8px",
+    border: `1px solid ${colors.accent}`,
     letterSpacing: "0.01em",
   } as React.CSSProperties,
 

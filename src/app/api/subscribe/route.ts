@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import { render } from "@react-email/render";
 import { createServiceClient } from "@/lib/supabase/server";
+import WelcomeEmail from "../../../../emails/welcome";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: Request) {
-  let body: { email?: string };
+  let body: { email?: string; name?: string };
 
   try {
     body = await request.json();
@@ -17,6 +19,7 @@ export async function POST(request: Request) {
   }
 
   const email = body.email?.trim().toLowerCase();
+  const name = body.name?.trim() || null;
 
   if (!email || !EMAIL_RE.test(email)) {
     return NextResponse.json(
@@ -29,7 +32,10 @@ export async function POST(request: Request) {
   const supabase = createServiceClient();
   const { error } = await supabase
     .from("subscribers")
-    .upsert({ email, status: "active" }, { onConflict: "email" });
+    .upsert(
+      { email, status: "active", ...(name ? { name } : {}) },
+      { onConflict: "email" }
+    );
 
   if (error) {
     return NextResponse.json(
@@ -45,10 +51,13 @@ export async function POST(request: Request) {
       const resend = new Resend(resendKey);
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
+      const html = await render(WelcomeEmail({ email, name: name ?? undefined, siteUrl }));
+
       await resend.emails.send({
-        from: "BTC Today <digest@btctoday.dev>",
+        from: "BTC Today <hello@btctoday.co>",
         to: email,
         subject: "Welcome to BTC Today",
+        html,
         text: `Welcome to BTC Today!\n\nYou'll receive a daily Bitcoin intelligence briefing every morning at 2 AM CET.\n\nRead today's briefing: ${siteUrl}\n\n— BTC Today`,
       });
     } catch {
