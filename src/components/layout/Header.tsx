@@ -22,7 +22,7 @@ function formatBriefingDate(isoDate: string): string {
 
 export function Header({ date }: { date?: string }) {
   return (
-    <header className="sticky top-0 z-50 bg-[var(--color-bg-base)]/80 backdrop-blur-md">
+    <header className="sticky top-[36px] z-50 bg-[var(--color-bg-base)]/80 backdrop-blur-md">
       <Container wide className="flex h-14 items-center justify-between">
         {/* Logo — intelligence report framing */}
         <Link

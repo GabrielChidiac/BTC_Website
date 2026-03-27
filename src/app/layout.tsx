@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Inter, Geist } from "next/font/google";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
+import { SubscribeBanner } from "@/components/subscribe/SubscribeBanner";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +39,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen">
         <ScrollProgress />
+        <SubscribeBanner />
         {children}
       </body>
     </html>
