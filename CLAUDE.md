@@ -11,7 +11,7 @@ AI-curated daily Bitcoin intelligence for high-net-worth individuals and busines
 | Layer | Tech | Notes |
 |---|---|---|
 | Framework | Next.js 16 (App Router, ISR) | `next@16.2.1`, React 19 |
-| Pipeline | Trigger.dev v3 (`@trigger.dev/sdk@^4.4.3`) | Cron tasks, 5min max per task |
+| Pipeline | Trigger.dev v3 (`@trigger.dev/sdk@^4.4.3`) | Cron tasks, 15min global max (`maxDuration: 900`) |
 | Database | Supabase (Postgres + RLS) | `@supabase/ssr@^0.9.0` |
 | Styling | Tailwind CSS v4 | CSS-only config via `@theme` |
 | AI | Claude Sonnet (briefing) + Perplexity sonar-pro (enrichment) | Kie.ai fallback for Claude |
@@ -50,7 +50,7 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - **Never** `Promise.all` with individual `triggerAndWait` calls
 - `Promise.allSettled` is fine inside wrapper functions
 - Cron: `"0 1 * * *"` (1 UTC = 2 CET)
-- Max duration: 5 min per task (`trigger.config.ts`)
+- Max duration: 15 min global (`maxDuration: 900` in `trigger.config.ts`)
 - Task files go in `src/trigger/` (configured via `dirs` in `trigger.config.ts`)
 
 ### Supabase
@@ -74,9 +74,8 @@ All listed in `.env.example`. Required keys:
 | `ANTHROPIC_API_KEY` | Claude Sonnet (briefing generation) |
 | `PERPLEXITY_API_KEY` | sonar-pro (enrichment: forward outlook, institutional flows, expert insights, supply dynamics) |
 | `KIE_API_KEY` | Kie.ai (Claude fallback, OpenAI-compatible) |
-| `SEARCHAPI_KEY` | SearchAPI.io (Google News) |
 | `COINGECKO_API_KEY` | CoinGecko Demo (free, `x-cg-demo-api-key` header) |
-| `ALPHA_VANTAGE_API_KEY` | Alpha Vantage (DXY, free 25 req/day) |
+| `ALPHA_VANTAGE_API_KEY` | Alpha Vantage (unused — DXY now via Yahoo Finance) |
 | `TRIGGER_SECRET_KEY` | Trigger.dev |
 | `RESEND_API_KEY` | Resend (email) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
@@ -90,11 +89,11 @@ All listed in `.env.example`. Required keys:
 2 AM CET daily (Trigger.dev cron):
 
   ┌─ news collector ──────┐
-  │  (SearchAPI + RSS)     │
+  │  (7 RSS feeds)         │
   │                        │──→ AI Brain (Claude) ──→ Enrichment (Perplexity x4)
   └─ market collector ─────┘         │                       │
      (CoinGecko, Mempool,           │                       ├── looking_ahead
-      Yahoo, Alpha Vantage)         v                       ├── institutional_flows
+      Yahoo Finance)               v                       ├── institutional_flows
                                BriefingJSON ◄───────────────├── expert_insights
                                     │                       └── supply_dynamics
                                     ├──→ Save to Supabase
@@ -147,3 +146,14 @@ All listed in `.env.example`. Required keys:
 - **Institutional lens** — frame everything through where money flows, macro implications, long-term value
 - **Anti-skeptic by data** — let BTC vs Everything comparisons (24h, YTD, 1Y) speak for themselves
 - **Expert voices** — Perplexity-sourced insights from recognized analysts (Lyn Alden, Saylor, etc.), not YouTube influencers
+
+## Pre-Deployment Checklist
+- [ ] Set `NEXT_PUBLIC_SITE_URL` to production domain (currently `http://localhost:3000`)
+- [ ] Set all env vars in Vercel/hosting provider (never commit `.env`)
+- [ ] Verify Supabase RLS policies are applied (`001_initial_schema.sql`)
+- [ ] Verify `digest@btctoday.dev` domain is verified in Resend
+- [ ] Add `error.tsx` and `not-found.tsx` for branded error pages
+- [ ] Add rate limiting to `/api/chat` (unthrottled Claude proxy risk)
+- [ ] Consider adding `middleware.ts` for security headers (CSP, X-Frame-Options)
+- [ ] Remove unused dependency `youtube-transcript` from `package.json`
+- [ ] Remove unused env var `ALPHA_VANTAGE_API_KEY` (DXY comes from Yahoo Finance)

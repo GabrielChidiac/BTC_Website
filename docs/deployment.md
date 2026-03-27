@@ -6,7 +6,7 @@
 - [Trigger.dev](https://trigger.dev) account (free Developer plan — 50k runs/mo)
 - [Supabase](https://supabase.com) project (free plan — 500MB database)
 - [Resend](https://resend.com) account (free — 3k emails/mo)
-- API keys for: Anthropic, Perplexity, SearchAPI.io, CoinGecko (free Demo), Alpha Vantage (free)
+- API keys for: Anthropic, Perplexity, CoinGecko (free Demo)
 
 ---
 
@@ -49,9 +49,7 @@ Add all variables from `.env.example` in **Settings → Environment Variables**:
 | `ANTHROPIC_API_KEY` | `sk-ant-...` | Claude Sonnet |
 | `PERPLEXITY_API_KEY` | `pplx-...` | sonar-pro |
 | `KIE_API_KEY` | (optional) | Claude fallback |
-| `SEARCHAPI_KEY` | Your key | Google News |
 | `COINGECKO_API_KEY` | Your demo key | Free, no CC |
-| `ALPHA_VANTAGE_API_KEY` | Your key | Free, 25 req/day |
 | `TRIGGER_SECRET_KEY` | `tr_dev_...` | From Trigger.dev dashboard |
 | `RESEND_API_KEY` | `re_...` | Email sending |
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://xxx.supabase.co` | |
@@ -101,7 +99,7 @@ After deploying, go to the Trigger.dev dashboard:
 1. In the Trigger.dev dashboard, go to **Tasks → daily-pipeline**
 2. Click **Test** to trigger a manual run
 3. Watch the run logs to verify:
-   - All 3 collectors complete (news, youtube, market)
+   - Both collectors complete (news, market)
    - AI Brain produces valid BriefingJSON
    - Enrichment adds `looking_ahead` (or falls back gracefully)
    - Briefing saves to Supabase
@@ -117,9 +115,7 @@ Trigger.dev tasks run in their own runtime, so they need their own env vars. In 
 | `ANTHROPIC_API_KEY` | Yes |
 | `PERPLEXITY_API_KEY` | Yes |
 | `KIE_API_KEY` | No (fallback) |
-| `SEARCHAPI_KEY` | Yes |
 | `COINGECKO_API_KEY` | Yes |
-| `ALPHA_VANTAGE_API_KEY` | Yes |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes |
 | `RESEND_API_KEY` | Yes |
@@ -176,9 +172,7 @@ To test the frontend without running the full pipeline:
 | Resend | Free (3k emails/mo) | $0 |
 | Anthropic | Pay-as-you-go (~1 call/day) | ~$1-2 |
 | Perplexity | Pay-as-you-go (~1 call/day) | ~$0.50-1 |
-| SearchAPI.io | Free (100 searches/mo) | $0 |
 | CoinGecko | Demo (free) | $0 |
-| Alpha Vantage | Free (25 req/day) | $0 |
 | **Total** | | **~$2-3/month** |
 
 ---

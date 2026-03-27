@@ -1,7 +1,6 @@
 import { task } from "@trigger.dev/sdk/v3";
 import type { NewsCollectorOutput, RawArticle } from "@/lib/types";
 import { isWithinHours } from "@/lib/utils";
-import { fetchSearchApiNews } from "@/trigger/lib/searchapi";
 import { fetchRssArticles } from "@/trigger/lib/rss";
 
 function normalizeUrl(url: string): string {
@@ -11,29 +10,20 @@ function normalizeUrl(url: string): string {
 export const newsCollector = task({
   id: "news-collector",
   run: async ({ date }: { date: string }): Promise<NewsCollectorOutput> => {
-    const results = await Promise.allSettled([
-      fetchSearchApiNews(),
-      fetchRssArticles(),
-    ]);
+    const result = await fetchRssArticles();
 
-    const merged: RawArticle[] = [];
-
-    for (const result of results) {
-      if (result.status === "fulfilled" && result.value.error === null) {
-        merged.push(...result.value.data);
-      } else if (result.status === "fulfilled") {
-        console.warn(`[news-collector] Wrapper returned error: ${result.value.error}`);
-      } else {
-        console.warn(`[news-collector] Wrapper rejected: ${result.reason}`);
-      }
+    if (result.error || !result.data) {
+      console.warn(`[news-collector] RSS fetch error: ${result.error}`);
+      return { articles: [] };
     }
 
-    const rawCount = merged.length;
+    const articles = result.data;
+    const rawCount = articles.length;
 
     // Deduplicate by normalized URL
     const seen = new Set<string>();
     const deduplicated: RawArticle[] = [];
-    for (const article of merged) {
+    for (const article of articles) {
       const key = normalizeUrl(article.url);
       if (!seen.has(key)) {
         seen.add(key);
