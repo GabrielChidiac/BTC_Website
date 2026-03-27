@@ -1,5 +1,5 @@
 import type { AdoptionUpdate } from "@/lib/types";
-import { Badge } from "@/components/ui/Badge";
+import { Badge } from "@/components/ui/badge";
 
 const categoryLabels: Record<AdoptionUpdate["category"], string> = {
   corporate: "Corporate",
@@ -29,7 +29,7 @@ export function Adoption({
             className="card-interactive group rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4"
           >
             <div className="mb-2">
-              <Badge label={categoryLabels[update.category]} variant="default" />
+              <Badge variant="default">{categoryLabels[update.category]}</Badge>
             </div>
 
             {update.url && update.url.length > 30 ? (

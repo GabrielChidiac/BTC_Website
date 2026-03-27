@@ -3,13 +3,8 @@
 import { useState } from "react";
 import type { AssetComparison } from "@/lib/types";
 import { formatPctChange } from "@/lib/utils";
-import { TabSwitcher } from "@/components/ui/TabSwitcher";
-
-const TABS = [
-  { id: "24h", label: "24h" },
-  { id: "ytd", label: "YTD" },
-  { id: "1y", label: "1Y" },
-];
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 function getValues(asset: AssetComparison, period: string) {
   switch (period) {
@@ -62,28 +57,19 @@ function EdgeBar({ pct }: { pct: number | null | undefined }) {
 
 const VISIBLE_ROWS = 3;
 
-export function BtcVsEverythingTabs({
+function ComparisonTable({
   comparisons,
+  period,
 }: {
   comparisons: AssetComparison[];
+  period: string;
 }) {
-  const [activeTab, setActiveTab] = useState("ytd");
   const [showAll, setShowAll] = useState(false);
-
-  if (!comparisons || comparisons.length === 0) return null;
-
   const visibleRows = showAll ? comparisons : comparisons.slice(0, VISIBLE_ROWS);
   const hiddenCount = comparisons.length - VISIBLE_ROWS;
 
   return (
-    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4 sm:p-5">
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <h3 className="font-[family-name:var(--font-heading)] text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
-          BTC vs Everything
-        </h3>
-        <TabSwitcher tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
-
+    <>
       <div className="overflow-x-auto -mx-1">
         <table className="w-full text-left text-sm">
           <thead>
@@ -101,7 +87,7 @@ export function BtcVsEverythingTabs({
           </thead>
           <tbody>
             {visibleRows.map((asset) => {
-              const { change, edge } = getValues(asset, activeTab);
+              const { change, edge } = getValues(asset, period);
               return (
                 <tr
                   key={asset.ticker}
@@ -130,7 +116,6 @@ export function BtcVsEverythingTabs({
         </table>
       </div>
 
-      {/* Expand toggle */}
       {hiddenCount > 0 && (
         <button
           type="button"
@@ -156,6 +141,58 @@ export function BtcVsEverythingTabs({
           {showAll ? "Show less" : `${hiddenCount} more asset${hiddenCount !== 1 ? "s" : ""}`}
         </button>
       )}
-    </div>
+    </>
+  );
+}
+
+export function BtcVsEverythingTabs({
+  comparisons,
+}: {
+  comparisons: AssetComparison[];
+}) {
+  if (!comparisons || comparisons.length === 0) return null;
+
+  return (
+    <Card className="gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+      <CardContent className="p-4 sm:p-5">
+        <Tabs defaultValue="ytd" className="gap-0">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h3 className="font-[family-name:var(--font-heading)] text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+              BTC vs Everything
+            </h3>
+            <TabsList className="h-auto bg-[var(--color-bg-base)] p-1 rounded-lg">
+              <TabsTrigger
+                value="24h"
+                className="rounded-md px-3 py-1 text-[11px] font-[family-name:var(--font-heading)] font-semibold uppercase tracking-[0.08em] data-active:bg-[var(--color-bg-surface)] data-active:text-[var(--color-accent)] data-active:shadow-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
+              >
+                24h
+              </TabsTrigger>
+              <TabsTrigger
+                value="ytd"
+                className="rounded-md px-3 py-1 text-[11px] font-[family-name:var(--font-heading)] font-semibold uppercase tracking-[0.08em] data-active:bg-[var(--color-bg-surface)] data-active:text-[var(--color-accent)] data-active:shadow-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
+              >
+                YTD
+              </TabsTrigger>
+              <TabsTrigger
+                value="1y"
+                className="rounded-md px-3 py-1 text-[11px] font-[family-name:var(--font-heading)] font-semibold uppercase tracking-[0.08em] data-active:bg-[var(--color-bg-surface)] data-active:text-[var(--color-accent)] data-active:shadow-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
+              >
+                1Y
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="24h">
+            <ComparisonTable comparisons={comparisons} period="24h" />
+          </TabsContent>
+          <TabsContent value="ytd">
+            <ComparisonTable comparisons={comparisons} period="ytd" />
+          </TabsContent>
+          <TabsContent value="1y">
+            <ComparisonTable comparisons={comparisons} period="1y" />
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 }

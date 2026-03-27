@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Container } from "./Container";
 import { MobileNav } from "./MobileNav";
+import { PulsingDot } from "@/components/ui/PulsingDot";
 
 const navLinks = [
   { href: "/", label: "Briefing" },
-  { href: "/experts", label: "Experts" },
   { href: "/chat", label: "Ask AI" },
   { href: "/archive", label: "Archive" },
 ] as const;
@@ -37,7 +37,8 @@ export function Header({ date }: { date?: string }) {
             <span className="text-[var(--color-accent)]">Today</span>
           </span>
           <span className="hidden sm:block h-3.5 w-px bg-[var(--color-border)]" />
-          <span className="hidden sm:block font-[family-name:var(--font-heading)] section-number text-[10px] font-medium text-[var(--color-text-muted)] tracking-[0.12em]">
+          <span className="hidden sm:flex items-center gap-1.5 font-[family-name:var(--font-heading)] section-number text-[10px] font-medium text-[var(--color-text-muted)] tracking-[0.12em]">
+            <PulsingDot variant="live" size={6} />
             DAILY INTELLIGENCE BRIEFING
           </span>
         </Link>

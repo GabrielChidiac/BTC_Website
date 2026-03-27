@@ -2,7 +2,7 @@
 
 ## Context
 
-Building "BTC Today" — an AI-curated daily Bitcoin intelligence website. A Next.js app with a Trigger.dev pipeline that runs daily at 6 AM CET, collects news/market/YouTube data, processes it through Claude Sonnet, and publishes a structured briefing to the website + email subscribers.
+Building "BTC Today" — an AI-curated daily Bitcoin intelligence website. A Next.js app with a Trigger.dev pipeline that runs daily at 2 AM CET, collects news/market/YouTube data, processes it through Claude Sonnet, and publishes a structured briefing to the website + email subscribers.
 
 ---
 
@@ -72,7 +72,7 @@ Every wrapper returns: `type Result<T> = { data: T; error: null } | { data: null
 
 ### Phase 6: Orchestrator (direct)
 - `src/trigger/daily-pipeline.ts`
-- Cron `"0 5 * * *"` (5 UTC = 6 CET)
+- Cron `"0 1 * * *"` (1 UTC = 2 CET)
 - Collectors via `batch.triggerAndWait` (parallel)
 - AI brain → enrichment → save → revalidate → email (sequential)
 - See [orchestrator.md](orchestrator.md) for full code

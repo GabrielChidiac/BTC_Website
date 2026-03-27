@@ -1,4 +1,6 @@
 import { SparklineSVG } from "./SparklineSVG";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface StatTileProps {
   label: string;
@@ -31,39 +33,44 @@ export function StatTile({
   const styles = sizeStyles[size];
 
   return (
-    <div
-      className={`card-interactive rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4 sm:p-5 ${className}`}
+    <Card
+      className={cn(
+        "card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0",
+        className
+      )}
     >
-      <p className={`${styles.label} font-[family-name:var(--font-heading)] font-medium uppercase tracking-[0.1em] text-[var(--color-text-muted)]`}>
-        {label}
-      </p>
+      <CardContent className="p-4 sm:p-5">
+        <p className={`${styles.label} font-[family-name:var(--font-heading)] font-medium uppercase tracking-[0.1em] text-[var(--color-text-muted)]`}>
+          {label}
+        </p>
 
-      <div className="mt-1.5 flex items-end justify-between gap-2">
-        <div className="min-w-0">
-          <p className={`${styles.value} font-[family-name:var(--font-heading)] font-bold tabular-nums tracking-tight text-[var(--color-text-primary)]`}>
-            {value}
-          </p>
-          {delta && (
-            <p className={`mt-0.5 text-xs font-medium tabular-nums ${delta.positive ? "text-emerald-700" : "text-red-700"}`}>
-              {delta.value}
+        <div className="mt-1.5 flex items-end justify-between gap-2">
+          <div className="min-w-0">
+            <p className={`${styles.value} font-[family-name:var(--font-heading)] font-bold tabular-nums tracking-tight text-[var(--color-text-primary)]`}>
+              {value}
             </p>
-          )}
-          {sublabel && (
-            <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)]">
-              {sublabel}
-            </p>
+            {delta && (
+              <p className={`mt-0.5 text-xs font-medium tabular-nums ${delta.positive ? "text-emerald-700" : "text-red-700"}`}>
+                {delta.value}
+              </p>
+            )}
+            {sublabel && (
+              <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)]">
+                {sublabel}
+              </p>
+            )}
+          </div>
+
+          {sparkline && sparkline.length >= 2 && (
+            <SparklineSVG
+              data={sparkline}
+              width={64}
+              height={20}
+              className="shrink-0 opacity-60"
+            />
           )}
         </div>
-
-        {sparkline && sparkline.length >= 2 && (
-          <SparklineSVG
-            data={sparkline}
-            width={64}
-            height={20}
-            className="shrink-0 opacity-60"
-          />
-        )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

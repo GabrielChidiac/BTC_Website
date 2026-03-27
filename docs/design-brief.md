@@ -3,7 +3,7 @@
 ## What This Is
 A daily AI-curated Bitcoin intelligence briefing for high-net-worth individuals and executives. Think Bloomberg Terminal meets Axios — information-dense but scannable, premium but not flashy.
 
-**Live site**: Deployed on Vercel with Next.js. Data refreshes daily at 6 AM CET via AI pipeline.
+**Live site**: Deployed on Vercel with Next.js. Data refreshes daily at 2 AM CET via AI pipeline.
 
 ---
 

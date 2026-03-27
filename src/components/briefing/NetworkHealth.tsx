@@ -1,5 +1,15 @@
 import type { NetworkHealth as NetworkHealthType } from "@/lib/types";
-import { compactNumber } from "@/lib/utils";
+
+function formatHashrate(ehps: number): string {
+  if (ehps >= 1000) return `${(ehps / 1000).toFixed(1)} ZH/s`;
+  return `${ehps.toFixed(0)} EH/s`;
+}
+
+function formatDifficulty(diff: number): string {
+  if (diff >= 1e12) return `${(diff / 1e12).toFixed(1)}T`;
+  if (diff >= 1e9) return `${(diff / 1e9).toFixed(1)}B`;
+  return diff.toLocaleString("en-US");
+}
 
 export function NetworkHealth({
   network,
@@ -12,44 +22,31 @@ export function NetworkHealth({
         Network Fundamentals
       </h2>
       <p className="text-xs text-[var(--color-text-muted)] mb-4">
-        Security and infrastructure metrics that underpin institutional confidence
+        Security and infrastructure metrics from Mempool.space
       </p>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <Stat label="Hashrate" value={`${compactNumber(network.hashrate_eh_s)} EH/s`} />
-        <Stat label="Difficulty" value={compactNumber(network.difficulty)} />
+      <div className="grid grid-cols-2 gap-3">
+        {/* Hashrate */}
+        <Stat label="Hashrate" value={formatHashrate(network.hashrate_eh_s)} />
+
+        {/* Block Height */}
         <Stat
           label="Block Height"
           value={network.block_height.toLocaleString("en-US")}
         />
+
+        {/* Difficulty */}
+        <Stat label="Difficulty" value={formatDifficulty(network.difficulty)} />
+
+        {/* Mempool */}
         <Stat
           label="Mempool"
           value={`${network.mempool_tx_count.toLocaleString("en-US")} tx`}
           sub={`${network.mempool_size_mb.toFixed(1)} MB`}
         />
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
-          <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
-            Fee Rates
-          </p>
-          <div className="mt-1 flex items-baseline gap-3 text-sm">
-            <span className="text-emerald-700">
-              <span className="text-[var(--color-text-muted)] text-xs">slow </span>
-              {network.fee_slow_sat_vb}
-            </span>
-            <span className="text-[var(--color-accent)]">
-              <span className="text-[var(--color-text-muted)] text-xs">med </span>
-              {network.fee_medium_sat_vb}
-            </span>
-            <span className="text-red-700">
-              <span className="text-[var(--color-text-muted)] text-xs">fast </span>
-              {network.fee_fast_sat_vb}
-            </span>
-          </div>
-          <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">sat/vB</p>
-        </div>
 
         {/* Halving progress */}
-        <div className="col-span-2 sm:col-span-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4">
+        <div className="col-span-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4">
           <div className="flex items-baseline justify-between">
             <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
               Next Halving
@@ -67,14 +64,9 @@ export function NetworkHealth({
               }}
             />
           </div>
-          <div className="mt-1 flex items-center justify-between">
-            <p className="text-xs text-[var(--color-text-muted)]">
-              Supply issuance halves, a programmed scarcity event
-            </p>
-            <p className="text-xs font-medium text-[var(--color-accent)] shrink-0 ml-2">
-              {network.halving_progress_pct.toFixed(1)}%
-            </p>
-          </div>
+          <p className="mt-1.5 text-xs font-medium text-[var(--color-accent)] text-right">
+            {network.halving_progress_pct.toFixed(1)}%
+          </p>
         </div>
       </div>
     </section>
@@ -95,7 +87,7 @@ function Stat({
       <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
         {label}
       </p>
-      <p className="mt-1 font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-text-primary)]">
+      <p className="mt-1 font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-text-primary)] tabular-nums">
         {value}
       </p>
       {sub && (
@@ -104,3 +96,4 @@ function Stat({
     </div>
   );
 }
+

@@ -118,7 +118,7 @@ BTC_Website/
 ## Data Flow
 
 ```
-6 AM CET daily:
+2 AM CET daily:
 
   ┌─ news collector ──────┐
   │  (SearchAPI + RSS)     │

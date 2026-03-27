@@ -15,6 +15,7 @@ import {
   fetchETH,
   fetchSOL,
 } from "@/trigger/lib/comparison";
+import { fetchFearGreedIndex } from "@/trigger/lib/alternativeme";
 
 export const marketCollector = task({
   id: "market-collector",
@@ -33,6 +34,7 @@ export const marketCollector = task({
       dxyResult,
       ethResult,
       solResult,
+      fearGreedResult,
     ] = await Promise.allSettled([
       fetchBtcPrice(),
       fetchGlobalData(),
@@ -44,6 +46,7 @@ export const marketCollector = task({
       fetchDXY(),
       fetchETH(),
       fetchSOL(),
+      fetchFearGreedIndex(),
     ]);
 
     // ── Step 2: Unwrap results ──────────────────────────────────────────────
@@ -78,9 +81,10 @@ export const marketCollector = task({
     const dxy = unwrap(dxyResult, "dxy");
     const eth = unwrap(ethResult, "eth");
     const sol = unwrap(solResult, "sol");
+    const fearGreed = unwrap(fearGreedResult, "fearGreed");
 
     // ── Step 3: Compute technical indicators ────────────────────────────────
-    let technical = { rsi_14: 0, sma_50: 0, sma_200: 0 };
+    let technical = { rsi_14: 0, sma_50: 0, sma_200: 0, support_level: 0, resistance_level: 0 };
     if (closingPrices && closingPrices.length >= 200) {
       const indicatorResult = calculateIndicators(closingPrices);
       if (!indicatorResult.error) {
@@ -156,8 +160,11 @@ export const marketCollector = task({
         sol_change_ytd_pct: sol?.change_ytd_pct ?? null,
         sol_change_1y_pct: sol?.change_1y_pct ?? null,
       },
+      ath_usd: btcPrice?.ath_usd ?? null,
+      ath_date: btcPrice?.ath_date ?? null,
       btc_change_ytd_pct: btcYtdPct,
       btc_change_1y_pct: btc1yPct,
+      fear_greed: fearGreed ? { value: fearGreed.value, label: fearGreed.label } : null,
     };
 
     // ── Step 6: Log summary and return ──────────────────────────────────────

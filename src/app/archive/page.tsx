@@ -45,7 +45,7 @@ export default async function ArchivePage() {
           {briefings.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] py-16">
               <p className="text-sm text-[var(--color-text-secondary)]">
-                No briefings yet. The first one publishes at 6 AM CET.
+                No briefings yet. The first one publishes at 2 AM CET.
               </p>
               <Link
                 href="/"

@@ -126,6 +126,8 @@ const previewBriefing: BriefingJSON = {
     market_cap_usd: 1_812_000_000_000,
     volume_24h_usd: 48_300_000_000,
     dominance_pct: 61.2,
+    ath_usd: 125_000,
+    ath_date: "2025-12-17T00:00:00Z",
   },
   technical_signals: {
     rsi_14: 62.4,
@@ -208,6 +210,7 @@ const previewBriefing: BriefingJSON = {
       date: "2026-03-22",
     },
   ],
+  fear_greed: { value: 72, label: "Greed" },
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -408,7 +411,7 @@ export default function DailyDigest({
             <Text style={styles.footerText}>
               AI-curated daily Bitcoin intelligence.
               <br />
-              Data refreshed every day at 6 AM CET.
+              Data refreshed every day at 2 AM CET.
             </Text>
             <Text style={styles.footerLinks}>
               <Link href={siteUrl} style={styles.footerLink}>

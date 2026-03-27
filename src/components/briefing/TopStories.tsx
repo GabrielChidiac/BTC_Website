@@ -1,5 +1,5 @@
 import type { TopStory } from "@/lib/types";
-import { Badge } from "../ui/Badge";
+import { Badge } from "@/components/ui/badge";
 
 export function TopStories({ stories }: { stories: TopStory[] }) {
   if (!stories || stories.length === 0) return null;
@@ -19,7 +19,7 @@ export function TopStories({ stories }: { stories: TopStory[] }) {
       {/* Featured story — large card */}
       <article className="card-interactive rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-5 sm:p-6 mb-3">
         <div className="flex items-start gap-3 mb-2">
-          <Badge label={featured.sentiment} variant={featured.sentiment} />
+          <Badge variant={featured.sentiment as "bullish" | "bearish" | "neutral"}>{featured.sentiment}</Badge>
           <span className="text-xs text-[var(--color-text-muted)]">
             {featured.source}
           </span>
@@ -41,7 +41,7 @@ export function TopStories({ stories }: { stories: TopStory[] }) {
         {featured.tags.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
             {featured.tags.map((tag) => (
-              <Badge key={tag} label={tag} variant="default" />
+              <Badge key={tag} variant="default">{tag}</Badge>
             ))}
           </div>
         )}
@@ -57,7 +57,7 @@ export function TopStories({ stories }: { stories: TopStory[] }) {
                 i > 0 ? "border-t border-[var(--color-border)]/50" : ""
               }`}
             >
-              <Badge label={story.sentiment} variant={story.sentiment} />
+              <Badge variant={story.sentiment as "bullish" | "bearish" | "neutral"}>{story.sentiment}</Badge>
 
               <div className="min-w-0 flex-1">
                 <a

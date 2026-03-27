@@ -2,7 +2,7 @@
 
 import type { AdoptionUpdate, RegulatoryUpdate } from "@/lib/types";
 import { ExpandableCard } from "@/components/ui/ExpandableCard";
-import { Badge } from "@/components/ui/Badge";
+import { Badge } from "@/components/ui/badge";
 
 type SignalItem =
   | { type: "adoption"; data: AdoptionUpdate }
@@ -28,19 +28,17 @@ export function SignalExpandable({ item }: { item: SignalItem }) {
       <div className="flex flex-wrap items-center gap-1.5 mb-1">
         {item.type === "regulatory" ? (
           <>
-            <Badge label="Regulatory" variant="default" />
+            <Badge variant="default">Regulatory</Badge>
             <Badge
-              label={(item.data as RegulatoryUpdate).impact}
               variant={impactVariant((item.data as RegulatoryUpdate).impact)}
-            />
+            >{(item.data as RegulatoryUpdate).impact}</Badge>
           </>
         ) : (
           <>
-            <Badge label="Adoption" variant="default" />
+            <Badge variant="default">Adoption</Badge>
             <Badge
-              label={categoryLabels[(item.data as AdoptionUpdate).category]}
               variant="neutral"
-            />
+            >{categoryLabels[(item.data as AdoptionUpdate).category]}</Badge>
           </>
         )}
       </div>

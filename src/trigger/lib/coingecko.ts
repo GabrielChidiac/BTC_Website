@@ -18,6 +18,8 @@ export async function fetchBtcPrice(): Promise<
     market_cap_usd: number;
     volume_24h_usd: number;
     change_1y_pct: number | null;
+    ath_usd: number | null;
+    ath_date: string | null;
   }>
 > {
   try {
@@ -39,6 +41,8 @@ export async function fetchBtcPrice(): Promise<
         market_cap_usd: md.market_cap.usd,
         volume_24h_usd: md.total_volume.usd,
         change_1y_pct: md.price_change_percentage_1y ?? null,
+        ath_usd: md.ath?.usd ?? null,
+        ath_date: md.ath_date?.usd ?? null,
       },
       error: null,
     };

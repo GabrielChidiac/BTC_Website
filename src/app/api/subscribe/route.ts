@@ -49,7 +49,7 @@ export async function POST(request: Request) {
         from: "BTC Today <digest@btctoday.dev>",
         to: email,
         subject: "Welcome to BTC Today",
-        text: `Welcome to BTC Today!\n\nYou'll receive a daily Bitcoin intelligence briefing every morning at 6 AM CET.\n\nRead today's briefing: ${siteUrl}\n\n— BTC Today`,
+        text: `Welcome to BTC Today!\n\nYou'll receive a daily Bitcoin intelligence briefing every morning at 2 AM CET.\n\nRead today's briefing: ${siteUrl}\n\n— BTC Today`,
       });
     } catch {
       // Non-fatal — subscriber is already saved

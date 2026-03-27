@@ -5,7 +5,7 @@ import { schedules, batch } from "@trigger.dev/sdk/v3";
 
 export const dailyPipelineTask = schedules.task({
   id: "daily-pipeline",
-  cron: "0 5 * * *", // 5:00 UTC = 6:00 CET
+  cron: "0 1 * * *", // 1:00 UTC = 2:00 CET
   run: async () => {
     const date = new Date().toISOString().split("T")[0];
 

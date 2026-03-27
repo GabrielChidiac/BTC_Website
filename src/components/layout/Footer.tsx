@@ -8,9 +8,7 @@ export function Footer() {
         <SubscribeForm />
 
         <p className="text-xs text-[var(--color-text-muted)]">
-          AI-curated daily Bitcoin intelligence.
-          <br />
-          Data refreshed every day at 6 AM CET.
+          Data refreshed every day at 2 AM CET.
         </p>
       </Container>
     </footer>

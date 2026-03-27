@@ -1,5 +1,5 @@
 import type { RegulatoryUpdate } from "@/lib/types";
-import { Badge } from "@/components/ui/Badge";
+import { Badge } from "@/components/ui/badge";
 
 function impactColor(impact: RegulatoryUpdate["impact"]): "bullish" | "bearish" | "neutral" {
   if (impact === "positive") return "bullish";
@@ -27,8 +27,8 @@ export function Regulatory({
             className="card-interactive group rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4"
           >
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <Badge label={update.region} variant="default" />
-              <Badge label={update.impact} variant={impactColor(update.impact)} />
+              <Badge variant="default">{update.region}</Badge>
+              <Badge variant={impactColor(update.impact)}>{update.impact}</Badge>
             </div>
 
             {update.url && update.url.length > 30 ? (

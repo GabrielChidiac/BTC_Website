@@ -69,6 +69,11 @@ export function InstitutionalFlows({
           ))}
         </ul>
       )}
+
+      {/* Source attribution */}
+      <p className="mt-3 text-[10px] text-[var(--color-text-muted)]">
+        Aggregated from public reports
+      </p>
     </div>
   );
 }

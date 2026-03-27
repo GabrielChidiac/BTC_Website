@@ -2,7 +2,7 @@
 
 import type { TopStory } from "@/lib/types";
 import { ExpandableCard } from "@/components/ui/ExpandableCard";
-import { Badge } from "@/components/ui/Badge";
+import { Badge } from "@/components/ui/badge";
 
 export function StoryExpandable({
   story,
@@ -16,7 +16,7 @@ export function StoryExpandable({
       defaultOpen={defaultOpen}
       preview={
         <div className="flex items-start gap-2.5">
-          <Badge label={story.sentiment} variant={story.sentiment} />
+          <Badge variant={story.sentiment as "bullish" | "bearish" | "neutral"}>{story.sentiment}</Badge>
           <div className="min-w-0 flex-1">
             <p className="font-[family-name:var(--font-heading)] text-sm font-bold leading-snug text-[var(--color-text-primary)]">
               {story.headline}
@@ -35,7 +35,7 @@ export function StoryExpandable({
       {story.tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
           {story.tags.map((tag) => (
-            <Badge key={tag} label={tag} variant="default" />
+            <Badge key={tag} variant="default">{tag}</Badge>
           ))}
         </div>
       )}

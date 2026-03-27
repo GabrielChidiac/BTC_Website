@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project
-AI-curated daily Bitcoin intelligence for high-net-worth individuals and business executives. Runs a Trigger.dev pipeline at 6 AM CET that collects news and market data, processes through Claude Sonnet into a structured briefing, enriches via Perplexity (institutional flows, expert insights, supply dynamics), and publishes to a Next.js site + email subscribers.
+AI-curated daily Bitcoin intelligence for high-net-worth individuals and business executives. Runs a Trigger.dev pipeline at 2 AM CET that collects news and market data, processes through Claude Sonnet into a structured briefing, enriches via Perplexity (institutional flows, expert insights, supply dynamics), and publishes to a Next.js site + email subscribers.
 
 **Target audience:** Busy executives, HNW individuals, institutional investors. Not beginners. Write peer-to-peer with sophisticated investors. Let the data speak for itself — no hype, no hand-holding.
 
@@ -16,7 +16,10 @@ AI-curated daily Bitcoin intelligence for high-net-worth individuals and busines
 | Styling | Tailwind CSS v4 | CSS-only config via `@theme` |
 | AI | Claude Sonnet (briefing) + Perplexity sonar-pro (enrichment) | Kie.ai fallback for Claude |
 | Email | Resend + React Email | |
-| Language | TypeScript (strict) | |
+| UI Components | shadcn/ui (base-nova) | `npx shadcn@latest add <component>` |
+| Animation | Framer Motion + GSAP | Only animate `transform` and `opacity` |
+| Technical Analysis | trading-signals | RSI-14, SMA-50, SMA-200 |
+| Language | TypeScript (strict) | No tests or linter configured |
 
 ## Dev Commands
 ```bash
@@ -46,7 +49,7 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - Use `batch.triggerAndWait()` for parallel sub-tasks
 - **Never** `Promise.all` with individual `triggerAndWait` calls
 - `Promise.allSettled` is fine inside wrapper functions
-- Cron: `"0 5 * * *"` (5 UTC = 6 CET)
+- Cron: `"0 1 * * *"` (1 UTC = 2 CET)
 - Max duration: 5 min per task (`trigger.config.ts`)
 - Task files go in `src/trigger/` (configured via `dirs` in `trigger.config.ts`)
 
@@ -84,7 +87,7 @@ All listed in `.env.example`. Required keys:
 
 ## Pipeline Architecture
 ```
-6 AM CET daily (Trigger.dev cron):
+2 AM CET daily (Trigger.dev cron):
 
   ┌─ news collector ──────┐
   │  (SearchAPI + RSS)     │
@@ -110,10 +113,10 @@ All listed in `.env.example`. Required keys:
 
 ### Design System
 - Light/platinum theme: bg `#F4F3F1`, surfaces `#FFFFFF`/`#F9F8F6`, accent `#F7931A` (BTC orange) + `#3B82F6` (atmospheric blue, background only)
-- Space Grotesk (headings, tracking `-0.03em`, line-height `1.2`) + IBM Plex Sans (body, line-height `1.7`)
+- Space Grotesk (headings, tracking `-0.03em`, line-height `1.2`) + Inter (body, line-height `1.7`)
 - Bloomberg terminal / editorial aesthetic
 - Mobile-first, `max-w-3xl`, information-dense
-- Font variables: `--font-space-grotesk`, `--font-ibm-plex-sans` (set in `layout.tsx`)
+- Font variables: `--font-space-grotesk`, `--font-inter` (set in `layout.tsx`)
 
 ### Brand Assets
 - Check `brand_assets/` before designing. Use real assets over placeholders.

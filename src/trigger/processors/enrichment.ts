@@ -1,5 +1,6 @@
 import { task, logger } from "@trigger.dev/sdk/v3";
 import { queryPerplexity } from "@/trigger/lib/perplexity";
+import { getExpertPhotoUrls } from "@/lib/expert-photos";
 import type {
   TopStory,
   InstitutionalFlows,
@@ -13,10 +14,15 @@ const LOOKING_AHEAD_SYSTEM = `You are a senior macro-financial analyst writing f
 
 Guidelines:
 - Focus on macro catalysts, regulatory milestones, and institutional movements for the next 24-72 hours
-- Write 2-3 concise paragraphs. Data-driven, no hype
+- Write 2-3 concise, polished paragraphs. Data-driven, no hype
 - Assume the reader understands finance and markets. Speak peer-to-peer
+- Each paragraph should cover one clear theme: e.g. macro outlook, institutional positioning, regulatory catalysts
+- Integrate specific data points (prices, percentages, dates, names) naturally into sentences
 - Do NOT use markdown formatting. Return plain text only
-- Never use em dashes or en dashes. Use commas, periods, or semicolons instead`;
+- Do NOT include citation markers like [1], [2], [3] or any bracketed references. Weave source context naturally into the text (e.g. "according to SEC filings" or "per Bloomberg data")
+- Never use em dashes or en dashes. Use commas, periods, or semicolons instead
+- No bullet points. Write in flowing editorial prose like the Financial Times or Bloomberg
+- Always close the final paragraph on a constructive or long-term bullish note grounded in verifiable data (e.g. institutional inflows, network fundamentals, supply scarcity, adoption milestones). Never fabricate; if the short-term outlook is bearish, anchor the closing in Bitcoin's structural long-term thesis rather than price predictions.`;
 
 function buildLookingAheadPrompt(stories: TopStory[]): string {
   if (stories.length === 0) {
@@ -49,6 +55,7 @@ Rules:
 - etf_flow_trend: describe the recent trend, e.g. "5 consecutive days of net inflows totaling $1.2B"
 - notable_moves: 2-4 notable institutional moves, e.g. "MicroStrategy purchased 12,000 BTC ($780M)"
 - Use real, verified data only. Do not fabricate numbers.
+- Do NOT include citation markers like [1], [2], [3] or any bracketed references in any string values.
 - Never use em dashes or en dashes in string values. Use commas, periods, or semicolons instead.`;
 
 // ─── Expert Insights ────────────────────────────────────────────────────────
@@ -62,6 +69,7 @@ Return an array in this exact JSON format:
   {
     "expert_name": "<full name>",
     "role": "<title/role>",
+    "twitter_handle": "<X/Twitter handle without @ symbol, or null if unknown>",
     "quote_or_summary": "<2-3 sentence summary of their key insight>",
     "source": "<where they said it>",
     "date": "<YYYY-MM-DD or approximate>"
@@ -70,10 +78,12 @@ Return an array in this exact JSON format:
 
 Rules:
 - Include 3-5 experts maximum
+- Every entry MUST be a named individual person, never a firm or team (e.g. "Gautam Chhugani" not "Bernstein Analysts")
 - Focus on macro analysts, fund managers, CEOs, former regulators. NOT YouTube influencers
 - Examples of credible voices: Lyn Alden, Michael Saylor, Cathie Wood, Raoul Pal, Luke Gromen, Larry Fink, Stanley Druckenmiller, Jeff Park, Mark Yusko
 - Use real, recent quotes/insights only. Do not fabricate.
 - Source should be specific: "The Investors Podcast ep. 423", "Bloomberg interview", "X post", etc.
+- Do NOT include citation markers like [1], [2], [3] or any bracketed references in any string values.
 - Never use em dashes or en dashes in string values. Use commas, periods, or semicolons instead.`;
 
 // ─── Supply Dynamics ────────────────────────────────────────────────────────
@@ -93,6 +103,7 @@ Rules:
 - long_term_holder_pct: percentage of BTC supply held for >1 year. null if unavailable.
 - supply_narrative: write for sophisticated investors who understand supply/demand dynamics
 - Use real data from sources like Glassnode, CryptoQuant, or similar. Do not fabricate.
+- Do NOT include citation markers like [1], [2], [3] or any bracketed references in any string values.
 - Never use em dashes or en dashes in string values. Use commas, periods, or semicolons instead.`;
 
 // ─── Task ───────────────────────────────────────────────────────────────────
@@ -186,7 +197,13 @@ export const enrichmentTask = task({
         const cleaned = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
         const parsed = JSON.parse(cleaned) as ExpertInsight[];
         if (Array.isArray(parsed)) {
-          output.expert_insights = parsed;
+          output.expert_insights = parsed.map((insight) => ({
+            ...insight,
+            photo_url: getExpertPhotoUrls(
+              insight.expert_name,
+              insight.twitter_handle,
+            )[0],
+          }));
           logger.info("Expert insights complete", { count: parsed.length });
         }
       } catch (e) {

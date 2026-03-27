@@ -29,6 +29,8 @@ export interface MarketSnapshot {
   market_cap_usd: number;
   volume_24h_usd: number;
   dominance_pct: number;
+  ath_usd: number | null;
+  ath_date: string | null;
 }
 
 export interface TechnicalSignals {
@@ -117,6 +119,8 @@ export interface SupplyDynamics {
 export interface ExpertInsight {
   expert_name: string;
   role: string;
+  twitter_handle?: string;
+  photo_url?: string;
   quote_or_summary: string;
   source: string;
   date: string;
@@ -128,10 +132,18 @@ export interface NarrativeConsensus {
   rationale: string;
 }
 
+// ─── Fear & Greed (direct from Alternative.me API, no AI) ──────────────────
+
+export interface FearGreedIndex {
+  value: number;  // 0-100
+  label: string;  // "Extreme Fear" | "Fear" | "Neutral" | "Greed" | "Extreme Greed"
+}
+
 // ─── Master Briefing type ───────────────────────────────────────────────────
 
 export interface BriefingJSON {
   date: string;
+  one_line?: string; // Single-sentence key insight for the day
   top_stories: TopStory[];
   market_snapshot: MarketSnapshot;
   technical_signals: TechnicalSignals;
@@ -148,6 +160,8 @@ export interface BriefingJSON {
   institutional_flows: InstitutionalFlows;
   supply_dynamics: SupplyDynamics;
   expert_insights: ExpertInsight[];
+  // Direct API data (no AI processing)
+  fear_greed: FearGreedIndex | null;
 }
 
 // ─── Collector output types ─────────────────────────────────────────────────
@@ -172,11 +186,15 @@ export interface MarketCollectorOutput {
     market_cap_usd: number;
     volume_24h_usd: number;
   };
+  ath_usd: number | null;
+  ath_date: string | null;
   dominance_pct: number;
   technical: {
     rsi_14: number;
     sma_50: number;
     sma_200: number;
+    support_level: number;
+    resistance_level: number;
   };
   network: {
     hashrate_eh_s: number;
@@ -210,6 +228,7 @@ export interface MarketCollectorOutput {
   };
   btc_change_ytd_pct: number | null;
   btc_change_1y_pct: number | null;
+  fear_greed: FearGreedIndex | null;
 }
 
 // ─── Database row types ─────────────────────────────────────────────────────

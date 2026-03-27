@@ -94,7 +94,7 @@ This bundles and deploys all tasks from `src/trigger/` to Trigger.dev's cloud ru
 
 After deploying, go to the Trigger.dev dashboard:
 - Navigate to **Schedules**
-- Confirm `daily-pipeline` is registered with cron `0 5 * * *` (5:00 UTC = 6:00 CET)
+- Confirm `daily-pipeline` is registered with cron `0 1 * * *` (1:00 UTC = 2:00 CET)
 
 ### Manual Test Run
 
@@ -143,10 +143,10 @@ Without a verified domain, Resend can only send to the account owner's email.
 
 - [ ] Supabase migration applied — tables visible in dashboard
 - [ ] Vercel build succeeds — site loads at your URL
-- [ ] Homepage shows "Your first briefing publishes at 6 AM CET" (no data yet)
+- [ ] Homepage shows "Your first briefing publishes at 2 AM CET" (no data yet)
 - [ ] Subscribe form works — email appears in `subscribers` table
 - [ ] Trigger.dev tasks deployed — visible in dashboard
-- [ ] Cron schedule registered — `0 5 * * *`
+- [ ] Cron schedule registered — `0 1 * * *`
 - [ ] Manual pipeline test run completes successfully
 - [ ] Briefing appears on homepage after test run
 - [ ] Archive page lists the briefing

@@ -2,19 +2,24 @@
 
 import { useState } from "react";
 import type { MacroContext, CountdownEvent } from "@/lib/types";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 export function DayInBriefExpandable({
   macro,
-  lookingAhead,
   events,
 }: {
   macro?: MacroContext;
-  lookingAhead: string;
   events?: CountdownEvent[];
 }) {
   const [open, setOpen] = useState(false);
 
-  if (!macro && !lookingAhead) return null;
+  if (!macro) return null;
 
   /* Build all bullet items */
   const bullets: { lead: string; rest: string; accent: "orange" | "blue" }[] = [];
@@ -26,56 +31,41 @@ export function DayInBriefExpandable({
     bullets.push({ lead: extractLead(macro.btc_correlation_note), rest: extractRest(macro.btc_correlation_note), accent: "blue" });
   }
 
-  const forwardBullets = lookingAhead
-    ? lookingAhead
-        .split(/\n\n+/)
-        .filter(Boolean)
-        .slice(0, 3)
-        .map((para) => {
-          const firstDot = para.indexOf(". ");
-          if (firstDot === -1) return { lead: para.trim(), rest: "" };
-          return { lead: para.slice(0, firstDot + 1).trim(), rest: para.slice(firstDot + 2).trim() };
-        })
-    : [];
-
-  for (const b of forwardBullets) {
-    bullets.push({ ...b, accent: "orange" });
-  }
-
   /* Show first 2 bullets always, rest behind expand */
   const visibleBullets = bullets.slice(0, 2);
   const hiddenBullets = bullets.slice(2);
 
-  /* Upcoming events within 7 days */
+  /* Upcoming events within 7 days (exclude conferences/summits) */
+  const BLOCKED = /conference|summit|expo|convention|meetup|hackathon/i;
   const urgentEvents = events
-    ?.filter((e) => e.days_away !== null && e.days_away <= 7)
+    ?.filter((e) => e.days_away !== null && e.days_away <= 7 && !BLOCKED.test(e.name) && !BLOCKED.test(e.description))
     .slice(0, 4) ?? [];
 
   const hasMore = hiddenBullets.length > 0 || urgentEvents.length > 0;
 
   return (
-    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-5 sm:p-6">
-      {/* Section label */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="h-px flex-1 bg-gradient-to-r from-[var(--color-accent)]/30 to-transparent" />
-        <h2 className="font-[family-name:var(--font-heading)] text-xs font-bold uppercase tracking-[0.15em] text-[var(--color-accent)]">
-          The Day in 30 Seconds
-        </h2>
-        <div className="h-px flex-1 bg-gradient-to-l from-[var(--color-accent)]/30 to-transparent" />
-      </div>
+    <Card className="gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+      <CardContent className="p-5 sm:p-6">
+        {/* Section label */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-px flex-1 bg-gradient-to-r from-[var(--color-accent)]/30 to-transparent" />
+          <h2 className="font-[family-name:var(--font-heading)] text-xs font-bold uppercase tracking-[0.15em] text-[var(--color-accent)]">
+            The Day in 30 Seconds
+          </h2>
+          <div className="h-px flex-1 bg-gradient-to-l from-[var(--color-accent)]/30 to-transparent" />
+        </div>
 
-      {/* Always-visible bullets */}
-      <div className="space-y-0">
-        {visibleBullets.map((bullet, i) => (
-          <BulletItem key={i} lead={bullet.lead} rest={bullet.rest} accent={bullet.accent} />
-        ))}
-      </div>
+        {/* Always-visible bullets */}
+        <div className="space-y-0">
+          {visibleBullets.map((bullet, i) => (
+            <BulletItem key={i} lead={bullet.lead} rest={bullet.rest} accent={bullet.accent} />
+          ))}
+        </div>
 
-      {/* Expandable section */}
-      {hasMore && (
-        <>
-          <div className="expandable-content" data-open={open}>
-            <div className="expandable-inner">
+        {/* Expandable section */}
+        {hasMore && (
+          <Collapsible open={open} onOpenChange={setOpen}>
+            <CollapsibleContent className="overflow-hidden transition-[height,opacity] data-[ending-style]:h-0 data-[starting-style]:h-0">
               <div className="space-y-0">
                 {hiddenBullets.map((bullet, i) => (
                   <BulletItem key={i} lead={bullet.lead} rest={bullet.rest} accent={bullet.accent} />
@@ -117,36 +107,36 @@ export function DayInBriefExpandable({
                   ))}
                 </div>
               )}
-            </div>
-          </div>
+            </CollapsibleContent>
 
-          {/* Toggle button */}
-          <button
-            type="button"
-            onClick={() => setOpen((prev) => !prev)}
-            className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors cursor-pointer"
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 16 16"
-              fill="none"
-              className="expand-chevron"
-              data-open={open}
+            {/* Toggle button */}
+            <CollapsibleTrigger
+              className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors cursor-pointer"
             >
-              <path
-                d="M4 6L8 10L12 6"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            {open ? "Show less" : `${hiddenBullets.length} more insight${hiddenBullets.length !== 1 ? "s" : ""}`}
-          </button>
-        </>
-      )}
-    </div>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 16 16"
+                fill="none"
+                className={cn(
+                  "transition-transform duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]",
+                  open && "rotate-180"
+                )}
+              >
+                <path
+                  d="M4 6L8 10L12 6"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {open ? "Show less" : `${hiddenBullets.length} more insight${hiddenBullets.length !== 1 ? "s" : ""}`}
+            </CollapsibleTrigger>
+          </Collapsible>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

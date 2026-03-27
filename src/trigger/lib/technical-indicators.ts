@@ -7,6 +7,8 @@ export function calculateIndicators(
   rsi_14: number;
   sma_50: number;
   sma_200: number;
+  support_level: number;
+  resistance_level: number;
 }> {
   try {
     if (closingPrices.length < 200) {
@@ -26,11 +28,18 @@ export function calculateIndicators(
       sma200.update(price, false);
     }
 
+    // 30-day swing high/low for support & resistance
+    const last30 = closingPrices.slice(-30);
+    const support = Math.round(Math.min(...last30) * 100) / 100;
+    const resistance = Math.round(Math.max(...last30) * 100) / 100;
+
     return {
       data: {
         rsi_14: Math.round(Number(rsi.getResult()) * 100) / 100,
         sma_50: Math.round(Number(sma50.getResult()) * 100) / 100,
         sma_200: Math.round(Number(sma200.getResult()) * 100) / 100,
+        support_level: support,
+        resistance_level: resistance,
       },
       error: null,
     };

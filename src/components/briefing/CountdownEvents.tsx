@@ -9,8 +9,21 @@ export function CountdownEvents({
 }) {
   if (!events || events.length === 0) return null;
 
+  // Filter out conferences/summits — only hard-scheduled macro/protocol events
+  const BLOCKED_KEYWORDS = /conference|summit|expo|convention|meetup|hackathon/i;
+  const filtered = events.filter((e) => !BLOCKED_KEYWORDS.test(e.name) && !BLOCKED_KEYWORDS.test(e.description));
+
+  if (filtered.length === 0) return null;
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (a.days_away === null && b.days_away === null) return 0;
+    if (a.days_away === null) return 1;
+    if (b.days_away === null) return -1;
+    return a.days_away - b.days_away;
+  });
+
   if (compact) {
-    const shown = events.slice(0, 5);
+    const shown = sorted.slice(0, 5);
     return (
       <section className="mt-6">
         <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-2.5">
@@ -52,7 +65,7 @@ export function CountdownEvents({
       </h2>
 
       <div className="space-y-3">
-        {events.map((event) => (
+        {sorted.map((event) => (
           <div
             key={event.name}
             className="flex items-center gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4"

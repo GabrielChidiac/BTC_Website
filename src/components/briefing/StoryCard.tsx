@@ -1,5 +1,5 @@
 import type { TopStory } from "@/lib/types";
-import { Badge } from "../ui/Badge";
+import { Badge } from "@/components/ui/badge";
 
 export function StoryCard({ story }: { story: TopStory }) {
   return (
@@ -23,9 +23,9 @@ export function StoryCard({ story }: { story: TopStory }) {
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Badge label={story.sentiment} variant={story.sentiment} />
+        <Badge variant={story.sentiment as "bullish" | "bearish" | "neutral"}>{story.sentiment}</Badge>
         {story.tags.map((tag) => (
-          <Badge key={tag} label={tag} variant="default" />
+          <Badge key={tag} variant="default">{tag}</Badge>
         ))}
       </div>
     </article>

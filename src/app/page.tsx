@@ -6,20 +6,24 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Container } from "@/components/layout/Container";
 import { SubscribeForm } from "@/components/subscribe/SubscribeForm";
-import { RevealOnScroll } from "@/components/ui/RevealOnScroll";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { MotionCard } from "@/components/ui/MotionCard";
 
 import { BentoGrid } from "@/components/ui/BentoGrid";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { StatTile } from "@/components/ui/StatTile";
+import { Card, CardContent } from "@/components/ui/card";
 
 import { BitcoinHero } from "@/components/hero/BitcoinHero";
 import { DayInBriefExpandable } from "@/components/briefing/DayInBriefExpandable";
 import { BtcVsEverythingTabs } from "@/components/briefing/BtcVsEverythingTabs";
 import { StoryExpandable } from "@/components/briefing/StoryExpandable";
 import { SignalExpandable } from "@/components/briefing/SignalExpandable";
+import { ExpertExpandable } from "@/components/briefing/ExpertExpandable";
 import { InstitutionalFlows } from "@/components/briefing/InstitutionalFlows";
 import { TechnicalSignals } from "@/components/briefing/TechnicalSignals";
 import { NetworkHealth } from "@/components/briefing/NetworkHealth";
+import { LookingAhead } from "@/components/briefing/LookingAhead";
 
 
 export const revalidate = 3600;
@@ -56,7 +60,7 @@ export default async function Home() {
               <span className="text-[var(--color-accent)]">Today</span>
             </h1>
             <p className="mt-3 text-sm text-[var(--color-text-secondary)]">
-              Your first briefing publishes at 6 AM CET.
+              Your first briefing publishes at 2 AM CET.
               <br />
               Subscribe to get it in your inbox.
             </p>
@@ -79,6 +83,21 @@ export default async function Home() {
     ...briefing.adoption.map((a) => ({ type: "adoption" as const, data: a })),
   ];
 
+  // Filter countdown events for reuse
+  const filteredEvents = briefing.countdown_events
+    ? [...briefing.countdown_events]
+        .filter((e) => !/conference|summit|expo|convention|meetup|hackathon/i.test(e.name) && !/conference|summit|expo|convention|meetup|hackathon/i.test(e.description))
+        .sort((a, b) => {
+          if (a.days_away === null && b.days_away === null) return 0;
+          if (a.days_away === null) return 1;
+          if (b.days_away === null) return -1;
+          return a.days_away - b.days_away;
+        })
+        .slice(0, 5)
+    : [];
+
+  const hasLookingAhead = briefing.looking_ahead && briefing.looking_ahead !== "Forward-looking analysis unavailable today.";
+
   return (
     <>
       <Header date={briefing.date} />
@@ -86,9 +105,21 @@ export default async function Home() {
         <Container wide>
 
           {/* ═══════════════════════════════════════════════════════════════
+              THE ONE LINE — The day's most important conclusion
+             ═══════════════════════════════════════════════════════════════ */}
+          {briefing.one_line && (
+            <div className="mt-6 border-l-[3px] border-[var(--color-accent)] pl-4 py-1">
+              <p className="font-[family-name:var(--font-heading)] text-base sm:text-lg font-bold text-[var(--color-text-primary)] leading-snug">
+                {briefing.one_line}
+              </p>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════════
+              TIER 1: THE SNAPSHOT
               01 — TODAY'S INSIGHT: Hero + Sentiment Gauge
              ═══════════════════════════════════════════════════════════════ */}
-          <div className="mt-6">
+          <div className={briefing.one_line ? "mt-6" : "mt-6"}>
             <SectionLabel number="01" title="Today&rsquo;s Insight" className="mb-4" />
             <BitcoinHero
               market={market}
@@ -97,76 +128,89 @@ export default async function Home() {
             />
           </div>
 
+          {/* ─── Tier divider: Snapshot → Briefing ─── */}
+          <div className="section-divider" />
+
           {/* ═══════════════════════════════════════════════════════════════
+              TIER 2: THE BRIEFING
               02 — MARKET EVIDENCE: Stat tiles
              ═══════════════════════════════════════════════════════════════ */}
-          <div className="mt-16">
+          <div className="mt-10">
             <SectionLabel number="02" title="Market Evidence" className="mb-4" />
-            <BentoGrid>
-              <StatTile
-                label="Market Cap"
-                value={`$${compactNumber(market.market_cap_usd)}`}
-                size="sm"
-              />
-              <StatTile
-                label="24h Volume"
-                value={`$${compactNumber(market.volume_24h_usd)}`}
-                size="sm"
-              />
-              <StatTile
-                label="Dominance"
-                value={`${market.dominance_pct.toFixed(1)}%`}
-                size="sm"
-              />
-              {briefing.institutional_flows?.etf_net_flow_usd != null && (
+            <ScrollReveal>
+              <BentoGrid>
                 <StatTile
-                  label="ETF Flow"
-                  value={formatFlowUSD(briefing.institutional_flows.etf_net_flow_usd)}
-                  delta={{
-                    value: briefing.institutional_flows.etf_flow_trend !== "Data unavailable"
-                      ? briefing.institutional_flows.etf_flow_trend.slice(0, 40)
-                      : "",
-                    positive: briefing.institutional_flows.etf_net_flow_usd >= 0,
-                  }}
+                  label="Market Cap"
+                  value={`$${compactNumber(market.market_cap_usd)}`}
                   size="sm"
                 />
-              )}
-            </BentoGrid>
+                <StatTile
+                  label="24h Volume"
+                  value={`$${compactNumber(market.volume_24h_usd)}`}
+                  size="sm"
+                />
+                <StatTile
+                  label="Dominance"
+                  value={`${market.dominance_pct.toFixed(1)}%`}
+                  size="sm"
+                />
+                {briefing.institutional_flows?.etf_net_flow_usd != null && (
+                  <StatTile
+                    label="ETF Flow"
+                    value={formatFlowUSD(briefing.institutional_flows.etf_net_flow_usd)}
+                    delta={{
+                      value: briefing.institutional_flows.etf_flow_trend !== "Data unavailable"
+                        ? briefing.institutional_flows.etf_flow_trend.slice(0, 40)
+                        : "",
+                      positive: briefing.institutional_flows.etf_net_flow_usd >= 0,
+                    }}
+                    size="sm"
+                  />
+                )}
+              </BentoGrid>
+            </ScrollReveal>
           </div>
 
           {/* ═══════════════════════════════════════════════════════════════
-              03 — WHAT HAPPENED: Day in Brief + BTC vs Everything
+              03 — WHAT HAPPENED: Day in Brief + BTC vs Everything + Signals
              ═══════════════════════════════════════════════════════════════ */}
           <div className="mt-16">
             <SectionLabel number="03" title="What Happened" className="mb-4" />
-            <RevealOnScroll>
+            <ScrollReveal>
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
-                {/* Day in Brief — wider, expandable with first 2 bullets visible */}
                 <div className="lg:col-span-3">
                   <DayInBriefExpandable
                     macro={briefing.macro_context}
-                    lookingAhead={briefing.looking_ahead}
                     events={briefing.countdown_events}
                   />
                 </div>
-
-                {/* BTC vs Everything — expandable for more comparisons */}
                 <div className="lg:col-span-2">
                   <BtcVsEverythingTabs comparisons={briefing.btc_vs_everything} />
                 </div>
               </div>
-            </RevealOnScroll>
+            </ScrollReveal>
+
+            {/* Signals (regulatory + adoption) merged into What Happened */}
+            {signals.length > 0 && (
+              <ScrollReveal>
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {signals.slice(0, 4).map((item, i) => (
+                    <SignalExpandable key={i} item={item} />
+                  ))}
+                </div>
+              </ScrollReveal>
+            )}
           </div>
 
           {/* ═══════════════════════════════════════════════════════════════
-              04 — TOP STORIES: Expandable cards (text-heavy, benefits from collapse)
+              04 — TOP STORIES: Expandable cards
              ═══════════════════════════════════════════════════════════════ */}
           {briefing.top_stories.length > 0 && (
             <div className="mt-16">
               <SectionLabel number="04" title="Top Stories" className="mb-4" />
-              <RevealOnScroll variant="left">
+              <ScrollReveal variant="left">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {briefing.top_stories.map((story, i) => (
+                  {briefing.top_stories.slice(0, 4).map((story, i) => (
                     <StoryExpandable
                       key={story.url || i}
                       story={story}
@@ -174,103 +218,136 @@ export default async function Home() {
                     />
                   ))}
                 </div>
-              </RevealOnScroll>
+              </ScrollReveal>
             </div>
           )}
 
+          {/* ─── Tier divider: Briefing → Deep Dive ─── */}
+          <div className="section-divider" />
+
           {/* ═══════════════════════════════════════════════════════════════
-              05 — DEEP DIVE: Data sections shown directly (no expand)
+              TIER 3: THE DEEP DIVE
+              05 — DEEP DIVE: Data sections + Expert Insights
              ═══════════════════════════════════════════════════════════════ */}
-          <div className="mt-16">
+          <div className="mt-10">
             <SectionLabel number="05" title="Deep Dive" className="mb-4" />
-            <RevealOnScroll>
+            <ScrollReveal>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {/* Institutional Flows — shown directly */}
-                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4 sm:p-5">
-                  <InstitutionalFlows flows={briefing.institutional_flows} />
-                </div>
+                <MotionCard>
+                  <Card className="gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                    <CardContent className="p-4 sm:p-5">
+                      <InstitutionalFlows flows={briefing.institutional_flows} />
+                    </CardContent>
+                  </Card>
+                </MotionCard>
 
-                {/* Technical Signals — shown directly */}
-                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4 sm:p-5">
-                  <TechnicalSignals signals={briefing.technical_signals} />
-                </div>
+                <MotionCard>
+                  <Card className="gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                    <CardContent className="p-4 sm:p-5">
+                      <TechnicalSignals signals={briefing.technical_signals} />
+                    </CardContent>
+                  </Card>
+                </MotionCard>
 
-                {/* Network Health — shown directly */}
-                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4 sm:p-5">
-                  <NetworkHealth network={briefing.network_health} />
-                </div>
+                <MotionCard>
+                  <Card className="gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                    <CardContent className="p-4 sm:p-5">
+                      <NetworkHealth network={briefing.network_health} />
+                    </CardContent>
+                  </Card>
+                </MotionCard>
               </div>
-            </RevealOnScroll>
+            </ScrollReveal>
 
+            {/* Expert Insights — max 3 quotes */}
+            {briefing.expert_insights && briefing.expert_insights.length > 0 && (
+              <ScrollReveal>
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  {briefing.expert_insights.slice(0, 3).map((insight, i) => (
+                    <ExpertExpandable key={i} insight={insight} />
+                  ))}
+                </div>
+              </ScrollReveal>
+            )}
           </div>
 
           {/* ═══════════════════════════════════════════════════════════════
-              06 — SIGNALS: Regulatory + Adoption (expandable, text-heavy)
+              06 — LOOKING AHEAD: Forward outlook + Countdown Events
              ═══════════════════════════════════════════════════════════════ */}
-          {signals.length > 0 && (
+          {(hasLookingAhead || filteredEvents.length > 0) && (
             <div className="mt-16">
-              <SectionLabel number="06" title="Signals" className="mb-4" />
-              <RevealOnScroll>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {signals.map((item, i) => (
-                    <SignalExpandable key={i} item={item} />
-                  ))}
-                </div>
-              </RevealOnScroll>
+              <SectionLabel number="06" title="Looking Ahead" className="mb-4" />
+
+              {hasLookingAhead && (
+                <ScrollReveal>
+                  <LookingAhead content={briefing.looking_ahead} />
+                </ScrollReveal>
+              )}
+
+              {filteredEvents.length > 0 && (
+                <ScrollReveal variant="scale">
+                  <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 ${hasLookingAhead ? "mt-4" : ""}`}>
+                    {filteredEvents.map((event) => (
+                      <MotionCard key={event.name} lift={4}>
+                        <Card
+                          className={`gap-0 py-0 ring-foreground/0 ${
+                            event.days_away !== null && event.days_away <= 3
+                              ? "ring-1 ring-[var(--color-accent)]/30 glow-card"
+                              : "ring-1 ring-[var(--color-border)]"
+                          }`}
+                        >
+                          <CardContent className="p-4">
+                            <p className="font-[family-name:var(--font-heading)] text-2xl font-bold tabular-nums text-[var(--color-text-primary)]">
+                              {event.days_away !== null ? `${event.days_away}d` : "TBD"}
+                            </p>
+                            <p className="mt-1 text-sm font-[family-name:var(--font-heading)] font-semibold text-[var(--color-text-primary)] leading-snug">
+                              {event.name}
+                            </p>
+                            {event.description && (
+                              <p className="mt-1 text-xs text-[var(--color-text-muted)] leading-relaxed">
+                                {event.description}
+                              </p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </MotionCard>
+                    ))}
+                  </div>
+                </ScrollReveal>
+              )}
             </div>
           )}
 
           {/* ═══════════════════════════════════════════════════════════════
-              07 — WHAT'S NEXT: Countdown Events
+              YOU'RE CAUGHT UP — Completion marker
              ═══════════════════════════════════════════════════════════════ */}
-          {briefing.countdown_events && briefing.countdown_events.length > 0 && (
-            <div className="mt-16">
-              <SectionLabel number="07" title="What&rsquo;s Next" className="mb-4" />
-              <RevealOnScroll variant="scale">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                  {briefing.countdown_events.slice(0, 8).map((event) => (
-                    <div
-                      key={event.name}
-                      className={`card-interactive rounded-xl border bg-[var(--color-bg-surface)] p-4 ${
-                        event.days_away !== null && event.days_away <= 3
-                          ? "border-[var(--color-accent)]/30 glow-card"
-                          : "border-[var(--color-border)]"
-                      }`}
-                    >
-                      <p className="font-[family-name:var(--font-heading)] text-2xl font-bold tabular-nums text-[var(--color-text-primary)]">
-                        {event.days_away !== null ? `${event.days_away}d` : "TBD"}
-                      </p>
-                      <p className="mt-1 text-sm font-[family-name:var(--font-heading)] font-semibold text-[var(--color-text-primary)] leading-snug">
-                        {event.name}
-                      </p>
-                      {event.description && (
-                        <p className="mt-1 text-xs text-[var(--color-text-muted)] leading-relaxed">
-                          {event.description}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </RevealOnScroll>
-            </div>
-          )}
+          <div className="mt-16 flex flex-col items-center gap-1">
+            <p className="font-[family-name:var(--font-heading)] text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+              You&rsquo;re caught up
+            </p>
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Next briefing: 2 AM CET tomorrow
+            </p>
+          </div>
 
           {/* ═══════════════════════════════════════════════════════════════
               SUBSCRIBE CTA
              ═══════════════════════════════════════════════════════════════ */}
-          <RevealOnScroll variant="scale">
-            <div className="shimmer-border mt-16 rounded-xl">
-              <div className="flex flex-col items-center gap-3 rounded-xl bg-[var(--color-bg-surface)] p-8">
-                <p className="font-[family-name:var(--font-heading)] text-base font-bold text-[var(--color-text-primary)]">
-                  Get the daily briefing in your inbox
-                </p>
-                <p className="text-sm text-[var(--color-text-secondary)]">
-                  AI-curated Bitcoin intelligence for decision-makers, every morning at 6 AM CET
-                </p>
-                <SubscribeForm />
-              </div>
+          <ScrollReveal variant="scale">
+            <div className="shimmer-border mt-8 rounded-xl">
+              <Card className="gap-0 py-0 ring-0">
+                <CardContent className="flex flex-col items-center gap-3 p-8">
+                  <p className="font-[family-name:var(--font-heading)] text-base font-bold text-[var(--color-text-primary)]">
+                    Get the daily briefing in your inbox
+                  </p>
+                  <p className="text-sm text-[var(--color-text-secondary)]">
+                    Every morning at 2 AM CET
+                  </p>
+                  <SubscribeForm />
+                </CardContent>
+              </Card>
             </div>
-          </RevealOnScroll>
+          </ScrollReveal>
 
         </Container>
       </main>

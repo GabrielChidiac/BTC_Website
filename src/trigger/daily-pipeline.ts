@@ -10,7 +10,7 @@ import type { BriefingJSON } from "@/lib/types";
 
 export const dailyPipelineTask = schedules.task({
   id: "daily-pipeline",
-  cron: "0 5 * * *", // 5:00 UTC = 6:00 CET
+  cron: "0 1 * * *", // 1:00 UTC = 2:00 CET
   run: async () => {
     const date = new Date().toISOString().split("T")[0];
     logger.info("Daily pipeline started", { date });
@@ -86,6 +86,7 @@ export const dailyPipelineTask = schedules.task({
       institutional_flows: enrichment.institutional_flows,
       supply_dynamics: enrichment.supply_dynamics,
       expert_insights: enrichment.expert_insights,
+      fear_greed: marketRun?.ok ? marketRun.output.fear_greed : null,
     };
 
     // ── Step 4: Publish (sequential) ──────────────────────────────────────

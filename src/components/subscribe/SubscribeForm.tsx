@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { MotionButton } from "@/components/ui/MotionButton";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -59,33 +60,34 @@ export function SubscribeForm() {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex w-full max-w-sm items-center gap-2"
-    >
-      <input
-        type="email"
-        required
-        value={email}
-        onChange={(e) => {
-          setEmail(e.target.value);
-          if (status === "error") setStatus("idle");
-        }}
-        placeholder="you@example.com"
-        aria-label="Email address"
-        className="h-10 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 transition-colors"
-      />
-      <button
-        type="submit"
-        disabled={status === "loading"}
-        className="h-10 shrink-0 rounded-lg bg-[var(--color-accent)] px-4 text-sm font-semibold text-white transition-transform hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-95 disabled:opacity-60"
+    <div className="w-full max-w-sm">
+      <form
+        onSubmit={handleSubmit}
+        className="flex items-center gap-2"
       >
-        {status === "loading" ? "..." : "Subscribe"}
-      </button>
-
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (status === "error") setStatus("idle");
+          }}
+          placeholder="you@example.com"
+          aria-label="Email address"
+          className="h-10 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 transition-colors"
+        />
+        <MotionButton
+          type="submit"
+          disabled={status === "loading"}
+          className="h-10 shrink-0 rounded-lg bg-[var(--color-accent)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 disabled:opacity-60"
+        >
+          {status === "loading" ? "..." : "Subscribe"}
+        </MotionButton>
+      </form>
       {status === "error" && (
-        <p className="absolute mt-12 text-xs text-red-600">{message}</p>
+        <p className="mt-2 text-xs text-red-600">{message}</p>
       )}
-    </form>
+    </div>
   );
 }

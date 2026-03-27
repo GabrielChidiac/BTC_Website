@@ -1,5 +1,5 @@
 import type { AdoptionUpdate, RegulatoryUpdate } from "@/lib/types";
-import { Badge } from "@/components/ui/Badge";
+import { Badge } from "@/components/ui/badge";
 
 type SignalItem =
   | { type: "adoption"; data: AdoptionUpdate }
@@ -56,20 +56,18 @@ export function Signals({
             <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
               {item.type === "regulatory" ? (
                 <>
-                  <Badge label="Regulatory" variant="default" />
-                  <Badge label={(item.data as RegulatoryUpdate).region} variant="neutral" />
+                  <Badge variant="default">Regulatory</Badge>
+                  <Badge variant="neutral">{(item.data as RegulatoryUpdate).region}</Badge>
                   <Badge
-                    label={(item.data as RegulatoryUpdate).impact}
                     variant={impactVariant((item.data as RegulatoryUpdate).impact)}
-                  />
+                  >{(item.data as RegulatoryUpdate).impact}</Badge>
                 </>
               ) : (
                 <>
-                  <Badge label="Adoption" variant="default" />
+                  <Badge variant="default">Adoption</Badge>
                   <Badge
-                    label={categoryLabels[(item.data as AdoptionUpdate).category]}
                     variant="neutral"
-                  />
+                  >{categoryLabels[(item.data as AdoptionUpdate).category]}</Badge>
                 </>
               )}
             </div>

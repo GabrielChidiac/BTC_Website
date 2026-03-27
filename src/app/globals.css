@@ -6,16 +6,16 @@
 
 @theme inline {
   /* Brand palette */
-  --color-bg-base: #FFF8F0;
-  --color-bg-surface: #FFFFFF;
-  --color-bg-elevated: #FFF9F3;
+  --color-bg-base: #E2E5EE;
+  --color-bg-surface: rgba(240, 240, 246, 0.65);
+  --color-bg-elevated: rgba(238, 236, 244, 0.55);
   --color-accent: #F7931A;
   --color-accent-hover: #E8850F;
   --color-accent-contrast: #FFFFFF;
   --color-text-primary: #2D2D34;
   --color-text-secondary: #5C5C66;
   --color-text-muted: #9C9CA6;
-  --color-border: #E8E4DF;
+  --color-border: #D4D6DE;
 
   /* Blue accent */
   --color-blue: #3B82F6;
@@ -27,9 +27,8 @@
   --color-accent-glow-intense: rgba(247, 147, 26, 0.40);
 
   /* Typography */
-  --font-heading: var(--font-sans);
-  --font-body: var(--font-ibm-plex-sans);
-  --font-sans: var(--font-sans);
+  --font-heading: var(--font-space-grotesk);
+  --font-body: var(--font-inter);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -68,52 +67,21 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ─── Animated gradient positions ──────────────────────────────────────────── */
-
-@property --mesh-x1 {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 30%;
-}
-@property --mesh-y1 {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 0%;
-}
-@property --mesh-x2 {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 80%;
-}
-@property --mesh-y2 {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 80%;
-}
-@property --mesh-x3 {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 10%;
-}
-@property --mesh-y3 {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 50%;
-}
-
 body {
-  background-attachment: fixed;
+  background-color: #E2E5EE;
   color: var(--color-text-primary);
   font-family: var(--font-body), system-ui, sans-serif;
-  line-height: 1.7;
+  font-weight: 300;
+  line-height: 1.8;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading), system-ui, sans-serif;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
 }
 
 /* ─── Interactive card system ──────────────────────────────────────────────── */
@@ -128,22 +96,23 @@ h1, h2, h3, h4, h5, h6 {
 .card-interactive:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 8px 32px rgba(247, 147, 26, 0.15),
-    0 0 0 1px rgba(247, 147, 26, 0.20);
-  border-color: rgba(247, 147, 26, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 8px 32px rgba(247, 147, 26, 0.12),
+    0 0 0 1px rgba(247, 147, 26, 0.18);
+  border-color: rgba(247, 147, 26, 0.30);
 }
 
-/* ─── Glass card ───────────────────────────────────────────────────────────── */
+/* ─── Glass card (elevated variant) ────────────────────────────────────────── */
 
 .card-glass {
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  background: rgba(255, 255, 255, 0.82) !important;
-  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  background: rgba(240, 240, 246, 0.72) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 8px 32px rgba(0, 0, 0, 0.08),
-    0 0 0 1px rgba(247, 147, 26, 0.06);
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 8px 32px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.03);
 }
 
 /* ─── Shimmer border (animated gradient edge) ──────────────────────────────── */
@@ -236,92 +205,29 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 0 12px rgba(247, 147, 26, 0.20);
 }
 
-/* ─── Bitcoin Hero animations ──────────────────────────────────────────────── */
+/* ─── Bitcoin coin 3D spin ─────────────────────────────────────────────────── */
+
+@keyframes coinSpin {
+  0%   { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
 
 @keyframes coinFloat {
-  0%, 100% { transform: translateY(0px) rotateY(0deg); }
-  25% { transform: translateY(-8px) rotateY(90deg); }
-  50% { transform: translateY(0px) rotateY(180deg); }
-  75% { transform: translateY(8px) rotateY(270deg); }
+  0%, 100% { transform: translateY(0px); }
+  50%      { transform: translateY(-6px); }
 }
 
-@keyframes coinGlow {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.08); }
+.coin-spin {
+  transform-style: preserve-3d;
+  animation: coinFloat 4s ease-in-out infinite;
 }
 
-@keyframes pulseRing {
-  0% { opacity: 0.3; transform: scale(0.95); }
-  50% { opacity: 0.1; transform: scale(1.15); }
-  100% { opacity: 0; transform: scale(1.3); }
+.coin-face {
+  animation: coinSpin 6s linear infinite;
+  backface-visibility: visible;
 }
 
-/* Hero stagger entrance for badges */
-@keyframes badgeFadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.badge-stagger {
-  opacity: 0;
-  animation: badgeFadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-/* Hero sentiment text fade-in */
-@keyframes textReveal {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.text-reveal {
-  opacity: 0;
-  animation: textReveal 0.6s ease forwards;
-  animation-delay: 1.3s;
-}
-
-/* ─── Scroll reveal ────────────────────────────────────────────────────────── */
-
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeInLeft {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes fadeInScale {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.reveal {
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-.reveal-left {
-  opacity: 0;
-  transform: translateX(-20px);
-}
-
-.reveal-scale {
-  opacity: 0;
-  transform: scale(0.97);
-}
-
-.reveal.visible {
-  animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-.reveal-left.visible {
-  animation: fadeInLeft 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-.reveal-scale.visible {
-  animation: fadeInScale 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
+/* (Scroll reveal and hero stagger animations now handled by GSAP) */
 
 /* ─── Expandable card system ───────────────────────────────────────────────── */
 
@@ -366,7 +272,12 @@ h1, h2, h3, h4, h5, h6 {
 
 .section-number {
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
+}
+
+/* Wider tracking for all uppercase labels */
+.uppercase {
+  letter-spacing: 0.12em;
 }
 
 /* ─── Sentiment gauge needle animation ─────────────────────────────────────── */
@@ -378,17 +289,6 @@ h1, h2, h3, h4, h5, h6 {
 /* ─── Reduced motion ───────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal, .reveal-left, .reveal-scale {
-    opacity: 1;
-    transform: none;
-  }
-  .reveal.visible, .reveal-left.visible, .reveal-scale.visible {
-    animation: none;
-  }
-  .badge-stagger, .text-reveal {
-    opacity: 1;
-    animation: none;
-  }
   .expandable-content,
   .expand-chevron,
   .bar-grow {
@@ -404,156 +304,117 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* ─── Animated mesh background ─────────────────────────────────────────────── */
-
-@keyframes meshDrift {
-  0% {
-    --mesh-x1: 30%; --mesh-y1: 0%;
-    --mesh-x2: 80%; --mesh-y2: 80%;
-    --mesh-x3: 10%; --mesh-y3: 50%;
-  }
-  33% {
-    --mesh-x1: 60%; --mesh-y1: 10%;
-    --mesh-x2: 20%; --mesh-y2: 70%;
-    --mesh-x3: 80%; --mesh-y3: 30%;
-  }
-  66% {
-    --mesh-x1: 40%; --mesh-y1: 20%;
-    --mesh-x2: 70%; --mesh-y2: 40%;
-    --mesh-x3: 20%; --mesh-y3: 70%;
-  }
-  100% {
-    --mesh-x1: 30%; --mesh-y1: 0%;
-    --mesh-x2: 80%; --mesh-y2: 80%;
-    --mesh-x3: 10%; --mesh-y3: 50%;
-  }
-}
+/* ─── Radial glow background ──────────────────────────────────────────────── */
 
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  background:
-    /* Warm orange blob — drifts */
-    radial-gradient(
-      ellipse 900px 700px at var(--mesh-x1) var(--mesh-y1),
-      rgba(247, 147, 26, 0.22) 0%,
-      rgba(247, 147, 26, 0.08) 40%,
-      transparent 70%
-    ),
-    /* Cool blue blob — drifts opposite */
-    radial-gradient(
-      ellipse 1000px 800px at var(--mesh-x2) var(--mesh-y2),
-      rgba(59, 130, 246, 0.18) 0%,
-      rgba(59, 130, 246, 0.06) 40%,
-      transparent 65%
-    ),
-    /* Warm amber accent — smaller */
-    radial-gradient(
-      ellipse 600px 500px at var(--mesh-x3) var(--mesh-y3),
-      rgba(251, 191, 36, 0.12) 0%,
-      transparent 50%
-    ),
-    /* Cool blue wisp — static top-right */
-    radial-gradient(
-      ellipse 700px 600px at 85% 10%,
-      rgba(147, 197, 253, 0.15) 0%,
-      transparent 60%
-    );
   pointer-events: none;
   z-index: 0;
-  animation: meshDrift 30s ease-in-out infinite;
+  background:
+    /* White highlight — top center, gives the hero area a lift */
+    radial-gradient(
+      ellipse 1000px 500px at 50% 0%,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0.15) 50%,
+      transparent 75%
+    ),
+    /* Blue wash — large, upper-right, cool tone */
+    radial-gradient(
+      circle 900px at 75% 20%,
+      rgba(59, 130, 246, 0.11) 0%,
+      rgba(147, 197, 253, 0.05) 40%,
+      transparent 70%
+    ),
+    /* Warm orange — left side, mid-page, BTC brand warmth */
+    radial-gradient(
+      circle 750px at 8% 45%,
+      rgba(247, 147, 26, 0.17) 0%,
+      rgba(251, 191, 36, 0.06) 45%,
+      transparent 70%
+    ),
+    /* Blue — bottom left, cooler complement */
+    radial-gradient(
+      circle 650px at 25% 80%,
+      rgba(96, 165, 250, 0.09) 0%,
+      rgba(59, 130, 246, 0.03) 45%,
+      transparent 70%
+    ),
+    /* Orange-peach — bottom right, warm balance */
+    radial-gradient(
+      circle 600px at 85% 65%,
+      rgba(251, 191, 36, 0.14) 0%,
+      rgba(247, 147, 26, 0.05) 45%,
+      transparent 65%
+    ),
+    /* White — center, keeps readability */
+    radial-gradient(
+      circle 600px at 50% 50%,
+      rgba(255, 255, 255, 0.25) 0%,
+      transparent 65%
+    );
 }
 
-/* Dot grid pattern overlay */
+/* SVG noise texture overlay */
 body::after {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background-image:
-    radial-gradient(circle, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
-  background-size: 24px 24px;
+  opacity: 0.18;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #E2E5EE;
+  --foreground: #2D2D34;
+  --card: rgba(240, 240, 246, 0.65);
+  --card-foreground: #2D2D34;
+  --popover: #FFFFFF;
+  --popover-foreground: #2D2D34;
+  --primary: #F7931A;
+  --primary-foreground: #FFFFFF;
+  --secondary: #EAE8EE;
+  --secondary-foreground: #2D2D34;
+  --muted: #EAE8EE;
+  --muted-foreground: #9C9CA6;
+  --accent: #FFF9F3;
+  --accent-foreground: #2D2D34;
+  --destructive: #DC2626;
+  --border: #D4D6DE;
+  --input: #D4D6DE;
+  --ring: #F7931A;
+  --chart-1: #F7931A;
+  --chart-2: #3B82F6;
+  --chart-3: #10B981;
+  --chart-4: #F59E0B;
+  --chart-5: #6366F1;
+  --radius: 0.75rem;
+  --sidebar: #FFF9F3;
+  --sidebar-foreground: #2D2D34;
+  --sidebar-primary: #F7931A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #FFF8F0;
+  --sidebar-accent-foreground: #2D2D34;
+  --sidebar-border: #E8E4DF;
+  --sidebar-ring: #F7931A;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
     @apply font-sans;
   }
+}
+
+/* Frosted glass: any rounded-xl with a border gets the blur
+   (covers all card-like surfaces not using shadcn Card) */
+.rounded-xl[class*="border"] {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }

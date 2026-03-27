@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, IBM_Plex_Sans, Geist } from "next/font/google";
+import { Space_Grotesk, Inter, Geist } from "next/font/google";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -9,13 +9,14 @@ const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
   display: "swap",
 });
 
-const ibmPlexSans = IBM_Plex_Sans({
-  variable: "--font-ibm-plex-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500"],
   display: "swap",
 });
 
@@ -33,7 +34,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn(spaceGrotesk.variable, ibmPlexSans.variable, "font-sans", geist.variable)}
+      className={cn(spaceGrotesk.variable, inter.variable, "font-sans", geist.variable)}
     >
       <body className="min-h-screen">
         <ScrollProgress />

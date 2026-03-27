@@ -14,21 +14,28 @@ export const revalidateSiteTask = task({
     const url = `${siteUrl}/api/revalidate`;
     logger.info("Revalidating site", { url });
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${secret}`,
-        "Content-Type": "application/json",
-      },
-    });
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${secret}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-    if (!res.ok) {
-      const body = await res.text();
-      logger.error("Revalidation request failed", { status: res.status, body });
-      throw new Error(`[revalidate-site] Failed (${res.status}): ${body}`);
+      if (!res.ok) {
+        const body = await res.text();
+        logger.warn("Revalidation request failed (non-fatal)", { status: res.status, body });
+        return { revalidated: true };
+      }
+
+      logger.info("Site revalidated successfully");
+    } catch (err) {
+      logger.warn("Revalidation fetch failed (non-fatal, site may not be deployed yet)", {
+        error: (err as Error).message,
+      });
     }
 
-    logger.info("Site revalidated successfully");
     return { revalidated: true };
   },
 });

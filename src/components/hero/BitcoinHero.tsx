@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
 import type { MarketSnapshot, DailyDiff, NarrativeConsensus } from "@/lib/types";
 import { formatPctChange } from "@/lib/utils";
-import { SentimentGauge } from "@/components/ui/SentimentGauge";
+import { BitcoinCoin } from "./BitcoinCoin";
 
 function pctColor(pct: number): string {
   return pct >= 0 ? "text-emerald-700" : "text-red-700";
 }
 
-/** Animate a number from ~98.5% of target to target over `duration` ms. */
 function useCountUp(to: number, duration = 1200) {
   const [value, setValue] = useState(to * 0.985);
   const rafRef = useRef<number>(0);
@@ -33,6 +33,12 @@ function useCountUp(to: number, duration = 1200) {
   return value;
 }
 
+function truncateToSentences(text: string, max: number): string {
+  const sentences = text.match(/[^.!?]+[.!?]+/g);
+  if (!sentences) return text;
+  return sentences.slice(0, max).join(" ").trim();
+}
+
 function formatUSDAnimated(amount: number): string {
   return "$" + amount.toLocaleString("en-US", {
     minimumFractionDigits: 0,
@@ -50,14 +56,70 @@ export function BitcoinHero({
   consensus?: NarrativeConsensus;
 }) {
   const animatedPrice = useCountUp(market.price_usd);
+  const heroRef = useRef<HTMLElement>(null);
+  const priceRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const badgesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (mq.matches) return;
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+      tl.fromTo(
+        heroRef.current,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6 }
+      );
+
+      tl.fromTo(
+        priceRef.current,
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.5 },
+        "-=0.2"
+      );
+
+      tl.fromTo(
+        contentRef.current,
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.5 },
+        "-=0.25"
+      );
+
+      if (badgesRef.current && badgesRef.current.children.length > 0) {
+        tl.fromTo(
+          badgesRef.current.children,
+          { opacity: 0, y: 8 },
+          { opacity: 1, y: 0, duration: 0.3, stagger: 0.05 },
+          "-=0.15"
+        );
+      }
+    });
+
+    return () => ctx.revert();
+  }, []);
+
+  const sentimentColor = consensus
+    ? consensus.score >= 25
+      ? "text-emerald-700"
+      : consensus.score <= -25
+        ? "text-red-700"
+        : "text-[var(--color-text-secondary)]"
+    : "";
 
   return (
-    <section className="card-glass relative overflow-hidden rounded-2xl px-6 py-8 sm:py-10">
+    <section
+      ref={heroRef}
+      className="card-glass relative overflow-hidden rounded-2xl px-6 py-8 sm:px-8 sm:py-10"
+      style={{ opacity: 0 }}
+    >
       {/* Background glow layers */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          backgroundImage: `radial-gradient(ellipse 600px 400px at 50% 30%, rgba(247, 147, 26, 0.20) 0%, transparent 70%), radial-gradient(ellipse 500px 400px at 10% 75%, rgba(59, 130, 246, 0.15) 0%, transparent 60%), radial-gradient(ellipse 400px 300px at 90% 15%, rgba(251, 191, 36, 0.10) 0%, transparent 50%)`,
+          backgroundImage: `radial-gradient(ellipse 600px 400px at 50% 30%, rgba(247, 147, 26, 0.12) 0%, transparent 70%), radial-gradient(ellipse 500px 400px at 10% 75%, rgba(59, 130, 246, 0.08) 0%, transparent 60%)`,
         }}
       />
 
@@ -71,57 +133,67 @@ export function BitcoinHero({
       />
 
       <div className="relative">
-        {/* Top row: Today's Insight headline + Sentiment Gauge */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            {/* "Today's Number" — the variable reward */}
-            <p className="text-reveal font-[family-name:var(--font-heading)] text-xl sm:text-2xl font-bold leading-snug text-[var(--color-text-primary)] tracking-tight">
-              {dailyDiff.price_change}
+        {/* Price row — big but not absurd */}
+        <div
+          ref={priceRef}
+          className="flex items-center justify-between gap-6"
+          style={{ opacity: 0 }}
+        >
+          <div className="flex items-baseline gap-4 font-[family-name:var(--font-heading)]">
+            <p
+              className="text-4xl sm:text-5xl font-bold text-[var(--color-accent)] tabular-nums tracking-tight"
+              style={{ textShadow: "0 0 40px rgba(247, 147, 26, 0.15)" }}
+            >
+              {formatUSDAnimated(animatedPrice)}
             </p>
-
-            {/* Price + deltas */}
-            <div className="mt-3 flex items-baseline gap-4 font-[family-name:var(--font-heading)]">
-              <p
-                className="text-3xl sm:text-4xl font-bold text-[var(--color-accent)] tabular-nums tracking-tight"
-                style={{ textShadow: "0 0 40px rgba(247, 147, 26, 0.20)" }}
-              >
-                {formatUSDAnimated(animatedPrice)}
-              </p>
-              <div className="flex items-center gap-3 text-sm font-medium tabular-nums">
-                <span className={pctColor(market.change_24h_pct)}>
-                  24h {formatPctChange(market.change_24h_pct)}
-                </span>
-                <span className="text-[var(--color-border)]">|</span>
-                <span className={pctColor(market.change_7d_pct)}>
-                  7d {formatPctChange(market.change_7d_pct)}
-                </span>
-              </div>
+            <div className="flex items-center gap-3 text-sm font-medium tabular-nums">
+              <span className={pctColor(market.change_24h_pct)}>
+                24h {formatPctChange(market.change_24h_pct)}
+              </span>
+              <span className="text-[var(--color-border)]">|</span>
+              <span className={pctColor(market.change_7d_pct)}>
+                7d {formatPctChange(market.change_7d_pct)}
+              </span>
             </div>
           </div>
 
-          {/* Sentiment gauge */}
+          <BitcoinCoin size={56} className="shrink-0 drop-shadow-[0_4px_20px_rgba(247,147,26,0.3)]" />
+        </div>
+
+        {/* Headline + sentiment */}
+        <div ref={contentRef} className="mt-5" style={{ opacity: 0 }}>
+          <h1 className="font-[family-name:var(--font-heading)] text-xl sm:text-2xl font-bold text-[var(--color-text-primary)] tracking-[-0.02em] leading-snug max-w-2xl">
+            {dailyDiff.price_change}
+          </h1>
+
+          <p className="mt-2 text-sm text-[var(--color-text-secondary)] leading-relaxed max-w-xl">
+            {dailyDiff.sentiment_shift}
+          </p>
+
           {consensus && (
-            <SentimentGauge
-              score={consensus.score}
-              label={consensus.label}
-              className="shrink-0"
-            />
+            <>
+              <p className="mt-2 text-xs font-medium font-[family-name:var(--font-heading)] uppercase tracking-[0.1em]">
+                <span className="text-[var(--color-text-muted)]">Consensus</span>
+                {" "}
+                <span className={sentimentColor}>{consensus.label}</span>
+              </p>
+              {consensus.rationale && (
+                <p className="mt-1.5 text-xs leading-relaxed text-[var(--color-text-secondary)] max-w-xl">
+                  {truncateToSentences(consensus.rationale, 2)}
+                </p>
+              )}
+            </>
           )}
         </div>
 
-        {/* Sentiment shift text */}
-        <p className="text-reveal mt-4 text-sm text-[var(--color-text-secondary)] leading-relaxed max-w-xl">
-          {dailyDiff.sentiment_shift}
-        </p>
-
         {/* Key changes as badges */}
         {dailyDiff.key_changes.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {dailyDiff.key_changes.map((change, i) => (
+          <div ref={badgesRef} className="mt-4 flex flex-wrap gap-2">
+            {dailyDiff.key_changes.map((change) => (
               <span
                 key={change}
-                className="badge-stagger rounded-full bg-[var(--color-bg-elevated)] border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-text-secondary)]"
-                style={{ animationDelay: `${1.4 + i * 0.08}s` }}
+                className="rounded-full bg-[var(--color-bg-elevated)] border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-text-secondary)]"
+                style={{ opacity: 0 }}
               >
                 {change}
               </span>

@@ -75,21 +75,21 @@ export function TechnicalSignals({
         {/* Support / Resistance */}
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
           <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
-            Est. Support
+            30-Day Low
           </p>
           <p className="mt-1 font-[family-name:var(--font-heading)] text-lg font-bold text-emerald-700">
             {formatUSD(signals.support_level, 0)}
           </p>
-          <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">AI-estimated level</p>
+          <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Support level</p>
         </div>
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
           <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
-            Est. Resistance
+            30-Day High
           </p>
           <p className="mt-1 font-[family-name:var(--font-heading)] text-lg font-bold text-red-700">
             {formatUSD(signals.resistance_level, 0)}
           </p>
-          <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">AI-estimated level</p>
+          <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Resistance level</p>
         </div>
 
         {/* Signal summary */}

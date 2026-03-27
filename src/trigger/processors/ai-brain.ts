@@ -13,8 +13,8 @@ import type {
 
 type AiBrainOutput = Omit<
   BriefingJSON,
-  "looking_ahead" | "institutional_flows" | "supply_dynamics" | "expert_insights"
->;
+  "looking_ahead" | "institutional_flows" | "supply_dynamics" | "expert_insights" | "fear_greed"
+> & { one_line?: string };
 
 interface AiBrainPayload {
   date: string;
@@ -46,6 +46,8 @@ interface MarketSnapshot {
   market_cap_usd: number;
   volume_24h_usd: number;
   dominance_pct: number;
+  ath_usd: number | null;
+  ath_date: string | null;
 }
 
 interface TechnicalSignals {
@@ -83,7 +85,7 @@ interface NetworkHealth {
 interface DailyDiff {
   price_change: string;
   sentiment_shift: string;
-  key_changes: string[];       // 3-5 concise bullet points of what changed
+  key_changes: string[];       // 3-5 concise bullet points of what changed. The last bullet should close on a constructive or long-term bullish note grounded in real data (e.g. network strength, institutional adoption, supply dynamics). Never fabricate — if the day is genuinely negative, anchor the closing note in Bitcoin's structural fundamentals (fixed supply, growing hash rate, institutional infrastructure) rather than short-term price action.
 }
 
 interface CountdownEvent {
@@ -125,15 +127,16 @@ interface MacroContext {
 The root JSON object must have these exact keys:
 {
   "date": string,
-  "top_stories": TopStory[],           // 3-5 most significant stories for institutional investors
+  "one_line": string,                   // A single sentence (max 25 words) that captures THE most important conclusion for a sophisticated BTC holder today. Not a headline, an insight. Write as if texting a billionaire friend who holds BTC. No hype, no hedging.
+  "top_stories": TopStory[],           // 3-5 most significant stories for institutional investors, ordered by importance (most important first)
   "market_snapshot": MarketSnapshot,
   "technical_signals": TechnicalSignals,
   "btc_vs_everything": AssetComparison[], // Exactly 6: S&P 500, NASDAQ-100, Gold, DXY, Ethereum, Solana
   "network_health": NetworkHealth,
   "daily_diff": DailyDiff,
-  "countdown_events": CountdownEvent[], // 2-4 upcoming events (halvings, ETF deadlines, conferences, protocol upgrades)
-  "regulatory": RegulatoryUpdate[],    // 1-3 regulatory developments. Only genuine regulatory news.
-  "adoption": AdoptionUpdate[],        // 1-3 adoption stories. Only genuine adoption news.
+  "countdown_events": CountdownEvent[], // 3-5 upcoming events relevant to Bitcoin investors. ONLY include: halving, FOMC meetings, ETF deadlines, protocol upgrades, options expiry dates, macro events (CPI, jobs report, GDP). NEVER include conferences, summits, or industry events. Always calculate days_away from the briefing date. Use real scheduled dates only. If you are not 100% certain of a date, do not include the event.
+  "regulatory": RegulatoryUpdate[],    // 1-3 regulatory developments, ordered by impact (highest impact first). Only genuine regulatory news.
+  "adoption": AdoptionUpdate[],        // 1-3 adoption stories, ordered by significance (most significant first). Only genuine adoption news.
   "narrative_consensus": NarrativeConsensus,
   "macro_context": MacroContext
 }
@@ -149,6 +152,7 @@ Rules:
 - For btc_vs_everything: compute btc_relative_24h_pct as (BTC 24h change) minus (asset 24h change). Same for btc_relative_ytd_pct. Use null if data unavailable.
 - For every top_story, regulatory update, and adoption story: use the EXACT url from the input article data. Match each generated story to its source article and copy the url verbatim. Never fabricate or generalize URLs (e.g., never use "https://coindesk.com", use the full article URL from the input).
 - Pass through numerical market/network data exactly as provided. Do not round or alter.
+- For technical_signals: rsi_14, sma_50, sma_200, support_level, and resistance_level are PRE-CALCULATED from real market data. Copy them exactly as provided in the input. Only generate the signal_summary text.
 - Never use em dashes or en dashes. Use commas, periods, or semicolons instead.
 - Return ONLY the JSON object.`;
 
@@ -245,13 +249,15 @@ function buildFallbackBriefing(
       market_cap_usd: market?.price.market_cap_usd ?? 0,
       volume_24h_usd: market?.price.volume_24h_usd ?? 0,
       dominance_pct: market?.dominance_pct ?? 0,
+      ath_usd: market?.ath_usd ?? null,
+      ath_date: market?.ath_date ?? null,
     },
     technical_signals: {
       rsi_14: market?.technical.rsi_14 ?? 0,
       sma_50: market?.technical.sma_50 ?? 0,
       sma_200: market?.technical.sma_200 ?? 0,
-      support_level: 0,
-      resistance_level: 0,
+      support_level: market?.technical.support_level ?? 0,
+      resistance_level: market?.technical.resistance_level ?? 0,
       signal_summary: market ? "Data available but AI analysis failed" : "Market data unavailable",
     },
     btc_vs_everything: buildComparisons(market, btcChange),
@@ -318,6 +324,7 @@ function buildUserPrompt(
 - Market Cap (USD): ${market.price.market_cap_usd}
 - 24h Volume (USD): ${market.price.volume_24h_usd}
 - BTC Dominance: ${market.dominance_pct}%
+- ATH: ${market.ath_usd != null ? "$" + market.ath_usd : "N/A"}${market.ath_date ? " (" + market.ath_date.split("T")[0] + ")" : ""}
 - BTC YTD Change: ${market.btc_change_ytd_pct != null ? market.btc_change_ytd_pct.toFixed(2) + "%" : "N/A"}
 - BTC 1Y Change: ${market.btc_change_1y_pct != null ? market.btc_change_1y_pct.toFixed(2) + "%" : "N/A"}`);
 

@@ -3,24 +3,28 @@
 import type { ExpertInsight } from "@/lib/types";
 import { ExpandableCard } from "@/components/ui/ExpandableCard";
 import { truncateWords } from "@/lib/utils";
+import { ExpertAvatar } from "@/components/briefing/ExpertAvatar";
 
 export function ExpertExpandable({ insight }: { insight: ExpertInsight }) {
   const excerpt = truncateWords(insight.quote_or_summary, 15);
   const hasMore = excerpt !== insight.quote_or_summary;
 
   const preview = (
-    <div>
-      <div className="flex items-baseline gap-2">
-        <span className="font-[family-name:var(--font-heading)] text-sm font-bold text-[var(--color-accent)]">
-          {insight.expert_name}
-        </span>
-        <span className="text-xs text-[var(--color-text-muted)]">
-          {insight.role}
-        </span>
+    <div className="flex gap-3">
+      <ExpertAvatar name={insight.expert_name} twitterHandle={insight.twitter_handle} photoUrl={insight.photo_url} size={40} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <span className="font-[family-name:var(--font-heading)] text-sm font-bold text-[var(--color-accent)]">
+            {insight.expert_name}
+          </span>
+          <span className="text-xs text-[var(--color-text-muted)]">
+            {insight.role}
+          </span>
+        </div>
+        <p className="mt-1 text-sm italic leading-relaxed text-[var(--color-text-secondary)]">
+          &ldquo;{excerpt}{hasMore ? "..." : ""}&rdquo;
+        </p>
       </div>
-      <p className="mt-1 text-sm italic leading-relaxed text-[var(--color-text-secondary)]">
-        &ldquo;{excerpt}{hasMore ? "..." : ""}&rdquo;
-      </p>
     </div>
   );
 
