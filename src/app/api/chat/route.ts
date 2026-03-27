@@ -9,6 +9,7 @@ const MAX_HISTORY = 20;
 interface ChatRequest {
   message: string;
   email: string;
+  token: string;
   history: ChatMessage[];
 }
 
@@ -167,7 +168,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { message, email, history } = body;
+  const { message, email, token, history } = body;
 
   if (!message?.trim()) {
     return NextResponse.json(
@@ -183,7 +184,40 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!token) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 }
+    );
+  }
+
   const supabase = createServiceClient();
+
+  // Verify session token
+  const { data: session, error: sessionError } = await supabase
+    .from("verification_codes")
+    .select("email")
+    .eq("email", email.trim().toLowerCase())
+    .eq("code", `session:${token}`)
+    .eq("used", false)
+    .gte("expires_at", new Date().toISOString())
+    .maybeSingle();
+
+  if (sessionError) {
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
+  }
+
+  if (!session) {
+    return NextResponse.json(
+      { error: "Session expired. Please verify your email again." },
+      { status: 401 }
+    );
+  }
+
+  // Also confirm subscription is still active
   const { data: subscriber, error: subError } = await supabase
     .from("subscribers")
     .select("status")

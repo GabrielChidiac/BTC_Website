@@ -10,7 +10,7 @@ const STARTERS = [
   "What is the Lightning Network?",
 ];
 
-export function ChatInterface({ email }: { email: string }) {
+export function ChatInterface({ email, token }: { email: string; token: string }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,6 +36,7 @@ export function ChatInterface({ email }: { email: string }) {
         body: JSON.stringify({
           message: text.trim(),
           email,
+          token,
           history: messages,
         }),
       });

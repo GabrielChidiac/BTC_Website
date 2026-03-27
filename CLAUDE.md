@@ -151,7 +151,7 @@ All listed in `.env.example`. Required keys:
 - [ ] Set `NEXT_PUBLIC_SITE_URL` to production domain (currently `http://localhost:3000`)
 - [ ] Set all env vars in Vercel/hosting provider (never commit `.env`)
 - [ ] Verify Supabase RLS policies are applied (`001_initial_schema.sql`)
-- [ ] Verify `digest@btctoday.dev` domain is verified in Resend
+- [ ] Verify `digest@btctoday.co` domain is verified in Resend
 - [ ] Add `error.tsx` and `not-found.tsx` for branded error pages
 - [ ] Add rate limiting to `/api/chat` (unthrottled Claude proxy risk)
 - [ ] Consider adding `middleware.ts` for security headers (CSP, X-Frame-Options)

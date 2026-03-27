@@ -60,7 +60,7 @@ Add all variables from `.env.example` in **Settings → Environment Variables**:
 
 ### Custom Domain (Optional)
 
-1. **Settings → Domains** → add your domain (e.g., `btctoday.dev`)
+1. **Settings → Domains** → add your domain (e.g., `btctoday.co`)
 2. Add the DNS records Vercel provides
 3. Update `NEXT_PUBLIC_SITE_URL` to your custom domain
 
