@@ -14,15 +14,15 @@ import {
 
 // ─── Palette (matches daily-digest.tsx) ──────────────────────────────────────
 const colors = {
-  bgBase: "#111318",
-  bgSurface: "#191C23",
-  bgElevated: "#22262F",
+  bgBase: "#1C1F26",
+  bgSurface: "#252830",
+  bgElevated: "#2E323C",
   accent: "#F7931A",
   accentHover: "#FFB347",
   textPrimary: "#F0F0F5",
   textSecondary: "#9CA3B0",
   textMuted: "#5E6577",
-  border: "#2D3240",
+  border: "#3A3F4E",
 };
 
 // ─── Props ───────────────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ export default function WelcomeEmail({
             </Heading>
 
             <Text style={styles.bodyText}>
-              Welcome to BTC Today — AI-curated daily Bitcoin intelligence
+              Welcome to BTC Today. Daily Bitcoin intelligence
               for investors who don&apos;t have time to wade through noise.
             </Text>
 
@@ -122,7 +122,7 @@ export default function WelcomeEmail({
             <Text style={styles.ctaText}>
               Your first briefing arrives tomorrow. In the meantime:
             </Text>
-            <Link href={siteUrl} style={styles.ctaButton}>
+            <Link href="https://btctoday.co" style={styles.ctaButton}>
               Read Today&apos;s Briefing
             </Link>
           </Section>
