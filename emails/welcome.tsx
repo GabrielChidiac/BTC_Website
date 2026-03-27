@@ -12,17 +12,17 @@ import {
   Font,
 } from "@react-email/components";
 
-// ─── Palette (matches daily-digest.tsx) ──────────────────────────────────────
+// ─── Palette (light / platinum theme) ────────────────────────────────────────
 const colors = {
-  bgBase: "#1C1F26",
-  bgSurface: "#252830",
-  bgElevated: "#2E323C",
+  bgBase: "#F4F3F1",
+  bgSurface: "#FFFFFF",
+  bgElevated: "#F9F8F6",
   accent: "#F7931A",
   accentHover: "#FFB347",
-  textPrimary: "#F0F0F5",
-  textSecondary: "#9CA3B0",
-  textMuted: "#5E6577",
-  border: "#3A3F4E",
+  textPrimary: "#1A1A1A",
+  textSecondary: "#4A4A4A",
+  textMuted: "#8A8A8A",
+  border: "#E0DFDD",
 };
 
 // ─── Props ───────────────────────────────────────────────────────────────────
@@ -45,8 +45,8 @@ export default function WelcomeEmail({
     <Html lang="en" dir="ltr">
       <Head>
         <Font fontFamily="Georgia" fallbackFontFamily="serif" />
-        <meta name="color-scheme" content="dark" />
-        <meta name="supported-color-schemes" content="dark" />
+        <meta name="color-scheme" content="light" />
+        <meta name="supported-color-schemes" content="light" />
       </Head>
       <Preview>You're in — daily Bitcoin intelligence starts tomorrow at 2 AM CET</Preview>
       <Body style={styles.body}>

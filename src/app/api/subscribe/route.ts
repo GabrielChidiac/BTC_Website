@@ -28,8 +28,23 @@ export async function POST(request: Request) {
     );
   }
 
-  // Upsert subscriber (handles new + re-subscribe)
   const supabase = createServiceClient();
+
+  // Check if already subscribed
+  const { data: existing } = await supabase
+    .from("subscribers")
+    .select("email, status")
+    .eq("email", email)
+    .single();
+
+  if (existing?.status === "active") {
+    return NextResponse.json(
+      { success: false, error: "This email is already subscribed." },
+      { status: 409 }
+    );
+  }
+
+  // Insert new or re-activate
   const { error } = await supabase
     .from("subscribers")
     .upsert(
