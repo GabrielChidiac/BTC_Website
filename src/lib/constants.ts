@@ -10,6 +10,11 @@ export const RSS_FEEDS = [
   // ── Tier 2: Institutional / macro coverage ────────────────────────────────
   { name: "Blockworks", url: "https://blockworks.co/feed/" },
   { name: "CNBC Crypto", url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=33002079" },
+  // ── Tier 3: Expert Substack newsletters ───────────────────────────────────
+  { name: "Lyn Alden", url: "https://www.lynalden.com/feed/" },
+  { name: "Dylan LeClair", url: "https://dylanleclair.substack.com/feed" },
+  { name: "Luke Gromen", url: "https://fftt-llc.substack.com/feed" },
+  { name: "Jeff Park", url: "https://jeffpark.substack.com/feed" },
 ] as const;
 
 // ─── SearchAPI ─────────────────────────────────────────────────────────────

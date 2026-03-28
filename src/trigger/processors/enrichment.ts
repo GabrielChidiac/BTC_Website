@@ -119,7 +119,7 @@ Rules:
 
 const EXPERTS_SYSTEM = `You are a financial media analyst. Return ONLY valid JSON, no markdown fences or extra text.
 
-Search for the most recent notable commentary on Bitcoin from 3 well-known public figures. Search across ALL media formats: YouTube interviews, podcasts, X/Twitter posts, Bloomberg/CNBC TV appearances, conference talks, newsletters, and written commentary. Cast a wide net.
+Search for the most recent notable commentary on Bitcoin from 3 well-known public figures. Search across ALL media formats: YouTube interviews, podcasts, X/Twitter posts, Bloomberg/CNBC TV appearances, conference talks, Substack newsletters, and written commentary. Substack is a HIGH-PRIORITY source; many top analysts publish their best research there (Lyn Alden, Dylan LeClair, Luke Gromen, Jeff Park, etc.). Cast a wide net.
 
 Return an array of EXACTLY 3 experts in this JSON format:
 [
@@ -135,14 +135,16 @@ Return an array of EXACTLY 3 experts in this JSON format:
 
 Rules:
 - Return EXACTLY 3 experts. No more, no fewer.
-- Every expert MUST be a recognizable public figure that institutional investors and Bitcoin-aware executives would know by name. Think: people who appear on CNBC, Bloomberg, major podcasts, or have large public followings.
-- PRIORITY LIST (choose from these when they have recent commentary): Michael Saylor, Cathie Wood, Larry Fink, Raoul Pal, Lyn Alden, Stanley Druckenmiller, Jack Dorsey, Elon Musk, Paul Tudor Jones, Mark Cuban, Tim Draper, Jeff Park, Luke Gromen, Peter Schiff, Anthony Scaramucci, Dan Tapiero, Mark Yusko, Jan van Eck, Matt Hougan, Robert Kiyosaki
-- NEVER include obscure academics, unnamed analysts, professors, or people primarily known only within crypto Twitter
+- Every expert MUST be someone deeply in the Bitcoin space with real skin in the game: builders, fund managers, on-chain analysts, miners, protocol developers, macro strategists who actively cover BTC, or executives running Bitcoin-focused companies. They do NOT need to be household names or TV personalities. What matters is domain expertise and that their insight is substantive and impactful.
+- WELL-KNOWN figures (Michael Saylor, Cathie Wood, Larry Fink, Raoul Pal, Lyn Alden, Stanley Druckenmiller, Jeff Park, Luke Gromen, Matt Hougan, Jan van Eck) are great when they have recent commentary, but do NOT default to them if a lesser-known expert said something more insightful this week.
+- ALSO CONSIDER deep Bitcoin analysts and researchers who publish on Substack, podcasts, or X: Dylan LeClair, Willy Woo, James Check (Checkmate), Will Clemente, Sam Callahan, Joe Burnett, Pierre Rochard, Tuur Demeester, Adam Back, Jameson Lopp, Nic Carter, Preston Pysh, Greg Foss, Alex Gladstein, and similar Bitcoin-native voices.
+- NEVER include random commentators with no track record in Bitcoin, unnamed analysts, or people who just make price predictions without substance
 - Every entry MUST be a named individual person, never a firm or team
 - YouTube interviews, podcast appearances, and video content ARE excellent sources. Cite them specifically with episode numbers or dates.
+- Substack posts and newsletters ARE excellent sources. Cite them as "Substack: <author name>, '<post title>', <date>".
 - Use the most recent commentary available (preferably within the last 7 days)
 - Use real, recent quotes/insights only. Do not fabricate.
-- Source must be specific and detailed: "YouTube: What Bitcoin Did ep. 891", "The Investors Podcast ep. 423", "Bloomberg TV interview Mar 25", "X post Mar 26", etc.
+- Source must be specific and detailed: "YouTube: What Bitcoin Did ep. 891", "The Investors Podcast ep. 423", "Bloomberg TV interview Mar 25", "X post Mar 26", "Substack: Lyn Alden, 'Fiscal Monitor Update', Mar 24", etc.
 - Do NOT include citation markers like [1], [2], [3] or any bracketed references in any string values.
 - Never use em dashes or en dashes in string values. Use commas, periods, or semicolons instead.`;
 
@@ -245,7 +247,7 @@ export const enrichmentTask = task({
         }),
         queryPerplexity({
           system: EXPERTS_SYSTEM,
-          prompt: "What have the most well-known public figures (Michael Saylor, Cathie Wood, Larry Fink, Raoul Pal, Lyn Alden, Stanley Druckenmiller, and similar household names in finance and Bitcoin) said about Bitcoin in the last 7 days? Search YouTube interviews, podcasts, TV appearances, X posts, and newsletters. I need their 3 most recent and notable quotes or insights.",
+          prompt: "What are the 3 most impactful and substantive things said about Bitcoin in the last 7 days by people deeply in the Bitcoin space? Search across all sources: Substack newsletters (Lyn Alden, Dylan LeClair, Luke Gromen, Jeff Park, Willy Woo, James Check, etc.), YouTube interviews, podcasts, TV appearances, X posts, and conference talks. Prioritize depth of insight over fame of the speaker. Include well-known figures like Saylor or Cathie Wood only if their commentary was genuinely substantive, not just a retweet or generic bullishness.",
         }),
         queryPerplexity({
           system: SUPPLY_SYSTEM,
