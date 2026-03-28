@@ -288,9 +288,9 @@ export default async function Home() {
                 <ScrollReveal variant="scale">
                   <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 ${hasLookingAhead ? "mt-4" : ""}`}>
                     {filteredEvents.map((event) => (
-                      <MotionCard key={event.name} lift={4}>
+                      <MotionCard key={event.name} lift={4} className="h-full">
                         <Card
-                          className={`gap-0 py-0 ring-foreground/0 ${
+                          className={`h-full gap-0 py-0 ring-foreground/0 ${
                             event.days_away !== null && event.days_away <= 3
                               ? "ring-1 ring-[var(--color-accent)]/30 glow-card"
                               : "ring-1 ring-[var(--color-border)]"

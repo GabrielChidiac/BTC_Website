@@ -46,7 +46,7 @@ export function NetworkHealth({
         />
 
         {/* Halving progress */}
-        <div className="card-hover-glow col-span-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4">
+        <div className="card-interactive col-span-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4">
           <div className="flex items-baseline justify-between">
             <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
               Next Halving
@@ -83,7 +83,7 @@ function Stat({
   sub?: string;
 }) {
   return (
-    <div className="card-hover-glow rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
+    <div className="card-interactive rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
       <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
         {label}
       </p>

@@ -22,7 +22,7 @@ export function SupplyDynamics({
         On-chain scarcity signals
       </p>
 
-      <div className="card-hover-glow rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-5">
+      <div className="card-interactive rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-5">
         {supply.long_term_holder_pct !== null && (
           <div className="mb-4">
             <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">

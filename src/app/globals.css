@@ -106,19 +106,6 @@ h1, h2, h3, h4, h5, h6 {
   border-color: rgba(247, 147, 26, 0.30);
 }
 
-/* ─── Orange glow on hover for all briefing cards ─────────────────────────── */
-
-.card-hover-glow {
-  transition: box-shadow 0.25s ease, border-color 0.25s ease;
-}
-
-.card-hover-glow:hover {
-  border-color: rgba(247, 147, 26, 0.30);
-  box-shadow:
-    0 0 16px rgba(247, 147, 26, 0.10),
-    0 0 0 1px rgba(247, 147, 26, 0.15);
-}
-
 /* ─── Glass card (elevated variant) ────────────────────────────────────────── */
 
 .card-glass {

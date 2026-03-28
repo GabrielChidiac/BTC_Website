@@ -30,7 +30,7 @@ export function ExpertExpandable({ insight }: { insight: ExpertInsight }) {
 
   if (!hasMore) {
     return (
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-5 sm:p-6 card-interactive">
+      <div className="h-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-5 sm:p-6 card-interactive">
         {preview}
         <p className="mt-2 text-xs text-[var(--color-text-muted)]">
           {insight.source}{insight.date && ` | ${insight.date}`}
@@ -40,7 +40,7 @@ export function ExpertExpandable({ insight }: { insight: ExpertInsight }) {
   }
 
   return (
-    <ExpandableCard preview={preview}>
+    <ExpandableCard preview={preview} className="h-full">
       <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
         {insight.quote_or_summary}
       </p>

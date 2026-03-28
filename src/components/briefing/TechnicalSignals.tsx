@@ -24,7 +24,7 @@ export function TechnicalSignals({
 
       <div className="grid grid-cols-2 gap-3">
         {/* RSI */}
-        <div className="card-hover-glow rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 col-span-2">
+        <div className="card-interactive rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 col-span-2">
           <div className="flex items-baseline justify-between">
             <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
               Momentum (RSI)
@@ -53,7 +53,7 @@ export function TechnicalSignals({
         </div>
 
         {/* SMAs */}
-        <div className="card-hover-glow rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
+        <div className="card-interactive rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
           <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
             50-Day Average
           </p>
@@ -62,7 +62,7 @@ export function TechnicalSignals({
           </p>
           <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Short-term trend</p>
         </div>
-        <div className="card-hover-glow rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
+        <div className="card-interactive rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
           <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
             200-Day Average
           </p>
@@ -73,7 +73,7 @@ export function TechnicalSignals({
         </div>
 
         {/* Support / Resistance */}
-        <div className="card-hover-glow rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
+        <div className="card-interactive rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
           <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
             30-Day Low
           </p>
@@ -82,7 +82,7 @@ export function TechnicalSignals({
           </p>
           <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Support level</p>
         </div>
-        <div className="card-hover-glow rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
+        <div className="card-interactive rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
           <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
             30-Day High
           </p>
@@ -93,7 +93,7 @@ export function TechnicalSignals({
         </div>
 
         {/* Signal summary */}
-        <div className="card-hover-glow col-span-2 rounded-xl border-l-4 border-l-[var(--color-accent)] border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-4 py-3">
+        <div className="card-interactive col-span-2 rounded-xl border-l-4 border-l-[var(--color-accent)] border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-4 py-3">
           <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
             {signals.signal_summary}
           </p>

@@ -33,7 +33,7 @@ export function CountdownEvents({
           {shown.map((event) => (
             <div
               key={event.name}
-              className={`flex shrink-0 items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-4 py-2.5 transition-colors hover:border-[var(--color-accent)]/40${event.days_away !== null && event.days_away <= 3 ? " pulse-urgent" : ""}`}
+              className={`card-interactive flex shrink-0 items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-4 py-2.5${event.days_away !== null && event.days_away <= 3 ? " pulse-urgent" : ""}`}
             >
               <div className="flex flex-col items-center justify-center">
                 <span className="font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-accent)] leading-none">
@@ -68,7 +68,7 @@ export function CountdownEvents({
         {sorted.map((event) => (
           <div
             key={event.name}
-            className="card-hover-glow flex items-center gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4"
+            className="card-interactive flex items-center gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4"
           >
             {/* Days badge */}
             <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border)]">

@@ -15,7 +15,7 @@ function StatCard({
   sub?: { text: string; positive?: boolean };
 }) {
   return (
-    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
+    <div className="card-interactive rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
       <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
         {label}
       </p>

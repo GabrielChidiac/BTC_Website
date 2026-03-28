@@ -25,7 +25,7 @@ export function ExpandableCard({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
+    <Collapsible open={open} onOpenChange={setOpen} className="h-full">
       <Card
         className={cn(
           "card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0",

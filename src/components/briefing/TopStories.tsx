@@ -49,7 +49,7 @@ export function TopStories({ stories }: { stories: TopStory[] }) {
 
       {/* Remaining stories — compact rows */}
       {rest.length > 0 && (
-        <div className="space-y-0 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] overflow-hidden">
+        <div className="card-interactive space-y-0 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] overflow-hidden">
           {rest.map((story, i) => (
             <article
               key={story.url}

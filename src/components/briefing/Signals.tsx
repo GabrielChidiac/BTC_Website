@@ -44,7 +44,7 @@ export function Signals({
         <div className="h-px flex-1 bg-gradient-to-l from-[var(--color-accent)]/30 to-transparent" />
       </div>
 
-      <div className="card-hover-glow rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] overflow-hidden">
+      <div className="card-interactive rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] overflow-hidden">
         {items.map((item, i) => (
           <article
             key={i}
