@@ -2,7 +2,7 @@ import type { DailyDiff } from "@/lib/types";
 
 export function DailyDiffBanner({ dailyDiff }: { dailyDiff: DailyDiff }) {
   return (
-    <section className="mt-6 rounded-xl border-l-4 border-l-[var(--color-accent)] border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-4 py-3">
+    <section className="card-hover-glow mt-6 rounded-xl border-l-4 border-l-[var(--color-accent)] border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-4 py-3">
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
         <span className="font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-text-primary)]">
           {dailyDiff.price_change}

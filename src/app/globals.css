@@ -12,9 +12,9 @@
   --color-accent: #F7931A;
   --color-accent-hover: #E8850F;
   --color-accent-contrast: #FFFFFF;
-  --color-text-primary: #111115;
-  --color-text-secondary: #222228;
-  --color-text-muted: #222228;
+  --color-text-primary: #0A0A0C;
+  --color-text-secondary: #1A1A1F;
+  --color-text-muted: #3A3A42;
   --color-border: #D4D6DE;
 
   /* Blue accent */
@@ -106,6 +106,19 @@ h1, h2, h3, h4, h5, h6 {
   border-color: rgba(247, 147, 26, 0.30);
 }
 
+/* ─── Orange glow on hover for all briefing cards ─────────────────────────── */
+
+.card-hover-glow {
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.card-hover-glow:hover {
+  border-color: rgba(247, 147, 26, 0.30);
+  box-shadow:
+    0 0 16px rgba(247, 147, 26, 0.10),
+    0 0 0 1px rgba(247, 147, 26, 0.15);
+}
+
 /* ─── Glass card (elevated variant) ────────────────────────────────────────── */
 
 .card-glass {
@@ -117,6 +130,17 @@ h1, h2, h3, h4, h5, h6 {
     inset 0 1px 0 rgba(255, 255, 255, 0.7),
     0 8px 32px rgba(0, 0, 0, 0.06),
     0 0 0 1px rgba(0, 0, 0, 0.03);
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.card-glass:hover {
+  border-color: rgba(247, 147, 26, 0.35) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 8px 32px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(247, 147, 26, 0.15),
+    0 0 20px rgba(247, 147, 26, 0.12),
+    0 0 40px rgba(247, 147, 26, 0.06);
 }
 
 /* ─── Shimmer border (animated gradient edge) ──────────────────────────────── */

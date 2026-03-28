@@ -68,7 +68,7 @@ export function CountdownEvents({
         {sorted.map((event) => (
           <div
             key={event.name}
-            className="flex items-center gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4"
+            className="card-hover-glow flex items-center gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4"
           >
             {/* Days badge */}
             <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border)]">

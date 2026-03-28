@@ -21,7 +21,7 @@ export function ExpertInsights({
         {insights.map((insight, i) => (
           <div
             key={i}
-            className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-5"
+            className="card-hover-glow rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-5"
           >
             <div className="flex gap-3">
               <ExpertAvatar name={insight.expert_name} twitterHandle={insight.twitter_handle} photoUrl={insight.photo_url} size={40} />
