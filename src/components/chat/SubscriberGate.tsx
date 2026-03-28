@@ -6,7 +6,7 @@ export function SubscriberGate({
   onVerified,
   verifyError,
 }: {
-  onVerified: (email: string, token: string) => void;
+  onVerified: (email: string) => void;
   verifyError?: string;
 }) {
   const [email, setEmail] = useState("");

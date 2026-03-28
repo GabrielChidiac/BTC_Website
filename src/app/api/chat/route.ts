@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import Anthropic from "@anthropic-ai/sdk";
 import { createServiceClient } from "@/lib/supabase/server";
+import { COOKIE_NAME, setSessionCookie, clearSessionCookie } from "@/lib/session";
 import type { ChatMessage, BriefingJSON, DailyBriefingRow } from "@/lib/types";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -9,7 +11,7 @@ const MAX_HISTORY = 20;
 interface ChatRequest {
   message: string;
   email: string;
-  token: string;
+  token?: string;
   history: ChatMessage[];
 }
 
@@ -207,7 +209,29 @@ export async function POST(request: Request) {
     );
   }
 
-  const { message, email, token, history } = body;
+  const { message, email: bodyEmail, token: bodyToken, history } = body;
+
+  // Resolve auth: cookie first, body fallback (for localStorage migration)
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get(COOKIE_NAME)?.value;
+
+  let email: string | undefined;
+  let token: string | undefined;
+  let authFromBody = false;
+
+  if (sessionCookie) {
+    try {
+      const parsed = JSON.parse(sessionCookie);
+      email = parsed.email;
+      token = parsed.token;
+    } catch { /* invalid cookie, fall through */ }
+  }
+
+  if (!token) {
+    email = bodyEmail;
+    token = bodyToken;
+    authFromBody = true;
+  }
 
   if (!message?.trim()) {
     return NextResponse.json(
@@ -224,10 +248,12 @@ export async function POST(request: Request) {
   }
 
   if (!token) {
-    return NextResponse.json(
+    const noAuth = NextResponse.json(
       { error: "Authentication required" },
       { status: 401 }
     );
+    if (sessionCookie) clearSessionCookie(noAuth);
+    return noAuth;
   }
 
   const supabase = createServiceClient();
@@ -250,10 +276,12 @@ export async function POST(request: Request) {
   }
 
   if (!session) {
-    return NextResponse.json(
+    const expired = NextResponse.json(
       { error: "Session expired. Please verify your email again." },
       { status: 401 }
     );
+    clearSessionCookie(expired);
+    return expired;
   }
 
   // Also confirm subscription is still active
@@ -276,6 +304,9 @@ export async function POST(request: Request) {
       { status: 403 }
     );
   }
+
+  // Auto-migrate: if auth came from body (localStorage), set the cookie
+  const needsCookieMigration = authFromBody && !sessionCookie;
 
   const { data: briefingRows } = await supabase
     .from("daily_briefings")
@@ -333,7 +364,7 @@ export async function POST(request: Request) {
 
     const response = await client.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 4096,
+      max_tokens: 2048,
       system: systemPrompt,
       messages,
     });
@@ -341,7 +372,9 @@ export async function POST(request: Request) {
     const text =
       response.content[0].type === "text" ? response.content[0].text : "";
 
-    return NextResponse.json({ message: text });
+    const jsonResponse = NextResponse.json({ message: text });
+    if (needsCookieMigration) setSessionCookie(jsonResponse, token, email);
+    return jsonResponse;
   } catch (primaryError) {
     const err = primaryError as Error & { status?: number };
     const status = err.status ?? 0;
@@ -376,7 +409,7 @@ export async function POST(request: Request) {
             { role: "system", content: systemPrompt },
             ...messages,
           ],
-          max_tokens: 4096,
+          max_tokens: 2048,
         }),
       });
 
@@ -389,7 +422,9 @@ export async function POST(request: Request) {
 
       const json = await res.json();
       const text = json.choices?.[0]?.message?.content ?? "";
-      return NextResponse.json({ message: text });
+      const fallbackResponse = NextResponse.json({ message: text });
+      if (needsCookieMigration) setSessionCookie(fallbackResponse, token, email);
+      return fallbackResponse;
     } catch {
       return NextResponse.json(
         { error: "AI service temporarily unavailable" },

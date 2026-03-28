@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { setSessionCookie } from "@/lib/session";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -83,8 +84,10 @@ export async function POST(request: Request) {
       used: false,
     });
 
-  return NextResponse.json(
+  const response = NextResponse.json(
     { success: true, token: sessionToken },
     { status: 200 }
   );
+  setSessionCookie(response, sessionToken, email);
+  return response;
 }
