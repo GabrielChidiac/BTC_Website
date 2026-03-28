@@ -24,7 +24,7 @@ export function InstitutionalFlows({
 
   return (
     <div>
-      <h3 className="font-[family-name:var(--font-heading)] text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-3">
+      <h3 className="font-[family-name:var(--font-heading)] text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-accent)] mb-3">
         Institutional Flows
       </h3>
 

@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { halvingProgress } from "@/lib/utils";
 import type {
   BriefingJSON,
+  TopStory,
   NewsCollectorOutput,
   MarketCollectorOutput,
   DailyBriefingRow,
@@ -27,6 +28,16 @@ interface AiBrainPayload {
 const SYSTEM_PROMPT = `You are a senior Bitcoin intelligence analyst producing a daily executive briefing for high-net-worth individuals and business decision-makers. Your readers are busy, sophisticated, and want to know: where is money flowing, what are the macro implications, and why does BTC matter in the long run.
 
 CRITICAL: Return ONLY valid JSON. No markdown fences, no extra text, no comments. Just the raw JSON object.
+
+CRITICAL CONTENT FILTER — BITCOIN ONLY:
+This briefing is EXCLUSIVELY about Bitcoin (BTC). Apply these rules strictly:
+- For top_stories, regulatory, and adoption: ONLY include stories that are directly about Bitcoin or have a direct, material impact on Bitcoin's price, network, or adoption.
+- NEVER include stories about altcoins (Ethereum, Solana, XRP, TRX, Cardano, Dogecoin, etc.) unless the story's primary impact is on Bitcoin specifically (e.g. "SEC approves Ethereum ETF" is relevant ONLY if you explain the direct impact on BTC; a TRX pump or SOL upgrade is NEVER relevant).
+- If a story mentions Bitcoin alongside other cryptocurrencies, include it only if Bitcoin is the primary subject.
+- If fewer than 3 Bitcoin stories qualify from today's articles, that is acceptable. Return only what qualifies. Do not pad with altcoin news.
+- If yesterday's top stories are provided as carry-over candidates and fewer than 4 Bitcoin stories qualify today, you may include 1-2 of yesterday's most impactful stories if they remain relevant and have not been superseded by new developments.
+- Regulatory updates must pertain to Bitcoin specifically, or to broad crypto regulation where Bitcoin is materially affected. Country-specific altcoin regulations are excluded.
+- Adoption stories must be about Bitcoin adoption specifically, not general "crypto" or altcoin adoption.
 
 The JSON must conform exactly to this TypeScript schema:
 
@@ -144,9 +155,9 @@ The root JSON object must have these exact keys:
 Rules:
 - Tone: Authoritative, data-driven, and concise. Let the data speak for itself. Write as a peer to sophisticated investors. Never condescend, never hype.
 - Target audience: HNW individuals and business executives who understand finance but may not follow crypto daily.
-- For top_stories: select 3-5 most significant stories through an institutional lens. Write 2-3 sentence summaries that assume financial literacy. Skip stories that only matter to retail traders.
-- For regulatory: 1-3 genuine regulatory developments. If fewer exist, include only what's real. Never force non-regulatory news into this section.
-- For adoption: 1-3 genuine adoption stories (corporate buys, sovereign adoption, infrastructure growth). Only real adoption news.
+- For top_stories: select 3-5 most significant BITCOIN stories through an institutional lens. Write 2-3 sentence summaries that assume financial literacy. Skip stories that only matter to retail traders. Exclude any story where Bitcoin is not the primary subject.
+- For regulatory: 1-3 genuine regulatory developments that directly affect Bitcoin. If fewer exist, include only what's real. Never force non-regulatory or altcoin-specific regulation into this section.
+- For adoption: 1-3 genuine Bitcoin adoption stories (corporate BTC buys, sovereign Bitcoin adoption, Bitcoin infrastructure growth). Exclude general crypto or altcoin adoption.
 - For macro_context: synthesize how current macro conditions (monetary policy, liquidity, DXY, inflation) relate to Bitcoin's positioning. Use your knowledge of scheduled macro events.
 - For narrative_consensus: assess the overall smart money sentiment. Score reflects institutional positioning, not retail mood.
 - For btc_vs_everything: compute btc_relative_24h_pct as (BTC 24h change) minus (asset 24h change). Same for btc_relative_ytd_pct. Use null if data unavailable.
@@ -299,7 +310,7 @@ function buildFallbackBriefing(
 function buildUserPrompt(
   payload: AiBrainPayload,
   halving: { progressPct: number; blocksRemaining: number },
-  yesterday: { price_usd: number } | null
+  yesterday: { price_usd: number; top_stories: TopStory[] } | null
 ): string {
   const { date, news, market } = payload;
 
@@ -365,6 +376,15 @@ function buildUserPrompt(
     sections.push(`## Yesterday's Briefing Data
 - Previous Price (USD): ${yesterday.price_usd}
 Use this to compute daily_diff.`);
+
+    if (yesterday.top_stories.length > 0) {
+      const storiesText = yesterday.top_stories
+        .map((s, i) => `${i + 1}. "${s.headline}" (${s.source}) — ${s.summary}`)
+        .join("\n");
+      sections.push(`## Yesterday's Top Stories (carry-over candidates)
+If fewer than 4 significant Bitcoin stories qualify from today's articles, you may include 1-2 of these if they remain relevant and have not been superseded by new developments:
+${storiesText}`);
+    }
   } else {
     sections.push(`## Yesterday's Briefing Data
 No previous briefing available. Set daily_diff.price_change to "N/A (first briefing)", sentiment_shift to "No previous data", and key_changes to an empty array.`);
@@ -394,7 +414,7 @@ export const aiBrainTask = task({
     }
 
     // Fetch yesterday's briefing
-    let yesterday: { price_usd: number } | null = null;
+    let yesterday: { price_usd: number; top_stories: TopStory[] } | null = null;
     try {
       const yesterdayDate = new Date(date + "T00:00:00Z");
       yesterdayDate.setUTCDate(yesterdayDate.getUTCDate() - 1);
@@ -411,10 +431,14 @@ export const aiBrainTask = task({
         logger.warn("Failed to fetch yesterday's briefing", { error: error.message });
       } else if (row) {
         const content = (row as DailyBriefingRow).content;
-        yesterday = { price_usd: content.market_snapshot.price_usd };
+        yesterday = {
+          price_usd: content.market_snapshot.price_usd,
+          top_stories: content.top_stories ?? [],
+        };
         logger.info("Yesterday's briefing found", {
           date: yesterdayStr,
           price: yesterday.price_usd,
+          storyCount: yesterday.top_stories.length,
         });
       } else {
         logger.info("No yesterday briefing found (first run or gap)");

@@ -4,6 +4,8 @@ import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase/server";
 import type { BriefingJSON } from "@/lib/types";
 import DailyDigest from "../../../emails/daily-digest";
+import { DailySummaryPDF } from "../../../emails/daily-summary-pdf";
+import { renderToBuffer } from "@react-pdf/renderer";
 
 interface SendDigestPayload {
   date: string; // "YYYY-MM-DD"
@@ -55,6 +57,33 @@ export const sendDigestTask = task({
 
     // Render React Email template to HTML (with placeholders for per-subscriber values)
     const htmlTemplate = await render(DailyDigest({ briefing, siteUrl, name: "%%NAME%%" }));
+
+    // Generate PDF summary and upload to Supabase Storage (non-fatal)
+    let pdfUrl = "";
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pdfBuffer = await renderToBuffer(DailySummaryPDF({ briefing }) as any);
+      const pdfFilename = `btc-today-${date}.pdf`;
+
+      // Upload to Supabase Storage (briefing-pdfs bucket)
+      const { error: uploadError } = await supabase.storage
+        .from("briefing-pdfs")
+        .upload(pdfFilename, pdfBuffer, {
+          contentType: "application/pdf",
+          upsert: true,
+        });
+
+      if (uploadError) {
+        logger.warn("PDF upload failed", { error: uploadError.message });
+      } else {
+        pdfUrl = `${siteUrl}/pdf/${date}`;
+        logger.info("PDF generated and uploaded", { pdfUrl });
+      }
+    } catch (pdfErr) {
+      logger.warn("PDF generation failed — emails will send without PDF link", {
+        error: (pdfErr as Error).message,
+      });
+    }
 
     // Plain text fallback for clients that don't render HTML
     const storySummaries = top_stories
@@ -118,7 +147,9 @@ Chat with our AI: %%CHAT_URL%%
           : `${siteUrl}/chat`;
         const subscriberName = nameByEmail.get(email);
 
-        let html = htmlTemplate.replace(/%%CHAT_URL%%/g, chatUrl);
+        let html = htmlTemplate
+          .replace(/%%CHAT_URL%%/g, chatUrl)
+          .replace(/%%PDF_URL%%/g, pdfUrl);
         let text = textTemplate.replace(/%%CHAT_URL%%/g, chatUrl);
 
         if (subscriberName) {

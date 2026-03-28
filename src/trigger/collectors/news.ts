@@ -60,14 +60,25 @@ export const newsCollector = task({
         new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
     );
 
+    // Pre-filter for BTC relevance (lightweight keyword check)
+    const BTC_KEYWORDS = /\b(bitcoin|btc|satoshi|sats|halving|lightning network|mining|hashrate|block reward|digital gold)\b/i;
+    const ALTCOIN_ONLY = /\b(ethereum|solana|xrp|tron|trx|cardano|polkadot|dogecoin|shiba|avalanche|chainlink)\b/i;
+
+    const btcRelevant = recent.filter((article) => {
+      const text = `${article.title} ${article.description ?? ""}`;
+      if (BTC_KEYWORDS.test(text)) return true;
+      if (ALTCOIN_ONLY.test(text)) return false;
+      return true; // Keep general macro/regulatory articles
+    });
+
     console.log(
-      `[news-collector] rss=${rssArticles.length} searchapi=${searchArticles.length} → deduplicated=${deduplicated.length} → final=${recent.length}`
+      `[news-collector] rss=${rssArticles.length} searchapi=${searchArticles.length} → deduplicated=${deduplicated.length} → recent=${recent.length} → btcRelevant=${btcRelevant.length}`
     );
 
     // Scrape full article text for top 10 articles via Jina Reader (non-fatal)
     try {
-      const scraped = await scrapeArticles(recent, 10);
-      for (const article of recent) {
+      const scraped = await scrapeArticles(btcRelevant, 10);
+      for (const article of btcRelevant) {
         const fullText = scraped.get(article.url);
         if (fullText) {
           article.content = fullText;
@@ -78,6 +89,6 @@ export const newsCollector = task({
       console.warn(`[news-collector] Jina scraping failed — continuing with headlines only: ${(e as Error).message}`);
     }
 
-    return { articles: recent };
+    return { articles: btcRelevant };
   },
 });

@@ -11,7 +11,7 @@ export function SectionLabel({ number, title, className = "" }: SectionLabelProp
         {number}
       </span>
       <span className="h-px flex-1 max-w-8 bg-[var(--color-border)]" />
-      <h2 className="font-[family-name:var(--font-heading)] text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+      <h2 className="font-[family-name:var(--font-heading)] text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
         {title}
       </h2>
     </div>

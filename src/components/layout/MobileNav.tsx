@@ -9,6 +9,15 @@ const navLinks = [
   { href: "/archive", label: "Archive" },
 ] as const;
 
+const sectionLinks = [
+  { href: "#insight", label: "Insight" },
+  { href: "#market", label: "Market" },
+  { href: "#news", label: "News" },
+  { href: "#stories", label: "Stories" },
+  { href: "#deep-dive", label: "Deep Dive" },
+  { href: "#outlook", label: "Outlook" },
+] as const;
+
 export function MobileNav() {
   const [open, setOpen] = useState(false);
 
@@ -58,6 +67,23 @@ export function MobileNav() {
               {label}
             </Link>
           ))}
+        </div>
+        <div className="mt-4 border-t border-[var(--color-border)] pt-4">
+          <p className="px-4 pb-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
+            Jump to
+          </p>
+          <div className="flex flex-col gap-1">
+            {sectionLinks.map(({ href, label }) => (
+              <a
+                key={href}
+                href={href}
+                onClick={() => setOpen(false)}
+                className="rounded-lg px-4 py-2 text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-elevated)] transition-colors"
+              >
+                {label}
+              </a>
+            ))}
+          </div>
         </div>
       </nav>
     </div>

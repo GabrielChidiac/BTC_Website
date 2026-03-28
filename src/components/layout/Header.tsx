@@ -9,6 +9,15 @@ const navLinks = [
   { href: "/archive", label: "Archive" },
 ] as const;
 
+const sectionLinks = [
+  { href: "#insight", label: "Insight" },
+  { href: "#market", label: "Market" },
+  { href: "#news", label: "News" },
+  { href: "#stories", label: "Stories" },
+  { href: "#deep-dive", label: "Deep Dive" },
+  { href: "#outlook", label: "Outlook" },
+] as const;
+
 function formatBriefingDate(isoDate: string): string {
   return new Date(isoDate + "T12:00:00Z")
     .toLocaleDateString("en-US", {
@@ -44,7 +53,7 @@ export function Header({ date }: { date?: string }) {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-4">
           {navLinks.map(({ href, label }) => (
             <Link
               key={href}
@@ -53,6 +62,16 @@ export function Header({ date }: { date?: string }) {
             >
               {label}
             </Link>
+          ))}
+          <span className="h-3.5 w-px bg-[var(--color-border)]" />
+          {sectionLinks.map(({ href, label }) => (
+            <a
+              key={href}
+              href={href}
+              className="text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+            >
+              {label}
+            </a>
           ))}
         </nav>
 

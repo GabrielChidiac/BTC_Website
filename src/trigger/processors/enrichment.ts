@@ -120,27 +120,30 @@ Rules:
 
 const EXPERTS_SYSTEM = `You are a financial media analyst. Return ONLY valid JSON, no markdown fences or extra text.
 
-Search for recent notable commentary on Bitcoin from recognized experts and thought leaders, from podcasts, interviews, newsletters, conference talks, or social media. Focus on credible voices that institutional investors would respect.
+Search for the most recent notable commentary on Bitcoin from 3 well-known public figures. Search across ALL media formats: YouTube interviews, podcasts, X/Twitter posts, Bloomberg/CNBC TV appearances, conference talks, newsletters, and written commentary. Cast a wide net.
 
-Return an array in this exact JSON format:
+Return an array of EXACTLY 3 experts in this JSON format:
 [
   {
     "expert_name": "<full name>",
     "role": "<title/role>",
     "twitter_handle": "<X/Twitter handle without @ symbol, or null if unknown>",
-    "quote_or_summary": "<2-3 sentence summary of their key insight>",
-    "source": "<where they said it>",
+    "quote_or_summary": "<2-3 sentence summary of their most recent key insight about Bitcoin>",
+    "source": "<specific source: 'YouTube: What Bitcoin Did ep. 891', 'Bloomberg TV interview Mar 25', 'The Investors Podcast ep. 423', 'X post', etc.>",
     "date": "<YYYY-MM-DD or approximate>"
   }
 ]
 
 Rules:
-- Include 3-5 experts maximum
-- Every entry MUST be a named individual person, never a firm or team (e.g. "Gautam Chhugani" not "Bernstein Analysts")
-- Focus on macro analysts, fund managers, CEOs, former regulators. NOT YouTube influencers
-- Examples of credible voices: Lyn Alden, Michael Saylor, Cathie Wood, Raoul Pal, Luke Gromen, Larry Fink, Stanley Druckenmiller, Jeff Park, Mark Yusko
+- Return EXACTLY 3 experts. No more, no fewer.
+- Every expert MUST be a recognizable public figure that institutional investors and Bitcoin-aware executives would know by name. Think: people who appear on CNBC, Bloomberg, major podcasts, or have large public followings.
+- PRIORITY LIST (choose from these when they have recent commentary): Michael Saylor, Cathie Wood, Larry Fink, Raoul Pal, Lyn Alden, Stanley Druckenmiller, Jack Dorsey, Elon Musk, Paul Tudor Jones, Mark Cuban, Tim Draper, Jeff Park, Luke Gromen, Peter Schiff, Anthony Scaramucci, Dan Tapiero, Mark Yusko, Jan van Eck, Matt Hougan, Robert Kiyosaki
+- NEVER include obscure academics, unnamed analysts, professors, or people primarily known only within crypto Twitter
+- Every entry MUST be a named individual person, never a firm or team
+- YouTube interviews, podcast appearances, and video content ARE excellent sources. Cite them specifically with episode numbers or dates.
+- Use the most recent commentary available (preferably within the last 7 days)
 - Use real, recent quotes/insights only. Do not fabricate.
-- Source should be specific: "The Investors Podcast ep. 423", "Bloomberg interview", "X post", etc.
+- Source must be specific and detailed: "YouTube: What Bitcoin Did ep. 891", "The Investors Podcast ep. 423", "Bloomberg TV interview Mar 25", "X post Mar 26", etc.
 - Do NOT include citation markers like [1], [2], [3] or any bracketed references in any string values.
 - Never use em dashes or en dashes in string values. Use commas, periods, or semicolons instead.`;
 
@@ -243,7 +246,7 @@ export const enrichmentTask = task({
         }),
         queryPerplexity({
           system: EXPERTS_SYSTEM,
-          prompt: "What have notable Bitcoin experts, macro analysts, and institutional investors said about Bitcoin in the last 7 days? Focus on credible voices from podcasts, interviews, newsletters, and conferences.",
+          prompt: "What have the most well-known public figures (Michael Saylor, Cathie Wood, Larry Fink, Raoul Pal, Lyn Alden, Stanley Druckenmiller, and similar household names in finance and Bitcoin) said about Bitcoin in the last 7 days? Search YouTube interviews, podcasts, TV appearances, X posts, and newsletters. I need their 3 most recent and notable quotes or insights.",
         }),
         queryPerplexity({
           system: SUPPLY_SYSTEM,

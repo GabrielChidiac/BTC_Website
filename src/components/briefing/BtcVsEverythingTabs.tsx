@@ -157,7 +157,7 @@ export function BtcVsEverythingTabs({
       <CardContent className="p-4 sm:p-5">
         <Tabs defaultValue="ytd" className="gap-0">
           <div className="flex items-center justify-between gap-3 mb-4">
-            <h3 className="font-[family-name:var(--font-heading)] text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+            <h3 className="font-[family-name:var(--font-heading)] text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-accent)]">
               BTC vs Everything
             </h3>
             <TabsList className="h-auto bg-[var(--color-bg-base)] p-1 rounded-lg">

@@ -119,7 +119,7 @@ export default async function Home() {
               TIER 1: THE SNAPSHOT
               01 — TODAY'S INSIGHT: Hero + Sentiment Gauge
              ═══════════════════════════════════════════════════════════════ */}
-          <div className={briefing.one_line ? "mt-6" : "mt-6"}>
+          <div id="insight" className={`scroll-mt-16 ${briefing.one_line ? "mt-6" : "mt-6"}`}>
             <SectionLabel number="01" title="Today&rsquo;s Insight" className="mb-4" />
             <BitcoinHero
               market={market}
@@ -135,7 +135,7 @@ export default async function Home() {
               TIER 2: THE BRIEFING
               02 — MARKET EVIDENCE: Stat tiles
              ═══════════════════════════════════════════════════════════════ */}
-          <div className="mt-10">
+          <div id="market" className="mt-10 scroll-mt-16">
             <SectionLabel number="02" title="Market Evidence" className="mb-4" />
             <ScrollReveal>
               <BentoGrid>
@@ -174,7 +174,7 @@ export default async function Home() {
           {/* ═══════════════════════════════════════════════════════════════
               03 — WHAT HAPPENED: Day in Brief + BTC vs Everything + Signals
              ═══════════════════════════════════════════════════════════════ */}
-          <div className="mt-16">
+          <div id="news" className="mt-10 scroll-mt-16">
             <SectionLabel number="03" title="What Happened" className="mb-4" />
             <ScrollReveal>
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
@@ -206,7 +206,7 @@ export default async function Home() {
               04 — TOP STORIES: Expandable cards
              ═══════════════════════════════════════════════════════════════ */}
           {briefing.top_stories.length > 0 && (
-            <div className="mt-16">
+            <div id="stories" className="mt-10 scroll-mt-16">
               <SectionLabel number="04" title="Top Stories" className="mb-4" />
               <ScrollReveal variant="left">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -229,7 +229,7 @@ export default async function Home() {
               TIER 3: THE DEEP DIVE
               05 — DEEP DIVE: Data sections + Expert Insights
              ═══════════════════════════════════════════════════════════════ */}
-          <div className="mt-10">
+          <div id="deep-dive" className="mt-10 scroll-mt-16">
             <SectionLabel number="05" title="Deep Dive" className="mb-4" />
             <ScrollReveal>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -275,7 +275,7 @@ export default async function Home() {
               06 — LOOKING AHEAD: Forward outlook + Countdown Events
              ═══════════════════════════════════════════════════════════════ */}
           {(hasLookingAhead || filteredEvents.length > 0) && (
-            <div className="mt-16">
+            <div id="outlook" className="mt-10 scroll-mt-16">
               <SectionLabel number="06" title="Looking Ahead" className="mb-4" />
 
               {hasLookingAhead && (
@@ -321,7 +321,7 @@ export default async function Home() {
           {/* ═══════════════════════════════════════════════════════════════
               YOU'RE CAUGHT UP — Completion marker
              ═══════════════════════════════════════════════════════════════ */}
-          <div className="mt-16 flex flex-col items-center gap-1">
+          <div className="mt-10 flex flex-col items-center gap-1">
             <p className="font-[family-name:var(--font-heading)] text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
               You&rsquo;re caught up
             </p>

@@ -17,17 +17,17 @@ import type { BriefingJSON } from "../src/lib/types";
 
 // ─── Palette (inline — CSS variables not supported in email) ──────────────────
 const colors = {
-  bgBase: "#111318",
-  bgSurface: "#191C23",
-  bgElevated: "#22262F",
+  bgBase: "#F4F3F1",
+  bgSurface: "#FFFFFF",
+  bgElevated: "#F9F8F6",
   accent: "#F7931A",
   accentHover: "#FFB347",
-  textPrimary: "#F0F0F5",
-  textSecondary: "#9CA3B0",
-  textMuted: "#5E6577",
-  border: "#2D3240",
-  green: "#4ADE80",
-  red: "#F87171",
+  textPrimary: "#1A1A1A",
+  textSecondary: "#4A4A4A",
+  textMuted: "#8A8A8A",
+  border: "#E0DFDD",
+  green: "#16A34A",
+  red: "#DC2626",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -233,8 +233,8 @@ export default function DailyDigest({
           fontFamily="Georgia"
           fallbackFontFamily="serif"
         />
-        <meta name="color-scheme" content="dark" />
-        <meta name="supported-color-schemes" content="dark" />
+        <meta name="color-scheme" content="light" />
+        <meta name="supported-color-schemes" content="light" />
       </Head>
       <Preview>
         BTC {formatUSD(mkt.price_usd)} ({formatPct(mkt.change_24h_pct)})
@@ -411,11 +411,20 @@ export default function DailyDigest({
               Read Full Briefing
             </Link>
             <Text style={styles.ctaChatText}>
+              Download today&apos;s 1-page summary:
+            </Text>
+            <Link href="%%PDF_URL%%" style={styles.ctaChatButton}>
+              Download PDF Summary
+            </Link>
+            <Text style={styles.ctaChatText}>
               Or ask our AI about today&apos;s data:
             </Text>
             <Link href="%%CHAT_URL%%" style={styles.ctaChatButton}>
               Chat with AI
             </Link>
+            <Text style={styles.communityText}>
+              As a subscriber, you have exclusive access to our AI assistant, daily PDF briefings, and the BTC Today community.
+            </Text>
           </Section>
 
           <Hr style={styles.hr} />
@@ -711,5 +720,13 @@ const styles = {
     color: colors.accent,
     textDecoration: "none",
     fontSize: "12px",
+  } as React.CSSProperties,
+
+  communityText: {
+    fontSize: "13px",
+    color: colors.textSecondary,
+    margin: "20px 0 0",
+    lineHeight: "1.6",
+    textAlign: "center" as const,
   } as React.CSSProperties,
 } as const;
