@@ -157,7 +157,7 @@ export function BitcoinHero({
             </div>
           </div>
 
-          <BitcoinCoin size={56} className="shrink-0 drop-shadow-[0_4px_20px_rgba(247,147,26,0.3)]" />
+          <BitcoinCoin className="shrink-0 size-10 sm:size-14 drop-shadow-[0_4px_20px_rgba(247,147,26,0.3)]" />
         </div>
 
         {/* Headline + sentiment */}

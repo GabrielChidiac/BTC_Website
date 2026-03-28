@@ -3,17 +3,17 @@ interface BitcoinCoinProps {
   className?: string;
 }
 
-export function BitcoinCoin({ size = 120, className = "" }: BitcoinCoinProps) {
+export function BitcoinCoin({ size, className = "" }: BitcoinCoinProps) {
   return (
     <div
       className={`coin-spin pointer-events-none select-none ${className}`}
-      style={{ width: size, height: size, perspective: "400px" }}
+      style={size ? { width: size, height: size, perspective: "400px" } : { perspective: "400px" }}
     >
       <svg
         viewBox="0 0 120 120"
         width={size}
         height={size}
-        className="coin-face"
+        className={`coin-face ${!size ? "w-full h-full" : ""}`}
         aria-hidden="true"
       >
         <defs>
