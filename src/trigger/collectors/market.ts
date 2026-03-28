@@ -4,6 +4,7 @@ import {
   fetchBtcPrice,
   fetchGlobalData,
   fetchHistoricalPrices,
+  fetchOHLC,
 } from "@/trigger/lib/coingecko";
 import { fetchMempoolData } from "@/trigger/lib/mempool";
 import { calculateIndicators } from "@/trigger/lib/technical-indicators";
@@ -27,6 +28,7 @@ export const marketCollector = task({
       btcPriceResult,
       globalDataResult,
       historicalResult,
+      ohlcResult,
       mempoolResult,
       sp500Result,
       nasdaqResult,
@@ -39,6 +41,7 @@ export const marketCollector = task({
       fetchBtcPrice(),
       fetchGlobalData(),
       fetchHistoricalPrices(365),
+      fetchOHLC(30),
       fetchMempoolData(),
       fetchSP500(),
       fetchNASDAQ(),
@@ -74,6 +77,7 @@ export const marketCollector = task({
     const btcPrice = unwrap(btcPriceResult, "btcPrice");
     const globalData = unwrap(globalDataResult, "globalData");
     const closingPrices = unwrap(historicalResult, "historicalPrices");
+    const ohlc = unwrap(ohlcResult, "ohlc30d");
     const mempool = unwrap(mempoolResult, "mempool");
     const sp500 = unwrap(sp500Result, "sp500");
     const nasdaq = unwrap(nasdaqResult, "nasdaq");
@@ -99,6 +103,20 @@ export const marketCollector = task({
         dataPoints: closingPrices?.length ?? 0,
       });
       sources["technicalIndicators"] = false;
+    }
+
+    // Override support/resistance with true 30-day high/low from OHLC candles
+    if (ohlc && ohlc.highs.length > 0 && ohlc.lows.length > 0) {
+      technical.resistance_level = Math.round(Math.max(...ohlc.highs) * 100) / 100;
+      technical.support_level = Math.round(Math.min(...ohlc.lows) * 100) / 100;
+      sources["ohlc30d"] = true;
+      logger.info("Support/resistance from OHLC", {
+        support: technical.support_level,
+        resistance: technical.resistance_level,
+        candles: ohlc.highs.length,
+      });
+    } else {
+      logger.warn("OHLC data unavailable — support/resistance from closing prices");
     }
 
     // ── Step 4: Compute BTC YTD change ──────────────────────────────────────

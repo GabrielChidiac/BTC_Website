@@ -91,4 +91,24 @@ export async function fetchHistoricalPrices(days: number): Promise<Result<number
   }
 }
 
+export async function fetchOHLC(days: number): Promise<Result<{ highs: number[]; lows: number[] }>> {
+  try {
+    const res = await cgFetch(
+      `/coins/bitcoin/ohlc?vs_currency=usd&days=${days}`
+    );
+    if (!res.ok) {
+      return { data: null, error: `[coingecko] fetchOHLC failed with status ${res.status}` };
+    }
+
+    // Each entry: [timestamp, open, high, low, close]
+    const json: [number, number, number, number, number][] = await res.json();
+    const highs = json.map((candle) => candle[2]);
+    const lows = json.map((candle) => candle[3]);
+
+    return { data: { highs, lows }, error: null };
+  } catch (e) {
+    return { data: null, error: `[coingecko] ${(e as Error).message}` };
+  }
+}
+
 // Gold price now fetched via Yahoo Finance (GC=F) in comparison.ts
