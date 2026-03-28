@@ -28,6 +28,8 @@ npm run build                 # Production build (verifies all types)
 npx trigger.dev@latest dev    # Trigger.dev local runner
 ```
 
+CI/CD: `.github/workflows/trigger-deploy.yml` deploys Trigger.dev tasks on push to main.
+
 Path alias: `@/*` maps to `./src/*` (configured in `tsconfig.json`).
 
 ## Documentation
@@ -75,7 +77,8 @@ All listed in `.env.example`. Required keys:
 | `PERPLEXITY_API_KEY` | sonar-pro (enrichment: forward outlook, institutional flows, expert insights, supply dynamics) |
 | `KIE_API_KEY` | Kie.ai (Claude fallback, OpenAI-compatible) |
 | `COINGECKO_API_KEY` | CoinGecko Demo (free, `x-cg-demo-api-key` header) |
-| `ALPHA_VANTAGE_API_KEY` | Alpha Vantage (unused — DXY now via Yahoo Finance) |
+| `SEARCHAPI_KEY` | SearchAPI.io (Google News scraping for news collector) |
+| `JINA_API_KEY` | Jina Reader (full article content extraction, 200 RPM free) |
 | `TRIGGER_SECRET_KEY` | Trigger.dev |
 | `RESEND_API_KEY` | Resend (email) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
@@ -83,6 +86,25 @@ All listed in `.env.example`. Required keys:
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role (server-side writes) |
 | `REVALIDATION_SECRET` | Protects `/api/revalidate` endpoint |
 | `NEXT_PUBLIC_SITE_URL` | Site URL (default: `http://localhost:3000`) |
+
+## Database (Supabase)
+3 tables, migrations in `supabase/migrations/`:
+| Table | Purpose |
+|---|---|
+| `daily_briefings` | `date` PK + `content` JSONB (the full `BriefingJSON`) |
+| `subscribers` | Email list (`email`, `name`, `status`: active/unsubscribed) |
+| `verification_codes` | OTP codes for chat access (`email`, `code`, `expires_at`, `used`) |
+
+RLS: briefings are publicly readable; subscribers and verification codes are service-role only.
+
+## API Routes
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/api/subscribe` | POST | Add email subscriber |
+| `/api/revalidate` | POST | ISR revalidation (requires `REVALIDATION_SECRET`) |
+| `/api/chat` | POST | Claude chat — requires OTP token, sends last 7 days of briefings as context |
+| `/api/chat/verify-send` | POST | Send 6-digit OTP to subscriber email |
+| `/api/chat/verify-check` | POST | Verify OTP, returns token for `/api/chat` |
 
 ## Pipeline Architecture
 ```
@@ -156,4 +178,3 @@ All listed in `.env.example`. Required keys:
 - [ ] Add rate limiting to `/api/chat` (unthrottled Claude proxy risk)
 - [ ] Consider adding `middleware.ts` for security headers (CSP, X-Frame-Options)
 - [ ] Remove unused dependency `youtube-transcript` from `package.json`
-- [ ] Remove unused env var `ALPHA_VANTAGE_API_KEY` (DXY comes from Yahoo Finance)
