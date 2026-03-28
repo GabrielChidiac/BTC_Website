@@ -62,7 +62,7 @@ export const newsCollector = task({
 
     // Pre-filter for BTC relevance (lightweight keyword check)
     const BTC_KEYWORDS = /\b(bitcoin|btc|satoshi|sats|halving|lightning network|mining|hashrate|block reward|digital gold)\b/i;
-    const ALTCOIN_ONLY = /\b(ethereum|solana|xrp|tron|trx|cardano|polkadot|dogecoin|shiba|avalanche|chainlink)\b/i;
+    const ALTCOIN_ONLY = /\b(ethereum|solana|xrp|tron|trx|cardano|polkadot|dogecoin|shiba|avalanche|chainlink|stablecoin|tether|polymarket|nft|defi)\b/i;
 
     const btcRelevant = recent.filter((article) => {
       const text = `${article.title} ${article.description ?? ""}`;
