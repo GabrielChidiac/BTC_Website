@@ -233,28 +233,34 @@ export default async function Home() {
             <SectionLabel number="05" title="Deep Dive" className="mb-4" />
             <ScrollReveal>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <MotionCard>
-                  <Card className="gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
-                    <CardContent className="p-4 sm:p-5">
-                      <InstitutionalFlows flows={briefing.institutional_flows} />
-                    </CardContent>
-                  </Card>
+                <MotionCard className="h-full">
+                  <div className="shimmer-border rounded-xl h-full">
+                    <Card className="h-full gap-0 py-0 ring-0">
+                      <CardContent className="p-4 sm:p-5">
+                        <InstitutionalFlows flows={briefing.institutional_flows} />
+                      </CardContent>
+                    </Card>
+                  </div>
                 </MotionCard>
 
-                <MotionCard>
-                  <Card className="gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
-                    <CardContent className="p-4 sm:p-5">
-                      <TechnicalSignals signals={briefing.technical_signals} />
-                    </CardContent>
-                  </Card>
+                <MotionCard className="h-full">
+                  <div className="shimmer-border rounded-xl h-full">
+                    <Card className="h-full gap-0 py-0 ring-0">
+                      <CardContent className="p-4 sm:p-5">
+                        <TechnicalSignals signals={briefing.technical_signals} />
+                      </CardContent>
+                    </Card>
+                  </div>
                 </MotionCard>
 
-                <MotionCard>
-                  <Card className="gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
-                    <CardContent className="p-4 sm:p-5">
-                      <NetworkHealth network={briefing.network_health} />
-                    </CardContent>
-                  </Card>
+                <MotionCard className="h-full">
+                  <div className="shimmer-border rounded-xl h-full">
+                    <Card className="h-full gap-0 py-0 ring-0">
+                      <CardContent className="p-4 sm:p-5">
+                        <NetworkHealth network={briefing.network_health} />
+                      </CardContent>
+                    </Card>
+                  </div>
                 </MotionCard>
               </div>
             </ScrollReveal>
@@ -325,7 +331,7 @@ export default async function Home() {
             <p className="font-[family-name:var(--font-heading)] text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-accent)]">
               You&rsquo;re caught up
             </p>
-            <p className="text-xs text-[var(--color-accent)]/70">
+            <p className="text-xs text-[var(--color-accent)]">
               Next briefing: 2 AM CET tomorrow
             </p>
           </div>

@@ -44,7 +44,8 @@ export function DayInBriefExpandable({
   const hasMore = hiddenBullets.length > 0 || urgentEvents.length > 0;
 
   return (
-    <Card className="gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+    <div className="shimmer-border rounded-xl h-full">
+    <Card className="h-full gap-0 py-0 ring-0">
       <CardContent className="p-5 sm:p-6">
         {/* Section label */}
         <div className="flex items-center gap-3 mb-4">
@@ -137,6 +138,7 @@ export function DayInBriefExpandable({
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }
 
