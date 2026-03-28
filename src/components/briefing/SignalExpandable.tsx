@@ -49,7 +49,7 @@ export function SignalExpandable({ item }: { item: SignalItem }) {
   );
 
   return (
-    <ExpandableCard preview={preview} className="h-full">
+    <ExpandableCard preview={preview}>
       <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
         {item.data.summary}
       </p>

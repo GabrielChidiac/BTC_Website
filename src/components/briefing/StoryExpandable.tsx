@@ -14,7 +14,6 @@ export function StoryExpandable({
   return (
     <ExpandableCard
       defaultOpen={defaultOpen}
-      className="h-full"
       preview={
         <div className="flex items-start gap-2.5">
           <Badge variant={story.sentiment as "bullish" | "bearish" | "neutral"}>{story.sentiment}</Badge>

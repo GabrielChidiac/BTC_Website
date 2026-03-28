@@ -193,7 +193,7 @@ export default async function Home() {
             {/* Signals (regulatory + adoption) merged into What Happened */}
             {signals.length > 0 && (
               <ScrollReveal>
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-start">
                   {signals.slice(0, 4).map((item, i) => (
                     <SignalExpandable key={i} item={item} />
                   ))}
@@ -209,7 +209,7 @@ export default async function Home() {
             <div id="stories" className="mt-10 scroll-mt-16">
               <SectionLabel number="04" title="Top Stories" className="mb-4" />
               <ScrollReveal variant="left">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-start">
                   {briefing.top_stories.slice(0, 4).map((story, i) => (
                     <StoryExpandable
                       key={story.url || i}
@@ -234,33 +234,27 @@ export default async function Home() {
             <ScrollReveal>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <MotionCard className="h-full">
-                  <div className="shimmer-border rounded-xl h-full">
-                    <Card className="h-full gap-0 py-0 ring-0">
-                      <CardContent className="p-4 sm:p-5">
-                        <InstitutionalFlows flows={briefing.institutional_flows} />
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                    <CardContent className="p-4 sm:p-5">
+                      <InstitutionalFlows flows={briefing.institutional_flows} />
+                    </CardContent>
+                  </Card>
                 </MotionCard>
 
                 <MotionCard className="h-full">
-                  <div className="shimmer-border rounded-xl h-full">
-                    <Card className="h-full gap-0 py-0 ring-0">
-                      <CardContent className="p-4 sm:p-5">
-                        <TechnicalSignals signals={briefing.technical_signals} />
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                    <CardContent className="p-4 sm:p-5">
+                      <TechnicalSignals signals={briefing.technical_signals} />
+                    </CardContent>
+                  </Card>
                 </MotionCard>
 
                 <MotionCard className="h-full">
-                  <div className="shimmer-border rounded-xl h-full">
-                    <Card className="h-full gap-0 py-0 ring-0">
-                      <CardContent className="p-4 sm:p-5">
-                        <NetworkHealth network={briefing.network_health} />
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                    <CardContent className="p-4 sm:p-5">
+                      <NetworkHealth network={briefing.network_health} />
+                    </CardContent>
+                  </Card>
                 </MotionCard>
               </div>
             </ScrollReveal>
@@ -268,7 +262,7 @@ export default async function Home() {
             {/* Expert Insights — max 3 quotes */}
             {briefing.expert_insights && briefing.expert_insights.length > 0 && (
               <ScrollReveal>
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-start">
                   {briefing.expert_insights.slice(0, 3).map((insight, i) => (
                     <ExpertExpandable key={i} insight={insight} />
                   ))}
@@ -296,10 +290,10 @@ export default async function Home() {
                     {filteredEvents.map((event) => (
                       <MotionCard key={event.name} lift={4} className="h-full">
                         <Card
-                          className={`h-full gap-0 py-0 ring-foreground/0 ${
+                          className={`card-interactive h-full gap-0 py-0 ring-1 ${
                             event.days_away !== null && event.days_away <= 3
-                              ? "ring-1 ring-[var(--color-accent)]/30 glow-card"
-                              : "ring-1 ring-[var(--color-border)]"
+                              ? "ring-[var(--color-accent)]/30 glow-card"
+                              : "ring-[var(--color-border)]"
                           }`}
                         >
                           <CardContent className="p-4">
