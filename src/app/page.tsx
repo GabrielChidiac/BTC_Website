@@ -322,10 +322,10 @@ export default async function Home() {
               YOU'RE CAUGHT UP — Completion marker
              ═══════════════════════════════════════════════════════════════ */}
           <div className="mt-10 flex flex-col items-center gap-1">
-            <p className="font-[family-name:var(--font-heading)] text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+            <p className="font-[family-name:var(--font-heading)] text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-accent)]">
               You&rsquo;re caught up
             </p>
-            <p className="text-xs text-[var(--color-text-muted)]">
+            <p className="text-xs text-[var(--color-accent)]/70">
               Next briefing: 2 AM CET tomorrow
             </p>
           </div>
