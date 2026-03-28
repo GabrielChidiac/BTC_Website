@@ -17,10 +17,16 @@ const SYSTEM_PROMPT = `You are BTC Today's AI assistant, a knowledgeable Bitcoin
 
 CRITICAL DATA RULES:
 - For ALL current Bitcoin data (price, ATH, market cap, network stats, ETF flows, technical indicators, etc.), use ONLY the briefing data provided below. Never rely on your training data for current numbers, prices, or market statistics.
-- If the user asks about data not in the briefing, say "I don't have that data in today's briefing" rather than guessing or using training knowledge.
+- If the user asks about data not in the briefing, say "I don't have that data in my briefing history" rather than guessing or using training knowledge.
 - Never guess, approximate, or fabricate any number, price, date, or statistic. If it's not in the data below, you don't know it.
 - The briefing data is refreshed daily at 2 AM CET. Treat it as the single source of truth for Bitcoin's current state.
 - You may use your general knowledge for conceptual explanations (e.g. "what is RSI", "how does the halving work"), but never for current values.
+
+HISTORICAL DATA:
+- You have access to the last 7 days of briefing data. Use this to identify trends, compare day-over-day changes, and provide richer analysis.
+- When analyzing trends, reference specific data points from multiple days (e.g. "price moved from $X on Monday to $Y today, a Z% shift").
+- You can compare prices across days, track sentiment shifts, identify narrative changes, and spot emerging patterns in institutional flows and technical signals.
+- If the user asks "what happened this week" or "how has sentiment changed", draw on all available days.
 
 Guidelines:
 - Write for sophisticated investors and business executives
@@ -149,6 +155,39 @@ ${briefing.looking_ahead || "Not available today."}
 `.trim();
 }
 
+function buildRecentBriefingSummary(briefing: BriefingJSON): string {
+  const { market_snapshot: mkt } = briefing;
+  const stories = briefing.top_stories
+    .slice(0, 3)
+    .map((s) => `- [${s.sentiment}] ${s.headline} (${s.source})`)
+    .join("\n");
+
+  const consensus = briefing.narrative_consensus;
+  const tech = briefing.technical_signals;
+  const fearGreed = briefing.fear_greed;
+  const lookingAhead = (briefing.looking_ahead || "").split("\n\n")[0] || "";
+
+  return `
+${briefing.date}:
+${briefing.one_line ? `Key insight: ${briefing.one_line}` : ""}
+Price: $${mkt.price_usd.toLocaleString()} | 24h: ${mkt.change_24h_pct >= 0 ? "+" : ""}${mkt.change_24h_pct.toFixed(2)}% | 7d: ${mkt.change_7d_pct >= 0 ? "+" : ""}${mkt.change_7d_pct.toFixed(2)}%
+${fearGreed ? `Fear & Greed: ${fearGreed.value} (${fearGreed.label})` : ""}
+${consensus ? `Consensus: ${consensus.label} (score: ${consensus.score}/100)` : ""}
+${tech ? `Technical: RSI ${tech.rsi_14} | ${tech.signal_summary}` : ""}
+Top stories:
+${stories || "No stories"}
+${lookingAhead ? `Outlook: ${lookingAhead}` : ""}
+`.trim();
+}
+
+function buildOlderBriefingSummary(briefing: BriefingJSON): string {
+  const { market_snapshot: mkt } = briefing;
+  const consensus = briefing.narrative_consensus;
+  const topStory = briefing.top_stories[0];
+
+  return `${briefing.date}: Price $${mkt.price_usd.toLocaleString()}, 24h ${mkt.change_24h_pct >= 0 ? "+" : ""}${mkt.change_24h_pct.toFixed(2)}%, Consensus: "${consensus?.label ?? "N/A"}" ${briefing.one_line ? `-- "${briefing.one_line}"` : ""}${topStory ? ` | Top: "${topStory.headline}"` : ""}`;
+}
+
 export async function POST(request: Request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -238,16 +277,41 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: briefingRow } = await supabase
+  const { data: briefingRows } = await supabase
     .from("daily_briefings")
-    .select("content")
+    .select("date, content")
     .order("date", { ascending: false })
-    .limit(1)
-    .single();
+    .limit(7);
 
-  const briefingContext = briefingRow
-    ? buildBriefingContext((briefingRow as DailyBriefingRow).content)
-    : "No briefing data available today.";
+  let briefingContext = "No briefing data available.";
+
+  if (briefingRows && briefingRows.length > 0) {
+    const contextParts: string[] = [];
+
+    // Today's briefing: full detail
+    const today = (briefingRows[0] as DailyBriefingRow).content;
+    contextParts.push(buildBriefingContext(today));
+
+    // Days 1-2: medium summary
+    const recentDays = briefingRows.slice(1, 3);
+    if (recentDays.length > 0) {
+      contextParts.push("\n\nRECENT BRIEFINGS:");
+      for (const row of recentDays) {
+        contextParts.push(buildRecentBriefingSummary((row as DailyBriefingRow).content));
+      }
+    }
+
+    // Days 3-6: minimal summary
+    const olderDays = briefingRows.slice(3, 7);
+    if (olderDays.length > 0) {
+      contextParts.push("\n\nHISTORICAL SNAPSHOT:");
+      for (const row of olderDays) {
+        contextParts.push(buildOlderBriefingSummary((row as DailyBriefingRow).content));
+      }
+    }
+
+    briefingContext = contextParts.join("\n");
+  }
 
   const systemPrompt = `${SYSTEM_PROMPT}\n\n${briefingContext}`;
 
@@ -269,7 +333,7 @@ export async function POST(request: Request) {
 
     const response = await client.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 1024,
+      max_tokens: 4096,
       system: systemPrompt,
       messages,
     });
@@ -278,11 +342,59 @@ export async function POST(request: Request) {
       response.content[0].type === "text" ? response.content[0].text : "";
 
     return NextResponse.json({ message: text });
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json(
-      { error: `AI service error: ${errorMessage}` },
-      { status: 502 }
-    );
+  } catch (primaryError) {
+    const err = primaryError as Error & { status?: number };
+    const status = err.status ?? 0;
+    const isRetryable = status === 429 || status >= 500;
+
+    if (!isRetryable) {
+      return NextResponse.json(
+        { error: `AI service error: ${err.message}` },
+        { status: 502 }
+      );
+    }
+
+    // Fallback to Kie.ai on retryable errors
+    const kieKey = process.env.KIE_API_KEY;
+    if (!kieKey) {
+      return NextResponse.json(
+        { error: "AI service temporarily unavailable" },
+        { status: 502 }
+      );
+    }
+
+    try {
+      const res = await fetch("https://api.kie.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${kieKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...messages,
+          ],
+          max_tokens: 4096,
+        }),
+      });
+
+      if (!res.ok) {
+        return NextResponse.json(
+          { error: "AI service temporarily unavailable" },
+          { status: 502 }
+        );
+      }
+
+      const json = await res.json();
+      const text = json.choices?.[0]?.message?.content ?? "";
+      return NextResponse.json({ message: text });
+    } catch {
+      return NextResponse.json(
+        { error: "AI service temporarily unavailable" },
+        { status: 502 }
+      );
+    }
   }
 }

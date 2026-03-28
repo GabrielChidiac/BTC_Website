@@ -172,6 +172,7 @@ export interface RawArticle {
   source: string;
   published_at: string;
   description?: string;
+  content?: string; // Full article text via Jina Reader
 }
 
 export interface NewsCollectorOutput {

@@ -1,8 +1,10 @@
 import { task, logger } from "@trigger.dev/sdk/v3";
 import { queryPerplexity } from "@/trigger/lib/perplexity";
+import { fetchForwardLookingContext } from "@/trigger/lib/searchapi";
 import { getExpertPhotoUrls } from "@/lib/expert-photos";
 import type {
   TopStory,
+  RawArticle,
   InstitutionalFlows,
   SupplyDynamics,
   ExpertInsight,
@@ -10,30 +12,86 @@ import type {
 
 // ─── Looking Ahead ──────────────────────────────────────────────────────────
 
-const LOOKING_AHEAD_SYSTEM = `You are a senior macro-financial analyst writing for high-net-worth investors and business executives. Use your web search capabilities to find the latest developments.
+const LOOKING_AHEAD_SYSTEM = `You are a senior macro-financial analyst and Bitcoin strategist writing the flagship forward-looking section for an institutional-grade daily briefing. Your audience is high-net-worth investors, hedge fund managers, and business executives. Use your web search capabilities to find the very latest developments.
+
+This is the most important section of the entire briefing. Be comprehensive and deeply informed.
 
 Guidelines:
-- Focus on macro catalysts, regulatory milestones, and institutional movements for the next 24-72 hours
-- Write 2-3 concise, polished paragraphs. Data-driven, no hype
-- Assume the reader understands finance and markets. Speak peer-to-peer
-- Each paragraph should cover one clear theme: e.g. macro outlook, institutional positioning, regulatory catalysts
-- Integrate specific data points (prices, percentages, dates, names) naturally into sentences
+- Write 4-5 substantive paragraphs, each covering one clear theme
+- Paragraph themes: (1) macro catalysts and central bank policy, (2) regulatory milestones and deadlines, (3) institutional positioning and ETF/corporate treasury signals, (4) technical price levels and what they mean for positioning, (5) on-chain and network signals that sophisticated investors track
+- Search the web thoroughly for upcoming events: FOMC meetings, CPI releases, jobs data, central bank decisions, SEC deadlines, congressional hearings, Bitcoin conferences, ETF approval/review dates
+- Integrate specific data points (prices, percentages, dates, names, flow numbers) naturally into every paragraph
+- Be forward-looking: tell the reader what to WATCH FOR, not just what happened
 - Do NOT use markdown formatting. Return plain text only
 - Do NOT include citation markers like [1], [2], [3] or any bracketed references. Weave source context naturally into the text (e.g. "according to SEC filings" or "per Bloomberg data")
 - Never use em dashes or en dashes. Use commas, periods, or semicolons instead
 - No bullet points. Write in flowing editorial prose like the Financial Times or Bloomberg
 - Always close the final paragraph on a constructive or long-term bullish note grounded in verifiable data (e.g. institutional inflows, network fundamentals, supply scarcity, adoption milestones). Never fabricate; if the short-term outlook is bearish, anchor the closing in Bitcoin's structural long-term thesis rather than price predictions.`;
 
-function buildLookingAheadPrompt(stories: TopStory[]): string {
-  if (stories.length === 0) {
-    return "What are the key macro and institutional catalysts Bitcoin investors should watch for in the next 24-72 hours?";
+interface LookingAheadContext {
+  top_stories: TopStory[];
+  all_articles: RawArticle[];
+  forward_headlines: string[];
+  market_summary: string | null;
+  briefing_summary: EnrichmentPayload["briefing_summary"];
+}
+
+function buildLookingAheadPrompt(ctx: LookingAheadContext): string {
+  const parts: string[] = [];
+
+  parts.push("TODAY'S COMPLETE BITCOIN INTELLIGENCE:\n");
+
+  // All analyzed top stories
+  if (ctx.top_stories.length > 0) {
+    parts.push("## Key Stories (AI-analyzed)");
+    for (const s of ctx.top_stories) {
+      parts.push(`- [${s.sentiment}] "${s.headline}" (${s.source}): ${s.summary}`);
+    }
+    parts.push("");
   }
 
-  const storyLines = stories
-    .map((s, i) => `${i + 1}. "${s.headline}" (${s.source})\n   ${s.summary}`)
-    .join("\n\n");
+  // Additional article headlines for breadth (cap at 30)
+  const extraArticles = ctx.all_articles
+    .filter((a) => !ctx.top_stories.some((s) => s.url === a.url))
+    .slice(0, 30);
+  if (extraArticles.length > 0) {
+    parts.push("## Additional Headlines (broader coverage)");
+    for (const a of extraArticles) {
+      parts.push(`- "${a.title}" (${a.source})`);
+    }
+    parts.push("");
+  }
 
-  return `Here are today's top Bitcoin stories:\n\n${storyLines}\n\nBased on these developments, what should sophisticated investors watch for in the next 24-72 hours? Focus on macro implications, regulatory catalysts, and institutional positioning.`;
+  // Forward-looking headlines from SearchAPI
+  if (ctx.forward_headlines.length > 0) {
+    parts.push("## Upcoming Events Intelligence (web-scraped)");
+    for (const h of ctx.forward_headlines.slice(0, 20)) {
+      parts.push(`- ${h}`);
+    }
+    parts.push("");
+  }
+
+  // Market state
+  if (ctx.market_summary) {
+    parts.push("## Market State");
+    parts.push(ctx.market_summary);
+    parts.push("");
+  }
+
+  // Briefing summary from AI Brain
+  if (ctx.briefing_summary) {
+    const bs = ctx.briefing_summary;
+    parts.push("## Current Narrative & Analysis");
+    if (bs.one_line) parts.push(`Key insight: ${bs.one_line}`);
+    if (bs.narrative_label) parts.push(`Consensus: ${bs.narrative_label} (score: ${bs.narrative_score}/100)`);
+    if (bs.macro_narrative) parts.push(`Macro context: ${bs.macro_narrative}`);
+    if (bs.technical_summary) parts.push(`Technical: ${bs.technical_summary}`);
+    parts.push("");
+  }
+
+  parts.push("Based on ALL of this intelligence, write a comprehensive forward-looking analysis for the next 24-72 hours. Cover: (1) macro catalysts and central bank policy implications, (2) regulatory milestones and upcoming deadlines, (3) institutional positioning signals and ETF flow trends, (4) key technical price levels to watch and their significance, (5) on-chain and network signals. Search the web for any additional upcoming events not covered above. This is the flagship section; be thorough and insightful.");
+
+  return parts.join("\n");
 }
 
 // ─── Institutional Flows ────────────────────────────────────────────────────
@@ -110,6 +168,15 @@ Rules:
 
 interface EnrichmentPayload {
   top_stories: TopStory[];
+  all_articles: RawArticle[];
+  market_summary: string | null;
+  briefing_summary: {
+    one_line: string;
+    macro_narrative: string;
+    technical_summary: string;
+    narrative_label: string;
+    narrative_score: number;
+  } | null;
 }
 
 interface EnrichmentOutput {
@@ -138,17 +205,37 @@ const DEFAULTS: EnrichmentOutput = {
 export const enrichmentTask = task({
   id: "enrichment",
   run: async (payload: EnrichmentPayload): Promise<EnrichmentOutput> => {
-    const { top_stories } = payload;
-    logger.info("Starting enrichment", { storyCount: top_stories.length });
+    const { top_stories, all_articles, market_summary, briefing_summary } = payload;
+    logger.info("Starting enrichment", {
+      storyCount: top_stories.length,
+      articleCount: all_articles.length,
+    });
 
     const output: EnrichmentOutput = { ...DEFAULTS };
+
+    // Fetch forward-looking context from SearchAPI (1 query, non-fatal)
+    let forwardHeadlines: string[] = [];
+    try {
+      const fwdResult = await fetchForwardLookingContext();
+      if (fwdResult.data) forwardHeadlines = fwdResult.data;
+    } catch {
+      logger.warn("Forward-looking SearchAPI scrape failed — continuing without");
+    }
+
+    const lookingAheadCtx: LookingAheadContext = {
+      top_stories,
+      all_articles,
+      forward_headlines: forwardHeadlines,
+      market_summary,
+      briefing_summary,
+    };
 
     // Run all Perplexity queries in parallel (non-fatal individually)
     const [lookingAheadResult, flowsResult, expertsResult, supplyResult] =
       await Promise.allSettled([
         queryPerplexity({
           system: LOOKING_AHEAD_SYSTEM,
-          prompt: buildLookingAheadPrompt(top_stories),
+          prompt: buildLookingAheadPrompt(lookingAheadCtx),
         }),
         queryPerplexity({
           system: FLOWS_SYSTEM,

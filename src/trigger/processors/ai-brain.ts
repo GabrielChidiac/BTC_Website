@@ -311,7 +311,7 @@ function buildUserPrompt(
   const articlesText = news.articles
     .map(
       (a, i) =>
-        `${i + 1}. **${a.title}**\n   Source: ${a.source}\n   URL: ${a.url}\n   Published: ${a.published_at}\n   Description: ${a.description ?? "N/A"}`
+        `${i + 1}. **${a.title}**\n   Source: ${a.source}\n   URL: ${a.url}\n   Published: ${a.published_at}\n   Description: ${a.description ?? "N/A"}${a.content ? `\n   Full article: ${a.content}` : ""}`
     )
     .join("\n\n");
   sections.push(`## News Articles (${news.articles.length} total)\n${articlesText || "No articles available."}`);

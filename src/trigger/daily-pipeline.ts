@@ -66,10 +66,25 @@ export const dailyPipelineTask = schedules.task({
       expert_insights: [] as BriefingJSON["expert_insights"],
     };
 
+    // Build market summary for enrichment context
+    const marketOutput = marketRun?.ok ? marketRun.output : null;
+    const marketSummary = marketOutput
+      ? `Price: $${marketOutput.price.usd.toLocaleString()} | 24h: ${marketOutput.price.change_24h_pct >= 0 ? "+" : ""}${marketOutput.price.change_24h_pct.toFixed(2)}% | 7d: ${marketOutput.price.change_7d_pct >= 0 ? "+" : ""}${marketOutput.price.change_7d_pct.toFixed(2)}% | Dominance: ${marketOutput.dominance_pct.toFixed(1)}% | RSI: ${marketOutput.technical.rsi_14.toFixed(0)} | SMA-50: $${marketOutput.technical.sma_50.toLocaleString()} | SMA-200: $${marketOutput.technical.sma_200.toLocaleString()}${marketOutput.fear_greed ? ` | Fear & Greed: ${marketOutput.fear_greed.value} (${marketOutput.fear_greed.label})` : ""}`
+      : null;
+
     try {
       const enriched = await enrichmentTask
         .triggerAndWait({
-          top_stories: briefing.top_stories.slice(0, 3),
+          top_stories: briefing.top_stories,
+          all_articles: newsRun?.ok ? newsRun.output.articles : [],
+          market_summary: marketSummary,
+          briefing_summary: {
+            one_line: briefing.one_line ?? "",
+            macro_narrative: briefing.macro_context?.narrative ?? "",
+            technical_summary: briefing.technical_signals?.signal_summary ?? "",
+            narrative_label: briefing.narrative_consensus?.label ?? "",
+            narrative_score: briefing.narrative_consensus?.score ?? 0,
+          },
         })
         .unwrap();
       enrichment = enriched;

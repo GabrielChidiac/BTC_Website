@@ -12,6 +12,13 @@ export const RSS_FEEDS = [
   { name: "CNBC Crypto", url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=33002079" },
 ] as const;
 
+// ─── SearchAPI ─────────────────────────────────────────────────────────────
+
+export const SEARCHAPI_BASE = "https://www.searchapi.io/api/v1/search";
+export const SEARCH_QUERIES = [
+  "Bitcoin BTC",
+] as const;
+
 // ─── API Base URLs ──────────────────────────────────────────────────────────
 
 export const COINGECKO_BASE = "https://api.coingecko.com/api/v3";

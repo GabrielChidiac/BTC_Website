@@ -2,6 +2,8 @@ import { task } from "@trigger.dev/sdk/v3";
 import type { NewsCollectorOutput, RawArticle } from "@/lib/types";
 import { isWithinHours } from "@/lib/utils";
 import { fetchRssArticles } from "@/trigger/lib/rss";
+import { fetchSearchApiNews } from "@/trigger/lib/searchapi";
+import { scrapeArticles } from "@/trigger/lib/jina";
 
 function normalizeUrl(url: string): string {
   return url.toLowerCase().replace(/\/+$/, "");
@@ -10,28 +12,42 @@ function normalizeUrl(url: string): string {
 export const newsCollector = task({
   id: "news-collector",
   run: async ({ date }: { date: string }): Promise<NewsCollectorOutput> => {
-    const result = await fetchRssArticles();
+    // Fetch from both sources in parallel (either failing is non-fatal)
+    const [rssResult, searchResult] = await Promise.allSettled([
+      fetchRssArticles(),
+      fetchSearchApiNews(),
+    ]);
 
-    if (result.error || !result.data) {
-      console.warn(`[news-collector] RSS fetch error: ${result.error}`);
-      return { articles: [] };
+    const rssArticles: RawArticle[] =
+      rssResult.status === "fulfilled" && rssResult.value.data
+        ? rssResult.value.data
+        : [];
+
+    const searchArticles: RawArticle[] =
+      searchResult.status === "fulfilled" && searchResult.value.data
+        ? searchResult.value.data
+        : [];
+
+    if (rssResult.status === "rejected" || rssResult.value.error) {
+      console.warn(`[news-collector] RSS fetch error: ${rssResult.status === "rejected" ? rssResult.reason : rssResult.value.error}`);
+    }
+    if (searchResult.status === "rejected" || searchResult.value.error) {
+      console.warn(`[news-collector] SearchAPI fetch error: ${searchResult.status === "rejected" ? searchResult.reason : searchResult.value.error}`);
     }
 
-    const articles = result.data;
-    const rawCount = articles.length;
+    // Merge both sources
+    const allArticles = [...rssArticles, ...searchArticles];
 
     // Deduplicate by normalized URL
     const seen = new Set<string>();
     const deduplicated: RawArticle[] = [];
-    for (const article of articles) {
+    for (const article of allArticles) {
       const key = normalizeUrl(article.url);
-      if (!seen.has(key)) {
+      if (key && !seen.has(key)) {
         seen.add(key);
         deduplicated.push(article);
       }
     }
-
-    const deduplicatedCount = deduplicated.length;
 
     // Filter to last 24 hours
     const recent = deduplicated.filter((article) =>
@@ -45,8 +61,22 @@ export const newsCollector = task({
     );
 
     console.log(
-      `[news-collector] raw=${rawCount} → deduplicated=${deduplicatedCount} → final=${recent.length}`
+      `[news-collector] rss=${rssArticles.length} searchapi=${searchArticles.length} → deduplicated=${deduplicated.length} → final=${recent.length}`
     );
+
+    // Scrape full article text for top 10 articles via Jina Reader (non-fatal)
+    try {
+      const scraped = await scrapeArticles(recent, 10);
+      for (const article of recent) {
+        const fullText = scraped.get(article.url);
+        if (fullText) {
+          article.content = fullText;
+        }
+      }
+      console.log(`[news-collector] Enriched ${scraped.size} articles with full text`);
+    } catch (e) {
+      console.warn(`[news-collector] Jina scraping failed — continuing with headlines only: ${(e as Error).message}`);
+    }
 
     return { articles: recent };
   },
