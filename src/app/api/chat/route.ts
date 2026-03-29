@@ -8,6 +8,26 @@ import type { ChatMessage, BriefingJSON, DailyBriefingRow } from "@/lib/types";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_HISTORY = 20;
 
+// Simple in-memory rate limiter: 20 messages per 10 minutes per email
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const RATE_LIMIT_MAX = 20;
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(email: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(email);
+
+  if (!entry || now >= entry.resetAt) {
+    rateLimitMap.set(email, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+
+  entry.count++;
+  return true;
+}
+
 interface ChatRequest {
   message: string;
   email: string;
@@ -284,10 +304,10 @@ export async function POST(request: Request) {
     return expired;
   }
 
-  // Also confirm subscription is still active
+  // Also confirm subscription is still active and check tier
   const { data: subscriber, error: subError } = await supabase
     .from("subscribers")
-    .select("status")
+    .select("status, tier")
     .eq("email", email.trim().toLowerCase())
     .maybeSingle();
 
@@ -302,6 +322,21 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Subscribe to access the AI assistant" },
       { status: 403 }
+    );
+  }
+
+  if (subscriber.tier !== "pro") {
+    return NextResponse.json(
+      { error: "Pro subscription required to access AI Chat. Upgrade at /pricing" },
+      { status: 403 }
+    );
+  }
+
+  // Rate limit: 20 messages per 10 minutes per user
+  if (!checkRateLimit(email.trim().toLowerCase())) {
+    return NextResponse.json(
+      { error: "You've sent too many messages. Please wait a few minutes." },
+      { status: 429 }
     );
   }
 

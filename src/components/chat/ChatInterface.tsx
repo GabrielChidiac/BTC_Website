@@ -49,6 +49,14 @@ export function ChatInterface({ email, legacyToken, onSessionExpired }: { email:
           onSessionExpired();
           return;
         }
+        if (res.status === 403 && data.error?.includes("Pro subscription required")) {
+          setMessages([
+            ...updated,
+            { role: "assistant", content: "AI Chat is available for Pro subscribers. Visit btctoday.co/pricing to upgrade and unlock conversations about today's briefing data." },
+          ]);
+          setLoading(false);
+          return;
+        }
         setMessages([
           ...updated,
           { role: "assistant", content: data.error || "Something went wrong. Please try again." },

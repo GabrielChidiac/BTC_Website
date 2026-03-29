@@ -232,6 +232,10 @@ export interface MarketCollectorOutput {
   fear_greed: FearGreedIndex | null;
 }
 
+// ─── Subscriber tier ────────────────────────────────────────────────────────
+
+export type SubscriberTier = "free" | "pro";
+
 // ─── Database row types ─────────────────────────────────────────────────────
 
 export interface DailyBriefingRow {
@@ -244,6 +248,11 @@ export interface DailyBriefingRow {
 export interface SubscriberRow {
   id: string;
   email: string;
+  name: string | null;
   status: "active" | "unsubscribed";
+  tier: SubscriberTier;
+  ls_customer_id: string | null;
+  ls_subscription_id: string | null;
   created_at: string;
+  tier_updated_at: string | null;
 }

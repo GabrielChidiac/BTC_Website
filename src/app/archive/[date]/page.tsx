@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createServerClient, createServiceClient } from "@/lib/supabase/server";
+import { getSubscriberTier } from "@/lib/tier";
 import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
 import { formatDisplayDate } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ import { NetworkHealth } from "@/components/briefing/NetworkHealth";
 import { SupplyDynamics } from "@/components/briefing/SupplyDynamics";
 import { CountdownEvents } from "@/components/briefing/CountdownEvents";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
+import { ProGateCompact } from "@/components/premium/ProGate";
 
 export const revalidate = false;
 
@@ -74,6 +76,13 @@ export default async function ArchiveDatePage({
   if (!data) notFound();
 
   const briefing: BriefingJSON = (data as DailyBriefingRow).content;
+
+  const { tier } = await getSubscriberTier();
+  const now = new Date();
+  const sevenDaysAgo = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 7));
+  const briefingDate = new Date(date + "T00:00:00Z");
+  const isOldBriefing = briefingDate < sevenDaysAgo;
+  const canViewFull = tier === "pro" || !isOldBriefing;
 
   const [{ data: prevRows }, { data: nextRows }] = await Promise.all([
     supabase
@@ -154,26 +163,35 @@ export default async function ArchiveDatePage({
 
           <DailyDiffBanner dailyDiff={briefing.daily_diff} />
           <MarketSnapshot market={briefing.market_snapshot} />
-          <InstitutionalFlows flows={briefing.institutional_flows} />
-          <MacroContext macro={briefing.macro_context} />
-          <BtcVsEverything comparisons={briefing.btc_vs_everything} />
-          <TopStories stories={briefing.top_stories} />
-          <ExpertInsights insights={briefing.expert_insights} />
-          <Adoption updates={briefing.adoption} />
-          <Regulatory updates={briefing.regulatory} />
 
-          <div className="mt-10 flex flex-col items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-6">
-            <p className="text-sm font-medium text-[var(--color-text-secondary)]">
-              Get this briefing in your inbox every morning
-            </p>
-            <SubscribeForm />
-          </div>
+          {canViewFull ? (
+            <>
+              <InstitutionalFlows flows={briefing.institutional_flows} />
+              <MacroContext macro={briefing.macro_context} />
+              <BtcVsEverything comparisons={briefing.btc_vs_everything} />
+              <TopStories stories={briefing.top_stories} />
+              <ExpertInsights insights={briefing.expert_insights} />
+              <Adoption updates={briefing.adoption} />
+              <Regulatory updates={briefing.regulatory} />
 
-          <TechnicalSignals signals={briefing.technical_signals} />
-          <NetworkHealth network={briefing.network_health} />
-          <SupplyDynamics supply={briefing.supply_dynamics} />
-          <CountdownEvents events={briefing.countdown_events} />
-          <LookingAhead content={briefing.looking_ahead} />
+              <div className="mt-10 flex flex-col items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-6">
+                <p className="text-sm font-medium text-[var(--color-text-secondary)]">
+                  Get this briefing in your inbox every morning
+                </p>
+                <SubscribeForm />
+              </div>
+
+              <TechnicalSignals signals={briefing.technical_signals} />
+              <NetworkHealth network={briefing.network_health} />
+              <SupplyDynamics supply={briefing.supply_dynamics} />
+              <CountdownEvents events={briefing.countdown_events} />
+              <LookingAhead content={briefing.looking_ahead} />
+            </>
+          ) : (
+            <div className="mt-10">
+              <ProGateCompact message="Full briefing content for older dates is available to Pro subscribers. Recent briefings (last 7 days) are free." />
+            </div>
+          )}
 
           <nav className="mt-10 flex items-center justify-between border-t border-[var(--color-border)] pt-6">
             {prevDate ? (

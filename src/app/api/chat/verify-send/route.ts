@@ -15,7 +15,7 @@ function generateToken(): string {
 }
 
 export async function POST(request: Request) {
-  let body: { email?: string };
+  let body: { email?: string; redirect?: string };
 
   try {
     body = await request.json();
@@ -27,6 +27,8 @@ export async function POST(request: Request) {
   }
 
   const email = body.email?.trim().toLowerCase();
+  // Allow callers to specify where the magic link should land (default: /chat)
+  const redirectPath = body.redirect === "/sign-in" ? "/sign-in" : "/chat";
 
   if (!email || !EMAIL_RE.test(email)) {
     return NextResponse.json(
@@ -94,7 +96,7 @@ export async function POST(request: Request) {
 
   // Build magic link URL
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const magicLink = `${siteUrl}/chat?token=${token}&email=${encodeURIComponent(email)}`;
+  const magicLink = `${siteUrl}${redirectPath}?token=${token}&email=${encodeURIComponent(email)}`;
 
   // Send magic link email
   const resendKey = process.env.RESEND_API_KEY;
@@ -110,13 +112,13 @@ export async function POST(request: Request) {
     await resend.emails.send({
       from: "BTC Today <hello@btctoday.co>",
       to: email,
-      subject: "Your BTC Today chat access link",
-      text: `Click the link below to access the BTC Today AI Assistant:\n\n${magicLink}\n\nThis link expires in ${TOKEN_EXPIRY_MINUTES} minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\n— BTC Today`,
+      subject: redirectPath === "/sign-in" ? "Sign in to BTC Today" : "Your BTC Today chat access link",
+      text: `Click the link below to ${redirectPath === "/sign-in" ? "sign in to" : "access the AI assistant on"} BTC Today:\n\n${magicLink}\n\nThis link expires in ${TOKEN_EXPIRY_MINUTES} minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\n— BTC Today`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
           <h2 style="font-size: 20px; font-weight: 700; color: #1a1a1a; margin: 0 0 8px;">BTC Today</h2>
-          <p style="font-size: 14px; color: #666; margin: 0 0 24px;">Access your AI Assistant</p>
-          <a href="${magicLink}" style="display: inline-block; background-color: #F7931A; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; padding: 12px 32px; border-radius: 8px;">Open Chat</a>
+          <p style="font-size: 14px; color: #666; margin: 0 0 24px;">${redirectPath === "/sign-in" ? "Sign in to your account" : "Access your AI Assistant"}</p>
+          <a href="${magicLink}" style="display: inline-block; background-color: #F7931A; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; padding: 12px 32px; border-radius: 8px;">${redirectPath === "/sign-in" ? "Sign In" : "Open Chat"}</a>
           <p style="font-size: 13px; color: #999; margin: 24px 0 0;">This link expires in ${TOKEN_EXPIRY_MINUTES} minutes. If you didn't request this, ignore this email.</p>
         </div>
       `,

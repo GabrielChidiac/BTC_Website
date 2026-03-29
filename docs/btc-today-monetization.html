@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC Today — Premium Subscription Strategy</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: #2D2D34;
+    background: #FFFFFF;
+    line-height: 1.5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    padding: 32px 40px;
+    position: relative;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #F7931A;
+  }
+
+  .logo-area h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #2D2D34;
+  }
+
+  .logo-area h1 span {
+    color: #F7931A;
+  }
+
+  .logo-area p {
+    font-size: 11px;
+    color: #9C9CA6;
+    margin-top: 2px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    text-align: right;
+    font-size: 11px;
+    color: #5C5C66;
+  }
+
+  .header-right strong {
+    display: block;
+    font-size: 13px;
+    color: #2D2D34;
+  }
+
+  /* Title section */
+  .title-section {
+    margin-bottom: 20px;
+  }
+
+  .title-section h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: #2D2D34;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+
+  .title-section p {
+    font-size: 12px;
+    color: #5C5C66;
+    line-height: 1.6;
+  }
+
+  /* Two column layout */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 16px;
+  }
+
+  /* Cards */
+  .card {
+    border: 1px solid #E8E4DF;
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .card h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #F7931A;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+  }
+
+  /* Feature table */
+  .feature-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+
+  .feature-table th {
+    text-align: left;
+    font-weight: 600;
+    padding: 5px 8px;
+    background: #F9F8F6;
+    border-bottom: 1px solid #E8E4DF;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #5C5C66;
+  }
+
+  .feature-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #F0EFED;
+    color: #2D2D34;
+  }
+
+  .feature-table .check { color: #16A34A; font-weight: 600; }
+  .feature-table .cross { color: #DC2626; font-weight: 500; }
+
+  .price-badge {
+    display: inline-block;
+    background: #F7931A;
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+  }
+
+  .price-sub {
+    font-size: 11px;
+    color: #5C5C66;
+  }
+
+  /* Revenue table */
+  .revenue-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin-top: 4px;
+  }
+
+  .revenue-table th {
+    text-align: left;
+    font-weight: 600;
+    padding: 5px 8px;
+    background: #F9F8F6;
+    border-bottom: 1px solid #E8E4DF;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #5C5C66;
+  }
+
+  .revenue-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #F0EFED;
+  }
+
+  .revenue-table tr:last-child td {
+    font-weight: 600;
+    background: #FFFBF5;
+  }
+
+  /* Section headers */
+  .section-header {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2D2D34;
+    margin-bottom: 8px;
+    margin-top: 16px;
+    letter-spacing: -0.02em;
+  }
+
+  /* Bullet list */
+  .bullet-list {
+    list-style: none;
+    padding: 0;
+  }
+
+  .bullet-list li {
+    font-size: 11px;
+    color: #2D2D34;
+    padding: 3px 0;
+    padding-left: 14px;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .bullet-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 9px;
+    width: 5px;
+    height: 5px;
+    background: #F7931A;
+    border-radius: 50%;
+  }
+
+  /* Highlight box */
+  .highlight-box {
+    background: #FFFBF5;
+    border: 1px solid #F7931A33;
+    border-left: 3px solid #F7931A;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-top: 14px;
+  }
+
+  .highlight-box h4 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #F7931A;
+    margin-bottom: 4px;
+  }
+
+  .highlight-box p {
+    font-size: 11px;
+    color: #5C5C66;
+    line-height: 1.5;
+  }
+
+  /* Costs row */
+  .costs-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .cost-card {
+    text-align: center;
+    padding: 10px;
+    border: 1px solid #E8E4DF;
+    border-radius: 8px;
+  }
+
+  .cost-card .label {
+    font-size: 10px;
+    color: #9C9CA6;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .cost-card .value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #2D2D34;
+    margin: 2px 0;
+  }
+
+  .cost-card .sub {
+    font-size: 10px;
+    color: #5C5C66;
+  }
+
+  /* Footer */
+  .footer {
+    position: absolute;
+    bottom: 24px;
+    left: 40px;
+    right: 40px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: #9C9CA6;
+    border-top: 1px solid #E8E4DF;
+    padding-top: 8px;
+  }
+
+  /* Additional revenue */
+  .additional-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .additional-card {
+    padding: 10px 12px;
+    border: 1px solid #E8E4DF;
+    border-radius: 6px;
+  }
+
+  .additional-card h4 {
+    font-size: 11px;
+    font-weight: 600;
+    color: #2D2D34;
+    margin-bottom: 2px;
+  }
+
+  .additional-card p {
+    font-size: 10px;
+    color: #5C5C66;
+    line-height: 1.4;
+  }
+
+  .additional-card .rev {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #16A34A;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-area">
+      <h1>BTC <span>Today</span></h1>
+      <p>AI-Curated Bitcoin Intelligence</p>
+    </div>
+    <div class="header-right">
+      <strong>Monetization Strategy</strong>
+      March 2026 | Confidential
+    </div>
+  </div>
+
+  <!-- Title -->
+  <div class="title-section">
+    <h2>Premium Subscription Model</h2>
+    <p>BTC Today delivers a daily AI-curated Bitcoin intelligence briefing to investors and executives. A fully automated pipeline runs at 2 AM CET, collecting data from 12+ sources, synthesizing it through Claude AI, and publishing to our website and email subscribers. Current operating cost: ~$3/month. We propose a freemium model to monetize the product globally.</p>
+  </div>
+
+  <!-- Pricing + Features -->
+  <div class="two-col">
+    <div class="card">
+      <h3>Pricing</h3>
+      <div class="price-badge">$9/month</div>
+      <p class="price-sub">or $69/year ($5.75/mo, save 36%)</p>
+      <br>
+      <ul class="bullet-list">
+        <li>70% cheaper than Bitcoin Magazine Pro ($30/mo)</li>
+        <li>40% cheaper than comparable newsletters ($15/mo)</li>
+        <li>LemonSqueezy handles global VAT/tax compliance</li>
+        <li>No business registration required to start</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Free vs Pro Features</h3>
+      <table class="feature-table">
+        <tr><th>Feature</th><th>Free</th><th>Pro</th></tr>
+        <tr><td>Market overview + top stories</td><td class="check">Yes</td><td class="check">Yes</td></tr>
+        <tr><td>Deep analysis + expert insights</td><td class="cross">No</td><td class="check">Yes</td></tr>
+        <tr><td>Forward-looking outlook</td><td class="cross">No</td><td class="check">Yes</td></tr>
+        <tr><td>AI Chat assistant</td><td class="cross">No</td><td class="check">Yes</td></tr>
+        <tr><td>Full archive + PDF downloads</td><td class="cross">No</td><td class="check">Yes</td></tr>
+        <tr><td>Full email digest + PDF</td><td class="cross">No</td><td class="check">Yes</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Why people pay -->
+  <div class="section-header">Why People Will Pay</div>
+  <ul class="bullet-list">
+    <li><strong>Time savings:</strong> Replaces 30-60 minutes of daily Bitcoin research with a single 5-minute briefing</li>
+    <li><strong>Institutional quality:</strong> No retail noise or altcoin hype. Frames everything through capital flows and macro implications</li>
+    <li><strong>Unique AI Chat:</strong> Conversational access to 7 days of structured briefing data. No competitor offers this</li>
+    <li><strong>Expert curation:</strong> Insights from Lyn Alden, Dylan LeClair, Luke Gromen, and other institutional-grade analysts</li>
+  </ul>
+
+  <!-- Revenue Projections -->
+  <div class="section-header">Revenue Projections (Subscriptions Only)</div>
+  <table class="revenue-table">
+    <tr><th>Email Subscribers</th><th>Conversion Rate</th><th>Paying Users</th><th>Monthly Revenue</th><th>Annual Revenue</th></tr>
+    <tr><td>500</td><td>5%</td><td>25</td><td>$225</td><td>$2,700</td></tr>
+    <tr><td>2,500</td><td>6%</td><td>150</td><td>$1,350</td><td>$16,200</td></tr>
+    <tr><td>5,000</td><td>7%</td><td>350</td><td>$3,150</td><td>$37,800</td></tr>
+    <tr><td>10,000</td><td>7%</td><td>700</td><td>$6,300</td><td>$75,600</td></tr>
+  </table>
+
+  <!-- Costs -->
+  <div class="costs-row">
+    <div class="cost-card">
+      <div class="label">Operating Cost</div>
+      <div class="value">~$3</div>
+      <div class="sub">per month (current)</div>
+    </div>
+    <div class="cost-card">
+      <div class="label">Cost at 5K Subs</div>
+      <div class="value">~$300</div>
+      <div class="sub">per month (scaled)</div>
+    </div>
+    <div class="cost-card">
+      <div class="label">Net Margin</div>
+      <div class="value">90%+</div>
+      <div class="sub">at all subscriber levels</div>
+    </div>
+  </div>
+
+  <!-- Additional Revenue -->
+  <div class="section-header">Additional Revenue Streams (Phase 2-3)</div>
+  <div class="additional-grid">
+    <div class="additional-card">
+      <h4>Newsletter Sponsorships</h4>
+      <p>Bitcoin companies (exchanges, wallets, custody) pay to reach our audience via a single "Presented by" line in the daily email.</p>
+      <div class="rev">$1,000-3,000/mo at 5K subs</div>
+    </div>
+    <div class="additional-card">
+      <h4>Affiliate Partnerships</h4>
+      <p>Commission from Ledger, Swan Bitcoin, Unchained, and other products our audience already buys. Passive, zero-risk income.</p>
+      <div class="rev">$200-400/mo at 5K subs</div>
+    </div>
+  </div>
+
+  <!-- Swiss Ecosystem -->
+  <div class="highlight-box">
+    <h4>Swiss Ecosystem Advantage (EPFL)</h4>
+    <p><strong>Venture Kick:</strong> CHF 10,000 (Stage 1 pitch, no product required — we have one). <strong>EPFL FIT Grant:</strong> CHF 10,000-30,000 for EPFL student startups. <strong>Legal:</strong> Sole proprietorship until CHF 100K/yr revenue; no registration needed. LemonSqueezy handles all international VAT.</p>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>BTC Today | btctoday.co</span>
+    <span>Confidential — March 2026</span>
+  </div>
+
+</div>
+</body>
+</html>

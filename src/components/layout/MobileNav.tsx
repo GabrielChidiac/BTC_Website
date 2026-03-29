@@ -18,7 +18,7 @@ const sectionLinks = [
   { href: "#outlook", label: "Outlook" },
 ] as const;
 
-export function MobileNav() {
+export function MobileNav({ signedInEmail }: { signedInEmail?: string | null }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -84,6 +84,23 @@ export function MobileNav() {
               </a>
             ))}
           </div>
+        </div>
+
+        {/* Auth */}
+        <div className="mt-4 border-t border-[var(--color-border)] pt-4 px-4">
+          {signedInEmail ? (
+            <p className="text-[11px] text-[var(--color-text-muted)] truncate">
+              {signedInEmail}
+            </p>
+          ) : (
+            <Link
+              href="/sign-in"
+              onClick={() => setOpen(false)}
+              className="text-sm font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors"
+            >
+              Sign in
+            </Link>
+          )}
         </div>
       </nav>
     </div>

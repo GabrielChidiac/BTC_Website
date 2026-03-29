@@ -1,4 +1,5 @@
 import { createServerClient } from "@/lib/supabase/server";
+import { getSubscriberTier } from "@/lib/tier";
 import type { BriefingJSON, DailyBriefingRow, AdoptionUpdate, RegulatoryUpdate } from "@/lib/types";
 import { compactNumber } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ import { InstitutionalFlows } from "@/components/briefing/InstitutionalFlows";
 import { TechnicalSignals } from "@/components/briefing/TechnicalSignals";
 import { NetworkHealth } from "@/components/briefing/NetworkHealth";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
+import { ProGate } from "@/components/premium/ProGate";
 
 
 export const revalidate = 3600;
@@ -76,6 +78,8 @@ export default async function Home() {
 
   const briefing: BriefingJSON = (data as DailyBriefingRow).content;
   const market = briefing.market_snapshot;
+  const { tier } = await getSubscriberTier();
+  const isPro = tier === "pro";
 
   // Build signals list
   const signals: SignalItem[] = [
@@ -225,97 +229,106 @@ export default async function Home() {
           {/* ─── Tier divider: Briefing → Deep Dive ─── */}
           <div className="section-divider" />
 
-          {/* ═══════════════════════════════════════════════════════════════
-              TIER 3: THE DEEP DIVE
-              05 — DEEP DIVE: Data sections + Expert Insights
-             ═══════════════════════════════════════════════════════════════ */}
-          <div id="deep-dive" className="mt-10 scroll-mt-16">
-            <SectionLabel number="05" title="Deep Dive" className="mb-4" />
-            <ScrollReveal>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <MotionCard className="h-full">
-                  <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
-                    <CardContent className="p-4 sm:p-5">
-                      <InstitutionalFlows flows={briefing.institutional_flows} />
-                    </CardContent>
-                  </Card>
-                </MotionCard>
-
-                <MotionCard className="h-full">
-                  <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
-                    <CardContent className="p-4 sm:p-5">
-                      <TechnicalSignals signals={briefing.technical_signals} />
-                    </CardContent>
-                  </Card>
-                </MotionCard>
-
-                <MotionCard className="h-full">
-                  <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
-                    <CardContent className="p-4 sm:p-5">
-                      <NetworkHealth network={briefing.network_health} />
-                    </CardContent>
-                  </Card>
-                </MotionCard>
-              </div>
-            </ScrollReveal>
-
-            {/* Expert Insights — max 3 quotes */}
-            {briefing.expert_insights && briefing.expert_insights.length > 0 && (
-              <ScrollReveal>
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  {briefing.expert_insights.slice(0, 3).map((insight, i) => (
-                    <ExpertExpandable key={i} insight={insight} />
-                  ))}
-                </div>
-              </ScrollReveal>
-            )}
-          </div>
-
-          {/* ═══════════════════════════════════════════════════════════════
-              06 — LOOKING AHEAD: Forward outlook + Countdown Events
-             ═══════════════════════════════════════════════════════════════ */}
-          {(hasLookingAhead || filteredEvents.length > 0) && (
-            <div id="outlook" className="mt-10 scroll-mt-16">
-              <SectionLabel number="06" title="Looking Ahead" className="mb-4" />
-
-              {hasLookingAhead && (
+          {isPro ? (
+            <>
+              {/* ═══════════════════════════════════════════════════════════════
+                  TIER 3: THE DEEP DIVE (Pro only)
+                  05 — DEEP DIVE: Data sections + Expert Insights
+                 ═══════════════════════════════════════════════════════════════ */}
+              <div id="deep-dive" className="mt-10 scroll-mt-16">
+                <SectionLabel number="05" title="Deep Dive" className="mb-4" />
                 <ScrollReveal>
-                  <LookingAhead content={briefing.looking_ahead} />
-                </ScrollReveal>
-              )}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <MotionCard className="h-full">
+                      <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                        <CardContent className="p-4 sm:p-5">
+                          <InstitutionalFlows flows={briefing.institutional_flows} />
+                        </CardContent>
+                      </Card>
+                    </MotionCard>
 
-              {filteredEvents.length > 0 && (
-                <ScrollReveal variant="scale">
-                  <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 ${hasLookingAhead ? "mt-4" : ""}`}>
-                    {filteredEvents.map((event) => (
-                      <MotionCard key={event.name} lift={4} className="h-full">
-                        <Card
-                          className={`card-interactive h-full gap-0 py-0 ring-1 ${
-                            event.days_away !== null && event.days_away <= 3
-                              ? "ring-[var(--color-accent)]/30 glow-card"
-                              : "ring-[var(--color-border)]"
-                          }`}
-                        >
-                          <CardContent className="p-4">
-                            <p className="font-[family-name:var(--font-heading)] text-2xl font-bold tabular-nums text-[var(--color-text-primary)]">
-                              {event.days_away !== null ? `${event.days_away}d` : "TBD"}
-                            </p>
-                            <p className="mt-1 text-sm font-[family-name:var(--font-heading)] font-semibold text-[var(--color-text-primary)] leading-snug">
-                              {event.name}
-                            </p>
-                            {event.description && (
-                              <p className="mt-1 text-xs text-[var(--color-text-muted)] leading-relaxed">
-                                {event.description}
-                              </p>
-                            )}
-                          </CardContent>
-                        </Card>
-                      </MotionCard>
-                    ))}
+                    <MotionCard className="h-full">
+                      <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                        <CardContent className="p-4 sm:p-5">
+                          <TechnicalSignals signals={briefing.technical_signals} />
+                        </CardContent>
+                      </Card>
+                    </MotionCard>
+
+                    <MotionCard className="h-full">
+                      <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                        <CardContent className="p-4 sm:p-5">
+                          <NetworkHealth network={briefing.network_health} />
+                        </CardContent>
+                      </Card>
+                    </MotionCard>
                   </div>
                 </ScrollReveal>
+
+                {/* Expert Insights — max 3 quotes */}
+                {briefing.expert_insights && briefing.expert_insights.length > 0 && (
+                  <ScrollReveal>
+                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      {briefing.expert_insights.slice(0, 3).map((insight, i) => (
+                        <ExpertExpandable key={i} insight={insight} />
+                      ))}
+                    </div>
+                  </ScrollReveal>
+                )}
+              </div>
+
+              {/* ═══════════════════════════════════════════════════════════════
+                  06 — LOOKING AHEAD: Forward outlook + Countdown Events
+                 ═══════════════════════════════════════════════════════════════ */}
+              {(hasLookingAhead || filteredEvents.length > 0) && (
+                <div id="outlook" className="mt-10 scroll-mt-16">
+                  <SectionLabel number="06" title="Looking Ahead" className="mb-4" />
+
+                  {hasLookingAhead && (
+                    <ScrollReveal>
+                      <LookingAhead content={briefing.looking_ahead} />
+                    </ScrollReveal>
+                  )}
+
+                  {filteredEvents.length > 0 && (
+                    <ScrollReveal variant="scale">
+                      <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 ${hasLookingAhead ? "mt-4" : ""}`}>
+                        {filteredEvents.map((event) => (
+                          <MotionCard key={event.name} lift={4} className="h-full">
+                            <Card
+                              className={`card-interactive h-full gap-0 py-0 ring-1 ${
+                                event.days_away !== null && event.days_away <= 3
+                                  ? "ring-[var(--color-accent)]/30 glow-card"
+                                  : "ring-[var(--color-border)]"
+                              }`}
+                            >
+                              <CardContent className="p-4">
+                                <p className="font-[family-name:var(--font-heading)] text-2xl font-bold tabular-nums text-[var(--color-text-primary)]">
+                                  {event.days_away !== null ? `${event.days_away}d` : "TBD"}
+                                </p>
+                                <p className="mt-1 text-sm font-[family-name:var(--font-heading)] font-semibold text-[var(--color-text-primary)] leading-snug">
+                                  {event.name}
+                                </p>
+                                {event.description && (
+                                  <p className="mt-1 text-xs text-[var(--color-text-muted)] leading-relaxed">
+                                    {event.description}
+                                  </p>
+                                )}
+                              </CardContent>
+                            </Card>
+                          </MotionCard>
+                        ))}
+                      </div>
+                    </ScrollReveal>
+                  )}
+                </div>
               )}
-            </div>
+            </>
+          ) : (
+            /* ═══════════════════════════════════════════════════════════════
+               FREE TIER: Show upgrade CTA instead of sections 05-06
+               ═══════════════════════════════════════════════════════════════ */
+            <ProGate />
           )}
 
           {/* ═══════════════════════════════════════════════════════════════

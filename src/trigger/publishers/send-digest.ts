@@ -31,7 +31,7 @@ export const sendDigestTask = task({
     const supabase = createServiceClient();
     const { data: subscribers, error } = await supabase
       .from("subscribers")
-      .select("email, name")
+      .select("email, name, tier")
       .eq("status", "active");
 
     if (error) {
@@ -41,6 +41,7 @@ export const sendDigestTask = task({
 
     const activeEmails = subscribers.map((s) => s.email);
     const nameByEmail = new Map(subscribers.map((s) => [s.email, s.name as string | null]));
+    const tierByEmail = new Map(subscribers.map((s) => [s.email, (s.tier as string) ?? "free"]));
 
     if (activeEmails.length === 0) {
       logger.info("No active subscribers — skipping email digest");
@@ -55,8 +56,9 @@ export const sendDigestTask = task({
 
     const subject = `BTC Today — $${market_snapshot.price_usd.toLocaleString("en-US")} (${market_snapshot.change_24h_pct >= 0 ? "+" : ""}${market_snapshot.change_24h_pct.toFixed(2)}%)`;
 
-    // Render React Email template to HTML (with placeholders for per-subscriber values)
-    const htmlTemplate = await render(DailyDigest({ briefing, siteUrl, name: "%%NAME%%" }));
+    // Render React Email templates — one per tier (with placeholders for per-subscriber values)
+    const htmlTemplatePro = await render(DailyDigest({ briefing, siteUrl, name: "%%NAME%%", tier: "pro" }));
+    const htmlTemplateFree = await render(DailyDigest({ briefing, siteUrl, name: "%%NAME%%", tier: "free" }));
 
     // Generate PDF summary and upload to Supabase Storage (non-fatal)
     let pdfUrl = "";
@@ -99,24 +101,25 @@ Top Stories:
 
 ${storySummaries || "No stories today."}
 
-Read the full briefing: ${siteUrl}/archive/${date}
+Read the full briefing: %%BRIEFING_URL%%
 
 Chat with our AI: %%CHAT_URL%%
 
 — BTC Today`;
 
-    // Step 3.5: Generate per-subscriber chat magic link tokens
+    // Step 3.5: Generate per-subscriber chat magic link tokens (Pro only)
+    const proEmails = activeEmails.filter((e) => tierByEmail.get(e) === "pro");
     const chatTokens = new Map<string, string>();
     const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    for (const email of activeEmails) {
+    for (const email of proEmails) {
       const bytes = new Uint8Array(32);
       crypto.getRandomValues(bytes);
       chatTokens.set(email, Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join(""));
     }
 
     // Batch insert all magic link tokens
-    const tokenRows = activeEmails.map((email) => ({
+    const tokenRows = proEmails.map((email) => ({
       email,
       code: `magic:${chatTokens.get(email)}`,
       expires_at: tokenExpiry.toISOString(),
@@ -141,16 +144,25 @@ Chat with our AI: %%CHAT_URL%%
       const batch = activeEmails.slice(i, i + BATCH_SIZE);
 
       const batchPayload = batch.map((email) => {
+        const subscriberTier = tierByEmail.get(email) || "free";
         const token = chatTokens.get(email);
         const chatUrl = token
           ? `${siteUrl}/chat?token=${token}&email=${encodeURIComponent(email)}`
           : `${siteUrl}/chat`;
         const subscriberName = nameByEmail.get(email);
 
-        let html = htmlTemplate
+        // Build auth-carrying briefing URL so clicking "Read Full Briefing" also signs the user in
+        const briefingUrl = token
+          ? `${siteUrl}/sign-in?token=${token}&email=${encodeURIComponent(email)}`
+          : `${siteUrl}/archive/${date}`;
+
+        let html = (subscriberTier === "pro" ? htmlTemplatePro : htmlTemplateFree)
           .replace(/%%CHAT_URL%%/g, chatUrl)
-          .replace(/%%PDF_URL%%/g, pdfUrl);
-        let text = textTemplate.replace(/%%CHAT_URL%%/g, chatUrl);
+          .replace(/%%PDF_URL%%/g, pdfUrl)
+          .replace(/%%BRIEFING_URL%%/g, briefingUrl);
+        let text = textTemplate
+          .replace(/%%CHAT_URL%%/g, chatUrl)
+          .replace(/%%BRIEFING_URL%%/g, briefingUrl);
 
         if (subscriberName) {
           html = html.replace(/%%NAME%%/g, subscriberName);
