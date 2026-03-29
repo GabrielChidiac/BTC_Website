@@ -9,7 +9,7 @@ export function LogoutButton({ className }: { className?: string }) {
   return (
     <button
       onClick={handleLogout}
-      className={className}
+      className={`cursor-pointer ${className}`}
     >
       Log out
     </button>

@@ -99,7 +99,7 @@ export function MobileNav({ signedInEmail, displayName }: { signedInEmail?: stri
                   setOpen(false);
                   window.location.reload();
                 }}
-                className="text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+                className="cursor-pointer text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
               >
                 Log out
               </button>
