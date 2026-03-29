@@ -45,11 +45,8 @@ export async function Header({ date }: { date?: string }) {
   return (
     <header className="sticky top-0 z-50 bg-[var(--color-bg-base)]/80 backdrop-blur-md">
       <Container wide className="flex h-14 items-center justify-between">
-        {/* Logo — intelligence report framing */}
-        <Link
-          href="/"
-          className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0"
-        >
+        {/* Logo + tagline */}
+        <div className="flex items-center gap-2 shrink-0">
           <span
             className="font-[family-name:var(--font-heading)] text-lg font-bold tracking-tight"
             style={{ textShadow: "0 0 20px rgba(247, 147, 26, 0.15)" }}
@@ -62,7 +59,7 @@ export async function Header({ date }: { date?: string }) {
             <PulsingDot variant="live" size={6} />
             DAILY INTELLIGENCE BRIEFING
           </span>
-        </Link>
+        </div>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-4">
