@@ -6,8 +6,8 @@ import { Footer } from "@/components/layout/Footer";
 import { SignInContent } from "./SignInContent";
 
 export const metadata = {
-  title: "Sign In | BTC Today",
-  description: "Sign in to access your BTC Today Pro subscription.",
+  title: "Login | BTC Today",
+  description: "Login to access your BTC Today Pro subscription.",
 };
 
 export default async function SignInPage() {

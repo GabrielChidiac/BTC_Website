@@ -91,7 +91,7 @@ function SignInInner() {
     return (
       <main className="flex min-h-[60vh] items-center justify-center">
         <p className="text-sm text-[var(--color-text-secondary)]">
-          Signing you in...
+          Logging you in...
         </p>
       </main>
     );
@@ -101,13 +101,13 @@ function SignInInner() {
     <main className="flex min-h-[60vh] flex-col items-center justify-center px-4">
       <div className="max-w-sm w-full text-center">
         <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-text-primary)]">
-          Sign in
+          Login
         </h1>
 
         {!sent ? (
           <>
             <p className="mt-3 text-sm text-[var(--color-text-secondary)] leading-relaxed">
-              Enter your subscriber email and we&apos;ll send you a sign-in link.
+              Enter your subscriber email and we&apos;ll send you a login link.
             </p>
 
             <form onSubmit={handleSendLink} className="mt-6 flex flex-col gap-3">
@@ -127,7 +127,7 @@ function SignInInner() {
                 disabled={loading}
                 className="rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
               >
-                {loading ? "Sending..." : "Send sign-in link"}
+                {loading ? "Sending..." : "Send login link"}
               </button>
             </form>
 
@@ -148,7 +148,7 @@ function SignInInner() {
                 Check your inbox
               </p>
               <p className="mt-2 text-sm text-[var(--color-text-secondary)] leading-relaxed">
-                We sent a sign-in link to{" "}
+                We sent a login link to{" "}
                 <span className="font-medium text-[var(--color-text-primary)]">
                   {email.trim().toLowerCase()}
                 </span>

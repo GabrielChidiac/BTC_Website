@@ -3,8 +3,8 @@ import { cookies } from "next/headers";
 import { Container } from "./Container";
 import { MobileNav } from "./MobileNav";
 import { LogoutButton } from "./LogoutButton";
-import { PulsingDot } from "@/components/ui/PulsingDot";
 import { COOKIE_NAME } from "@/lib/session";
+import { createServerClient } from "@/lib/supabase/server";
 
 const navLinks = [
   { href: "/", label: "Briefing" },
@@ -32,14 +32,6 @@ function formatBriefingDate(isoDate: string): string {
     .toUpperCase();
 }
 
-function getFirstName(name: string | null, email: string): string {
-  if (name) return name.split(/\s+/)[0];
-  // Derive from email: "john.doe@..." → "John"
-  const local = email.split("@")[0];
-  const first = local.split(/[._-]/)[0];
-  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
-}
-
 export async function Header({ date }: { date?: string }) {
   let signedInEmail: string | null = null;
   let displayName: string | null = null;
@@ -50,7 +42,18 @@ export async function Header({ date }: { date?: string }) {
       const parsed = JSON.parse(raw);
       if (parsed.email) {
         signedInEmail = parsed.email;
-        displayName = getFirstName(parsed.name ?? null, parsed.email);
+        // Use name from cookie, otherwise fetch from DB
+        let name: string | null = parsed.name ?? null;
+        if (!name) {
+          const supabase = await createServerClient();
+          const { data: subscriber } = await supabase
+            .from("subscribers")
+            .select("name")
+            .eq("email", parsed.email)
+            .maybeSingle();
+          name = subscriber?.name ?? null;
+        }
+        displayName = name?.split(/\s+/)[0] ?? null;
       }
     }
   } catch { /* no session */ }
@@ -66,11 +69,6 @@ export async function Header({ date }: { date?: string }) {
           >
             BTC{" "}
             <span className="text-[var(--color-accent)]">Today</span>
-          </span>
-          <span className="hidden sm:block h-3.5 w-px bg-[var(--color-border)]" />
-          <span className="hidden sm:flex items-center gap-1.5 font-[family-name:var(--font-heading)] section-number text-[10px] font-medium text-[var(--color-text-muted)] tracking-[0.12em]">
-            <PulsingDot variant="live" size={6} />
-            DAILY INTELLIGENCE BRIEFING
           </span>
         </div>
 
@@ -109,10 +107,14 @@ export async function Header({ date }: { date?: string }) {
           )}
           {signedInEmail ? (
             <div className="hidden md:flex items-center gap-2">
-              <span className="text-[11px] font-medium text-[var(--color-text-muted)] whitespace-nowrap">
-                {displayName}
-              </span>
-              <span className="h-3 w-px bg-[var(--color-border)]" />
+              {displayName && (
+                <>
+                  <span className="text-[11px] font-medium text-[var(--color-text-muted)] whitespace-nowrap">
+                    {displayName}
+                  </span>
+                  <span className="h-3 w-px bg-[var(--color-border)]" />
+                </>
+              )}
               <LogoutButton className="text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors whitespace-nowrap" />
             </div>
           ) : (

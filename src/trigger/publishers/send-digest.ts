@@ -107,21 +107,20 @@ Chat with our AI: %%CHAT_URL%%
 
 — BTC Today`;
 
-    // Step 3.5: Generate per-subscriber chat magic link tokens (Pro only)
-    const proEmails = activeEmails.filter((e) => tierByEmail.get(e) === "pro");
-    const chatTokens = new Map<string, string>();
+    // Step 3.5: Generate per-subscriber magic link tokens (all subscribers for auto-login)
+    const authTokens = new Map<string, string>();
     const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    for (const email of proEmails) {
+    for (const email of activeEmails) {
       const bytes = new Uint8Array(32);
       crypto.getRandomValues(bytes);
-      chatTokens.set(email, Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join(""));
+      authTokens.set(email, Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join(""));
     }
 
     // Batch insert all magic link tokens
-    const tokenRows = proEmails.map((email) => ({
+    const tokenRows = activeEmails.map((email) => ({
       email,
-      code: `magic:${chatTokens.get(email)}`,
+      code: `magic:${authTokens.get(email)}`,
       expires_at: tokenExpiry.toISOString(),
     }));
 
@@ -145,13 +144,13 @@ Chat with our AI: %%CHAT_URL%%
 
       const batchPayload = batch.map((email) => {
         const subscriberTier = tierByEmail.get(email) || "free";
-        const token = chatTokens.get(email);
+        const token = authTokens.get(email);
         const chatUrl = token
           ? `${siteUrl}/chat?token=${token}&email=${encodeURIComponent(email)}`
           : `${siteUrl}/chat`;
         const subscriberName = nameByEmail.get(email);
 
-        // Build auth-carrying briefing URL so clicking "Read Full Briefing" also signs the user in
+        // Build auth-carrying briefing URL so clicking from email auto-logs the user in
         const briefingUrl = token
           ? `${siteUrl}/sign-in?token=${token}&email=${encodeURIComponent(email)}`
           : `${siteUrl}/archive/${date}`;
