@@ -6,6 +6,7 @@ export function LookingAhead({ content }: { content: string }) {
 
   const paragraphs = content
     .split(/\n\n+/)
+    .filter((p) => !p.match(/^#{1,6}\s/))
     .filter(Boolean)
     .slice(0, 4);
 

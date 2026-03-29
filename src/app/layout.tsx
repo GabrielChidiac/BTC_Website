@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Space_Grotesk, Inter, Geist } from "next/font/google";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { SubscribeBanner } from "@/components/subscribe/SubscribeBanner";
+import { COOKIE_NAME } from "@/lib/session";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -27,11 +29,17 @@ export const metadata: Metadata = {
     "Daily AI-curated Bitcoin intelligence for investors: market data, institutional flows, macro analysis, and expert insights.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let isLoggedIn = false;
+  try {
+    const cookieStore = await cookies();
+    isLoggedIn = !!cookieStore.get(COOKIE_NAME)?.value;
+  } catch { /* no session */ }
+
   return (
     <html
       lang="en"
@@ -39,7 +47,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen">
         <ScrollProgress />
-        <SubscribeBanner />
+        {!isLoggedIn && <SubscribeBanner />}
         {children}
       </body>
     </html>

@@ -307,7 +307,7 @@ export async function POST(request: Request) {
   // Also confirm subscription is still active and check tier
   const { data: subscriber, error: subError } = await supabase
     .from("subscribers")
-    .select("status, tier")
+    .select("status, tier, name")
     .eq("email", email.trim().toLowerCase())
     .maybeSingle();
 
@@ -408,7 +408,7 @@ export async function POST(request: Request) {
       response.content[0].type === "text" ? response.content[0].text : "";
 
     const jsonResponse = NextResponse.json({ message: text });
-    if (needsCookieMigration) setSessionCookie(jsonResponse, token, email);
+    if (needsCookieMigration) setSessionCookie(jsonResponse, token, email, subscriber?.name);
     return jsonResponse;
   } catch (primaryError) {
     const err = primaryError as Error & { status?: number };
@@ -458,7 +458,7 @@ export async function POST(request: Request) {
       const json = await res.json();
       const text = json.choices?.[0]?.message?.content ?? "";
       const fallbackResponse = NextResponse.json({ message: text });
-      if (needsCookieMigration) setSessionCookie(fallbackResponse, token, email);
+      if (needsCookieMigration) setSessionCookie(fallbackResponse, token, email, subscriber?.name);
       return fallbackResponse;
     } catch {
       return NextResponse.json(

@@ -18,7 +18,7 @@ const sectionLinks = [
   { href: "#outlook", label: "Outlook" },
 ] as const;
 
-export function MobileNav({ signedInEmail }: { signedInEmail?: string | null }) {
+export function MobileNav({ signedInEmail, displayName }: { signedInEmail?: string | null; displayName?: string | null }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -89,16 +89,28 @@ export function MobileNav({ signedInEmail }: { signedInEmail?: string | null }) 
         {/* Auth */}
         <div className="mt-4 border-t border-[var(--color-border)] pt-4 px-4">
           {signedInEmail ? (
-            <p className="text-[11px] text-[var(--color-text-muted)] truncate">
-              {signedInEmail}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] text-[var(--color-text-muted)] truncate">
+                {displayName ?? signedInEmail}
+              </p>
+              <button
+                onClick={async () => {
+                  await fetch("/api/logout", { method: "POST" });
+                  setOpen(false);
+                  window.location.reload();
+                }}
+                className="text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+              >
+                Log out
+              </button>
+            </div>
           ) : (
             <Link
               href="/sign-in"
               onClick={() => setOpen(false)}
               className="text-sm font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors"
             >
-              Sign in
+              Login
             </Link>
           )}
         </div>

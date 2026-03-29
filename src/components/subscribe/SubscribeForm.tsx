@@ -13,6 +13,22 @@ export function SubscribeForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName || trimmedName.length > 50) {
+      setStatus("error");
+      setMessage(trimmedName.length > 50 ? "Name must be 50 characters or fewer" : "First name is required");
+      return;
+    }
+
+    if (!trimmedEmail || trimmedEmail.length > 254 || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmedEmail)) {
+      setStatus("error");
+      setMessage("Please enter a valid email address");
+      return;
+    }
+
     setStatus("loading");
 
     try {
@@ -69,6 +85,7 @@ export function SubscribeForm() {
         <input
           type="text"
           required
+          maxLength={50}
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="First name"
@@ -79,6 +96,7 @@ export function SubscribeForm() {
           <input
             type="email"
             required
+            maxLength={254}
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);

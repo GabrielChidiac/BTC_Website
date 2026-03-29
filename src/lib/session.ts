@@ -17,9 +17,10 @@ function cookieOptions() {
 export function setSessionCookie(
   response: NextResponse,
   token: string,
-  email: string
+  email: string,
+  name?: string | null
 ): void {
-  response.cookies.set(COOKIE_NAME, JSON.stringify({ email, token }), cookieOptions());
+  response.cookies.set(COOKIE_NAME, JSON.stringify({ email, token, ...(name && { name }) }), cookieOptions());
 }
 
 export function clearSessionCookie(response: NextResponse): void {

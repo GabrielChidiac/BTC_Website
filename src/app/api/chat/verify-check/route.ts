@@ -67,6 +67,13 @@ export async function POST(request: Request) {
     .update({ used: true })
     .eq("id", magicToken.id);
 
+  // Fetch subscriber name for personalized display
+  const { data: subscriber } = await supabase
+    .from("subscribers")
+    .select("name")
+    .eq("email", email)
+    .maybeSingle();
+
   // Generate a long-lived session token
   const sessionBytes = new Uint8Array(32);
   crypto.getRandomValues(sessionBytes);
@@ -88,6 +95,6 @@ export async function POST(request: Request) {
     { success: true, token: sessionToken },
     { status: 200 }
   );
-  setSessionCookie(response, sessionToken, email);
+  setSessionCookie(response, sessionToken, email, subscriber?.name);
   return response;
 }

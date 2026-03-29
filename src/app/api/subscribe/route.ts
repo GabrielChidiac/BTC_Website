@@ -4,7 +4,9 @@ import { render } from "@react-email/render";
 import { createServiceClient } from "@/lib/supabase/server";
 import WelcomeEmail from "../../../../emails/welcome";
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const NAME_MAX = 50;
+const EMAIL_MAX = 254;
+const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export async function POST(request: Request) {
   let body: { email?: string; name?: string };
@@ -21,16 +23,23 @@ export async function POST(request: Request) {
   const email = body.email?.trim().toLowerCase();
   const name = body.name?.trim() || null;
 
-  if (!name) {
+  if (!name || name.length < 1) {
     return NextResponse.json(
       { success: false, error: "First name is required" },
       { status: 400 }
     );
   }
 
-  if (!email || !EMAIL_RE.test(email)) {
+  if (name.length > NAME_MAX) {
     return NextResponse.json(
-      { success: false, error: "Invalid email" },
+      { success: false, error: `Name must be ${NAME_MAX} characters or fewer` },
+      { status: 400 }
+    );
+  }
+
+  if (!email || email.length > EMAIL_MAX || !EMAIL_RE.test(email)) {
+    return NextResponse.json(
+      { success: false, error: "Please enter a valid email address" },
       { status: 400 }
     );
   }

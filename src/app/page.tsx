@@ -1,5 +1,7 @@
+import { cookies } from "next/headers";
 import { createServerClient } from "@/lib/supabase/server";
 import { getSubscriberTier } from "@/lib/tier";
+import { COOKIE_NAME } from "@/lib/session";
 import type { BriefingJSON, DailyBriefingRow, AdoptionUpdate, RegulatoryUpdate } from "@/lib/types";
 import { compactNumber } from "@/lib/utils";
 
@@ -43,6 +45,12 @@ type SignalItem =
   | { type: "regulatory"; data: RegulatoryUpdate };
 
 export default async function Home() {
+  let isLoggedIn = false;
+  try {
+    const cookieStore = await cookies();
+    isLoggedIn = !!cookieStore.get(COOKIE_NAME)?.value;
+  } catch { /* no session */ }
+
   const supabase = await createServerClient();
   const { data } = await supabase
     .from("daily_briefings")
@@ -346,21 +354,23 @@ export default async function Home() {
           {/* ═══════════════════════════════════════════════════════════════
               SUBSCRIBE CTA
              ═══════════════════════════════════════════════════════════════ */}
-          <ScrollReveal variant="scale">
-            <div className="shimmer-border mt-8 rounded-xl">
-              <Card className="gap-0 py-0 ring-0">
-                <CardContent className="flex flex-col items-center gap-3 p-8">
-                  <p className="font-[family-name:var(--font-heading)] text-base font-bold text-[var(--color-text-primary)]">
-                    Get the daily briefing in your inbox
-                  </p>
-                  <p className="text-sm text-[var(--color-text-secondary)]">
-                    Every morning at 2 AM CET
-                  </p>
-                  <SubscribeForm />
-                </CardContent>
-              </Card>
-            </div>
-          </ScrollReveal>
+          {!isLoggedIn && (
+            <ScrollReveal variant="scale">
+              <div className="shimmer-border mt-8 rounded-xl">
+                <Card className="gap-0 py-0 ring-0">
+                  <CardContent className="flex flex-col items-center gap-3 p-8">
+                    <p className="font-[family-name:var(--font-heading)] text-base font-bold text-[var(--color-text-primary)]">
+                      Get the daily briefing in your inbox
+                    </p>
+                    <p className="text-sm text-[var(--color-text-secondary)]">
+                      Every morning at 2 AM CET
+                    </p>
+                    <SubscribeForm />
+                  </CardContent>
+                </Card>
+              </div>
+            </ScrollReveal>
+          )}
 
         </Container>
       </main>

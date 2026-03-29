@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createServerClient, createServiceClient } from "@/lib/supabase/server";
 import { getSubscriberTier } from "@/lib/tier";
+import { COOKIE_NAME } from "@/lib/session";
 import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
 import { formatDisplayDate } from "@/lib/utils";
 
@@ -65,6 +67,12 @@ export default async function ArchiveDatePage({
   const { date } = await params;
 
   if (!isValidDate(date)) notFound();
+
+  let isLoggedIn = false;
+  try {
+    const cookieStore = await cookies();
+    isLoggedIn = !!cookieStore.get(COOKIE_NAME)?.value;
+  } catch { /* no session */ }
 
   const supabase = await createServerClient();
   const { data } = await supabase
@@ -174,12 +182,14 @@ export default async function ArchiveDatePage({
               <Adoption updates={briefing.adoption} />
               <Regulatory updates={briefing.regulatory} />
 
-              <div className="mt-10 flex flex-col items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-6">
-                <p className="text-sm font-medium text-[var(--color-text-secondary)]">
-                  Get this briefing in your inbox every morning
-                </p>
-                <SubscribeForm />
-              </div>
+              {!isLoggedIn && (
+                <div className="mt-10 flex flex-col items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-6">
+                  <p className="text-sm font-medium text-[var(--color-text-secondary)]">
+                    Get this briefing in your inbox every morning
+                  </p>
+                  <SubscribeForm />
+                </div>
+              )}
 
               <TechnicalSignals signals={briefing.technical_signals} />
               <NetworkHealth network={briefing.network_health} />

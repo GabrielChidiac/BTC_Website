@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { Container } from "./Container";
 import { MobileNav } from "./MobileNav";
+import { LogoutButton } from "./LogoutButton";
 import { PulsingDot } from "@/components/ui/PulsingDot";
 import { COOKIE_NAME } from "@/lib/session";
 
@@ -31,14 +32,26 @@ function formatBriefingDate(isoDate: string): string {
     .toUpperCase();
 }
 
+function getFirstName(name: string | null, email: string): string {
+  if (name) return name.split(/\s+/)[0];
+  // Derive from email: "john.doe@..." → "John"
+  const local = email.split("@")[0];
+  const first = local.split(/[._-]/)[0];
+  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+}
+
 export async function Header({ date }: { date?: string }) {
   let signedInEmail: string | null = null;
+  let displayName: string | null = null;
   try {
     const cookieStore = await cookies();
     const raw = cookieStore.get(COOKIE_NAME)?.value;
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed.email) signedInEmail = parsed.email;
+      if (parsed.email) {
+        signedInEmail = parsed.email;
+        displayName = getFirstName(parsed.name ?? null, parsed.email);
+      }
     }
   } catch { /* no session */ }
 
@@ -62,12 +75,12 @@ export async function Header({ date }: { date?: string }) {
         </div>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-4">
+        <nav className="hidden md:flex items-center gap-4 shrink-0">
           {navLinks.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
-              className="text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+              className="whitespace-nowrap text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
             >
               {label}
             </Link>
@@ -77,7 +90,7 @@ export async function Header({ date }: { date?: string }) {
             <a
               key={href}
               href={href}
-              className="text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+              className="whitespace-nowrap text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
             >
               {label}
             </a>
@@ -95,18 +108,22 @@ export async function Header({ date }: { date?: string }) {
             </time>
           )}
           {signedInEmail ? (
-            <span className="hidden md:block text-[11px] font-medium text-[var(--color-text-muted)] truncate max-w-[120px]">
-              {signedInEmail}
-            </span>
+            <div className="hidden md:flex items-center gap-2">
+              <span className="text-[11px] font-medium text-[var(--color-text-muted)] whitespace-nowrap">
+                {displayName}
+              </span>
+              <span className="h-3 w-px bg-[var(--color-border)]" />
+              <LogoutButton className="text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors whitespace-nowrap" />
+            </div>
           ) : (
             <Link
               href="/sign-in"
               className="hidden md:block text-[11px] font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors"
             >
-              Sign in
+              Login
             </Link>
           )}
-          <MobileNav signedInEmail={signedInEmail} />
+          <MobileNav signedInEmail={signedInEmail} displayName={displayName} />
         </div>
       </Container>
       {/* Glow border */}
