@@ -185,7 +185,7 @@ export default async function ArchiveDatePage({
               {!isLoggedIn && (
                 <div className="mt-10 flex flex-col items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-6">
                   <p className="text-sm font-medium text-[var(--color-text-secondary)]">
-                    Get this briefing in your inbox every morning
+                    Create a free account to access daily briefings
                   </p>
                   <SubscribeForm />
                 </div>

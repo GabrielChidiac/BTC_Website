@@ -16,6 +16,8 @@ const FREE_FEATURES = [
   { label: "Top stories with sentiment", included: true },
   { label: "BTC vs Everything comparisons", included: true },
   { label: "Regulatory & adoption signals", included: true },
+  { label: "Weekly recap email", included: true },
+  { label: "Daily email briefing", included: false },
   { label: "Institutional flows & ETF data", included: false },
   { label: "Technical signals (RSI, SMAs)", included: false },
   { label: "Network health & halving", included: false },
@@ -65,7 +67,7 @@ export default async function PricingPage() {
             <p className="mt-2 text-sm text-[var(--color-text-secondary)] leading-relaxed max-w-md mx-auto">
               {isPro
                 ? "You have full access to all features."
-                : "Unlock the full daily briefing, AI chat, PDF downloads, and complete archive."}
+                : "Unlock the daily email briefing, AI chat, PDF downloads, and complete archive."}
             </p>
           </div>
 

@@ -72,7 +72,7 @@ export default async function Home() {
             <p className="mt-3 text-sm text-[var(--color-text-secondary)]">
               Your first briefing publishes at 2 AM CET.
               <br />
-              Subscribe to get it in your inbox.
+              Create a free account to start reading.
             </p>
             <div className="mt-6 flex justify-center">
               <SubscribeForm />
@@ -360,10 +360,10 @@ export default async function Home() {
                 <Card className="gap-0 py-0 ring-0">
                   <CardContent className="flex flex-col items-center gap-3 p-8">
                     <p className="font-[family-name:var(--font-heading)] text-base font-bold text-[var(--color-text-primary)]">
-                      Get the daily briefing in your inbox
+                      Stay informed, for free
                     </p>
                     <p className="text-sm text-[var(--color-text-secondary)]">
-                      Every morning at 2 AM CET
+                      Access daily briefings, market data & a weekly email recap
                     </p>
                     <SubscribeForm />
                   </CardContent>

@@ -93,7 +93,7 @@ export function SubscribeBanner() {
           className="group flex w-full items-center justify-center gap-2 bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline-none"
         >
           <span className="font-[family-name:var(--font-heading)] tracking-tight">
-            Get the daily briefing in your inbox
+            Create your free account
           </span>
           <svg
             width="14"
@@ -126,10 +126,10 @@ export function SubscribeBanner() {
               <div className="border-b border-[var(--color-border)] bg-[var(--color-bg-base)]/95 backdrop-blur-xl">
                 <div className="mx-auto max-w-md px-4 py-5">
                   <p className="mb-1 text-center font-[family-name:var(--font-heading)] text-base font-bold tracking-tight text-[var(--color-text-primary)]">
-                    Get the daily briefing in your inbox
+                    Access daily Bitcoin intelligence
                   </p>
                   <p className="mb-4 text-center text-xs text-[var(--color-text-muted)]">
-                    Every morning at 2 AM CET
+                    Free access to daily briefings, market data & a weekly email recap
                   </p>
 
                   {status === "success" ? (
@@ -186,7 +186,7 @@ export function SubscribeBanner() {
                           disabled={status === "loading"}
                           className="h-10 shrink-0 rounded-lg bg-[var(--color-accent)] px-5 text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 disabled:opacity-60 transition-colors"
                         >
-                          {status === "loading" ? "..." : "Subscribe"}
+                          {status === "loading" ? "..." : "Sign up"}
                         </button>
                       </div>
                       {status === "error" && (

@@ -256,3 +256,58 @@ export interface SubscriberRow {
   created_at: string;
   tier_updated_at: string | null;
 }
+
+// ─── Weekly Recap types ────────────────────────────────────────────────────
+
+export interface DaySummary {
+  date: string;
+  price_usd: number;
+  change_24h_pct: number;
+  consensus_label: string;
+  consensus_score: number;
+  fear_greed_value: number | null;
+  fear_greed_label: string | null;
+  one_line: string | null;
+}
+
+export interface WeeklyRecapData {
+  week_start: string;
+  week_end: string;
+  days_available: number;
+  price_start: number;
+  price_end: number;
+  price_change_pct: number;
+  price_high: number;
+  price_low: number;
+  daily_summaries: DaySummary[];
+  top_stories: Array<{
+    headline: string;
+    source: string;
+    url: string;
+    summary: string;
+    sentiment: "bullish" | "bearish" | "neutral";
+    date: string;
+  }>;
+  regulatory_highlights: Array<{
+    headline: string;
+    region: string;
+    summary: string;
+    impact: "positive" | "negative" | "neutral";
+  }>;
+  adoption_highlights: Array<{
+    headline: string;
+    category: string;
+    summary: string;
+  }>;
+  btc_vs_everything: Array<{
+    name: string;
+    ticker: string;
+    change_ytd_pct: number | null;
+  }>;
+  btc_7d_change_pct: number;
+  fear_greed_start: { value: number; label: string } | null;
+  fear_greed_end: { value: number; label: string } | null;
+  market_cap_end: number;
+  volume_avg: number;
+  dominance_end: number;
+}

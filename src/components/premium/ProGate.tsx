@@ -4,12 +4,15 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 
 const PRO_FEATURES = [
+  { label: "Daily Email Briefing", desc: "Full briefing delivered to your inbox" },
   { label: "Institutional Flows", desc: "ETF data, notable moves" },
   { label: "Technical Signals", desc: "RSI, SMAs, support & resistance" },
   { label: "Network Health", desc: "Hashrate, fees, halving countdown" },
   { label: "Expert Insights", desc: "Lyn Alden, Dylan LeClair, and more" },
   { label: "Forward Outlook", desc: "Macro, regulatory, technical analysis" },
   { label: "AI Chat", desc: "Ask questions about today's data" },
+  { label: "PDF Downloads", desc: "1-page daily summary" },
+  { label: "Full Archive", desc: "Access all historical briefings" },
 ];
 
 export function ProGate() {
@@ -80,7 +83,7 @@ export function ProGateCompact({ message }: { message?: string }) {
         Pro
       </p>
       <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed max-w-md">
-        {message ?? "This content is available to Pro subscribers. Upgrade to access the full briefing, AI chat, and archive."}
+        {message ?? "This content is available to Pro subscribers. Upgrade for the daily email briefing, AI chat, PDF downloads, and full archive."}
       </p>
       <Link
         href="/pricing"

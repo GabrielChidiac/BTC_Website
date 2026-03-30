@@ -85,7 +85,6 @@ interface DailyDigestProps {
   briefing: BriefingJSON;
   siteUrl: string;
   name?: string;
-  tier?: "free" | "pro";
 }
 
 // ─── Preview defaults for React Email dev server ──────────────────────────────
@@ -221,13 +220,10 @@ export default function DailyDigest({
   briefing = previewBriefing,
   siteUrl = "https://btctoday.co",
   name,
-  tier = "pro",
 }: DailyDigestProps) {
-  const isPro = tier === "pro";
   const { market_snapshot: mkt, top_stories, daily_diff, regulatory, adoption } = briefing;
   const stories = top_stories.slice(0, 3);
   const briefingUrl = "%%BRIEFING_URL%%";
-  const archiveUrl = `${siteUrl}/archive/${briefing.date}`;
   const greeting = name ? `Good morning, ${name}.` : "Good morning.";
 
   return (
@@ -353,7 +349,7 @@ export default function DailyDigest({
           <Hr style={styles.hr} />
 
           {/* ── Regulatory Spotlight ──────────────────────────────── */}
-          {isPro && regulatory && regulatory.length > 0 && (
+          {regulatory && regulatory.length > 0 && (
             <>
               <Section style={styles.section}>
                 <Heading as="h2" style={styles.sectionHeading}>
@@ -380,7 +376,7 @@ export default function DailyDigest({
           )}
 
           {/* ── Adoption Highlight ────────────────────────────────── */}
-          {isPro && adoption && adoption.length > 0 && (
+          {adoption && adoption.length > 0 && (
             <>
               <Section style={styles.section}>
                 <Heading as="h2" style={styles.sectionHeading}>
@@ -407,46 +403,29 @@ export default function DailyDigest({
           )}
 
           {/* ── CTA ────────────────────────────────────────────────── */}
-          {isPro ? (
-            <Section style={styles.ctaSection}>
-              <Text style={styles.ctaText}>
-                Full briefing with institutional flows, macro context, expert insights, and more:
-              </Text>
-              <Link href={briefingUrl} style={styles.ctaButton}>
-                Read Full Briefing
-              </Link>
-              <Text style={styles.ctaChatText}>
-                Download today&apos;s 1-page summary:
-              </Text>
-              <Link href="%%PDF_URL%%" style={styles.ctaChatButton}>
-                Download PDF Summary
-              </Link>
-              <Text style={styles.ctaChatText}>
-                Or ask our AI about today&apos;s data:
-              </Text>
-              <Link href="%%CHAT_URL%%" style={styles.ctaChatButton}>
-                Chat with AI
-              </Link>
-              <Text style={styles.communityText}>
-                As a Pro subscriber, you have exclusive access to our AI assistant, daily PDF briefings, and deep-dive analysis.
-              </Text>
-            </Section>
-          ) : (
-            <Section style={styles.ctaSection}>
-              <Text style={styles.ctaText}>
-                The full briefing continues with institutional flows, expert insights, technical analysis, macro context, and forward outlook.
-              </Text>
-              <Link href={`${siteUrl}/pricing`} style={styles.ctaButton}>
-                Go Pro — $9/month
-              </Link>
-              <Text style={styles.ctaChatText}>
-                Unlock the Deep Dive, AI Chat, PDF downloads, and full archive.
-              </Text>
-              <Link href={briefingUrl} style={styles.ctaChatButton}>
-                Read Today&apos;s Free Sections
-              </Link>
-            </Section>
-          )}
+          <Section style={styles.ctaSection}>
+            <Text style={styles.ctaText}>
+              Full briefing with institutional flows, macro context, expert insights, and more:
+            </Text>
+            <Link href={briefingUrl} style={styles.ctaButton}>
+              Read Full Briefing
+            </Link>
+            <Text style={styles.ctaChatText}>
+              Download today&apos;s 1-page summary:
+            </Text>
+            <Link href="%%PDF_URL%%" style={styles.ctaChatButton}>
+              Download PDF Summary
+            </Link>
+            <Text style={styles.ctaChatText}>
+              Or ask our AI about today&apos;s data:
+            </Text>
+            <Link href="%%CHAT_URL%%" style={styles.ctaChatButton}>
+              Chat with AI
+            </Link>
+            <Text style={styles.communityText}>
+              As a Pro subscriber, you have exclusive access to our AI assistant, daily PDF briefings, and deep-dive analysis.
+            </Text>
+          </Section>
 
           <Hr style={styles.hr} />
 

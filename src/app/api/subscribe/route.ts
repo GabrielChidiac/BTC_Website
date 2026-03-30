@@ -90,7 +90,7 @@ export async function POST(request: Request) {
         to: email,
         subject: "Welcome to BTC Today",
         html,
-        text: `Welcome to BTC Today!\n\nYou'll receive a daily Bitcoin intelligence briefing every morning at 2 AM CET.\n\nRead today's briefing: ${siteUrl}\n\n— BTC Today`,
+        text: `Welcome to BTC Today!\n\nA new briefing publishes every morning at 2 AM CET. Visit btctoday.co to read the latest. You'll also receive a weekly recap every Sunday.\n\nRead today's briefing: ${siteUrl}\n\nUpgrade to Pro for the daily email, AI chat, PDF downloads, and more: ${siteUrl}/pricing\n\n— BTC Today`,
       });
     } catch {
       // Non-fatal — subscriber is already saved

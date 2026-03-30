@@ -48,7 +48,7 @@ export default function WelcomeEmail({
         <meta name="color-scheme" content="light" />
         <meta name="supported-color-schemes" content="light" />
       </Head>
-      <Preview>You're in — daily Bitcoin intelligence starts tomorrow at 2 AM CET</Preview>
+      <Preview>You're in — access daily Bitcoin intelligence at btctoday.co</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
 
@@ -73,11 +73,13 @@ export default function WelcomeEmail({
             </Text>
 
             <Section style={styles.highlightBox}>
-              <Text style={styles.highlightLabel}>What you&apos;ll get</Text>
+              <Text style={styles.highlightLabel}>Your free account includes</Text>
               <Text style={styles.highlightText}>
-                Every morning at <strong style={{ color: colors.textPrimary }}>2 AM CET</strong>,
-                a single email with everything that matters: market moves, top stories,
-                institutional flows, macro context, and expert insights — no filler.
+                A new briefing publishes every morning at <strong style={{ color: colors.textPrimary }}>2 AM CET</strong>.
+                Visit btctoday.co to read the latest — market moves, top stories,
+                and BTC vs Everything comparisons. Plus, you&apos;ll receive a{" "}
+                <strong style={{ color: colors.textPrimary }}>weekly recap</strong> every Sunday
+                with the week&apos;s highlights.
               </Text>
             </Section>
 
@@ -98,19 +100,30 @@ export default function WelcomeEmail({
               </Text>
               <Text style={styles.expectItem}>
                 <span style={{ color: colors.accent }}>&#9656;</span>
-                {"  "}Institutional flows and ETF data
+                {"  "}BTC vs Everything comparisons
               </Text>
               <Text style={styles.expectItem}>
                 <span style={{ color: colors.accent }}>&#9656;</span>
-                {"  "}Technical signals (RSI, SMAs, support/resistance)
+                {"  "}Regulatory and adoption signals
               </Text>
               <Text style={styles.expectItem}>
                 <span style={{ color: colors.accent }}>&#9656;</span>
-                {"  "}Expert insights from recognized analysts
+                {"  "}Last 7 days of briefings in the archive
               </Text>
               <Text style={styles.expectItem}>
                 <span style={{ color: colors.accent }}>&#9656;</span>
-                {"  "}AI chat access to ask questions about the data
+                {"  "}Weekly recap email every Sunday
+              </Text>
+            </Section>
+
+            <Section style={styles.highlightBox}>
+              <Text style={styles.highlightLabel}>Want more?</Text>
+              <Text style={styles.highlightText}>
+                <Link href={`${siteUrl}/pricing`} style={{ color: colors.accent, textDecoration: "none", fontWeight: "700" }}>
+                  Go Pro
+                </Link>
+                {" "}to get the full briefing delivered to your inbox every morning, plus institutional flows,
+                expert insights, AI chat, PDF downloads, and full archive access.
               </Text>
             </Section>
           </Section>
@@ -120,9 +133,9 @@ export default function WelcomeEmail({
           {/* ── CTA ────────────────────────────────────────────────── */}
           <Section style={styles.ctaSection}>
             <Text style={styles.ctaText}>
-              Your first briefing arrives tomorrow. In the meantime:
+              Your first briefing is already live:
             </Text>
-            <Link href="https://btctoday.co" style={styles.ctaButton}>
+            <Link href={siteUrl} style={styles.ctaButton}>
               Read Today&apos;s Briefing
             </Link>
           </Section>

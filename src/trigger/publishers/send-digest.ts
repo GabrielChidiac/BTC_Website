@@ -28,12 +28,13 @@ export const sendDigestTask = task({
       return { sent: 0, failed: 0 };
     }
 
-    // Step 2: Fetch active subscribers
+    // Step 2: Fetch active Pro subscribers (only Pro tier receives the daily email)
     const supabase = createServiceClient();
     const { data: subscribers, error } = await supabase
       .from("subscribers")
       .select("email, name, tier")
-      .eq("status", "active");
+      .eq("status", "active")
+      .eq("tier", "pro");
 
     if (error) {
       logger.error("Failed to fetch subscribers", { error: error.message });
@@ -42,14 +43,13 @@ export const sendDigestTask = task({
 
     const activeEmails = subscribers.map((s) => s.email);
     const nameByEmail = new Map(subscribers.map((s) => [s.email, s.name as string | null]));
-    const tierByEmail = new Map(subscribers.map((s) => [s.email, (s.tier as string) ?? "free"]));
 
     if (activeEmails.length === 0) {
-      logger.info("No active subscribers — skipping email digest");
+      logger.info("No active Pro subscribers — skipping email digest");
       return { sent: 0, failed: 0 };
     }
 
-    logger.info("Sending digest", { subscriberCount: activeEmails.length, date });
+    logger.info("Sending digest to Pro subscribers", { subscriberCount: activeEmails.length, date });
 
     // Step 3: Build email content
     const siteUrl = getBaseUrl();
@@ -57,9 +57,8 @@ export const sendDigestTask = task({
 
     const subject = `BTC Today: $${market_snapshot.price_usd.toLocaleString("en-US")} (${market_snapshot.change_24h_pct >= 0 ? "+" : ""}${market_snapshot.change_24h_pct.toFixed(2)}%)`;
 
-    // Render React Email templates — one per tier (with placeholders for per-subscriber values)
-    const htmlTemplatePro = await render(DailyDigest({ briefing, siteUrl, name: "%%NAME%%", tier: "pro" }));
-    const htmlTemplateFree = await render(DailyDigest({ briefing, siteUrl, name: "%%NAME%%", tier: "free" }));
+    // Render React Email template (all recipients are Pro — full content)
+    const htmlTemplate = await render(DailyDigest({ briefing, siteUrl, name: "%%NAME%%" }));
 
     // Generate PDF summary and upload to Supabase Storage (non-fatal)
     let pdfUrl = "";
@@ -144,7 +143,6 @@ Chat with our AI: %%CHAT_URL%%
       const batch = activeEmails.slice(i, i + BATCH_SIZE);
 
       const batchPayload = batch.map((email) => {
-        const subscriberTier = tierByEmail.get(email) || "free";
         const token = authTokens.get(email);
         const chatUrl = token
           ? `${siteUrl}/chat?token=${token}&email=${encodeURIComponent(email)}`
@@ -161,7 +159,7 @@ Chat with our AI: %%CHAT_URL%%
           ? `${pdfUrl}?token=${token}&email=${encodeURIComponent(email)}`
           : pdfUrl;
 
-        let html = (subscriberTier === "pro" ? htmlTemplatePro : htmlTemplateFree)
+        let html = htmlTemplate
           .replace(/%%CHAT_URL%%/g, chatUrl)
           .replace(/%%PDF_URL%%/g, subscriberPdfUrl)
           .replace(/%%BRIEFING_URL%%/g, briefingUrl);
