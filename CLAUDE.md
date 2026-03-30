@@ -39,6 +39,9 @@ Path alias: `@/*` maps to `./src/*` (configured in `tsconfig.json`).
 - [docs/orchestrator.md](docs/orchestrator.md) — Pipeline orchestrator reference
 - [docs/deployment.md](docs/deployment.md) — Deployment guide
 
+## Working Rules
+- **Always verify before writing.** Read the relevant schema, types, and existing code before writing any new code. Never assume a field, type, or pattern exists — confirm it first.
+
 ## Critical Patterns
 
 ### Result Type
@@ -66,6 +69,15 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - **No `tailwind.config.js`** — Tailwind v4 doesn't use one
 - Custom CSS variables defined in `@theme`: `--color-bg-base`, `--color-accent`, `--font-heading`, etc.
 
+### Authentication
+- **Magic link auth** — no passwords. Email subscribers get magic link tokens (7-day expiry, not consumed on use)
+- `verify-send` sends magic link → `verify-check` validates token, checks subscriber is active, creates 30-day session
+- Session cookie (`btc-session`): httpOnly, secure in production, sameSite lax
+- **Max 3 concurrent sessions** per email — oldest evicted on 4th login
+- PDF route (`/pdf/[date]`) accepts both session cookie and magic link token via query params
+- All email links (briefing, PDF, chat) share the same per-subscriber magic token
+- `getBaseUrl()` (`src/lib/url.ts`) resolves site URL — never falls back to localhost
+
 ### Native fetch
 - All HTTP calls use native `fetch` — no axios
 
@@ -85,7 +97,7 @@ All listed in `.env.example`. Required keys:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role (server-side writes) |
 | `REVALIDATION_SECRET` | Protects `/api/revalidate` endpoint |
-| `NEXT_PUBLIC_SITE_URL` | Site URL (default: `http://localhost:3000`) |
+| `NEXT_PUBLIC_SITE_URL` | Site URL (fallback: `https://www.btctoday.co` via `getBaseUrl()` in `src/lib/url.ts`) |
 
 ## Database (Supabase)
 3 tables, migrations in `supabase/migrations/`:
@@ -93,7 +105,7 @@ All listed in `.env.example`. Required keys:
 |---|---|
 | `daily_briefings` | `date` PK + `content` JSONB (the full `BriefingJSON`) |
 | `subscribers` | Email list (`email`, `name`, `status`: active/unsubscribed) |
-| `verification_codes` | OTP codes for chat access (`email`, `code`, `expires_at`, `used`) |
+| `verification_codes` | Magic link tokens, session tokens (`email`, `code`, `expires_at`, `used`) |
 
 RLS: briefings are publicly readable; subscribers and verification codes are service-role only.
 
@@ -102,9 +114,11 @@ RLS: briefings are publicly readable; subscribers and verification codes are ser
 |---|---|---|
 | `/api/subscribe` | POST | Add email subscriber |
 | `/api/revalidate` | POST | ISR revalidation (requires `REVALIDATION_SECRET`) |
-| `/api/chat` | POST | Claude chat — requires OTP token, sends last 7 days of briefings as context |
-| `/api/chat/verify-send` | POST | Send 6-digit OTP to subscriber email |
-| `/api/chat/verify-check` | POST | Verify OTP, returns token for `/api/chat` |
+| `/api/chat` | POST | Claude chat — requires session token, sends last 7 days of briefings as context |
+| `/api/chat/verify-send` | POST | Send magic link to subscriber email |
+| `/api/chat/verify-check` | POST | Verify magic link token, create 30-day session (max 3 concurrent devices) |
+| `/api/logout` | POST | Clear session cookie |
+| `/pdf/[date]` | GET | PDF download — auth via session cookie or magic link token, Pro only |
 
 ## Pipeline Architecture
 ```
@@ -170,7 +184,7 @@ RLS: briefings are publicly readable; subscribers and verification codes are ser
 - **Expert voices** — Perplexity-sourced insights from recognized analysts (Lyn Alden, Saylor, etc.), not YouTube influencers
 
 ## Pre-Deployment Checklist
-- [ ] Set `NEXT_PUBLIC_SITE_URL` to production domain (currently `http://localhost:3000`)
+- [x] Set `NEXT_PUBLIC_SITE_URL` to production domain (`getBaseUrl()` falls back to `https://www.btctoday.co`)
 - [ ] Set all env vars in Vercel/hosting provider (never commit `.env`)
 - [ ] Verify Supabase RLS policies are applied (`001_initial_schema.sql`)
 - [ ] Verify `digest@btctoday.co` domain is verified in Resend

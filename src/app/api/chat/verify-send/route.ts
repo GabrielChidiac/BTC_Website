@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getBaseUrl } from "@/lib/url";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TOKEN_EXPIRY_MINUTES = 10;
@@ -95,7 +96,7 @@ export async function POST(request: Request) {
   }
 
   // Build magic link URL
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl = getBaseUrl();
   const magicLink = `${siteUrl}${redirectPath}?token=${token}&email=${encodeURIComponent(email)}`;
 
   // Send magic link email

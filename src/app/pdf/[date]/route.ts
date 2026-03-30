@@ -14,47 +14,63 @@ export async function GET(
     return new Response("Invalid date", { status: 400 });
   }
 
-  // Check tier via session cookie
+  const supabase = createServiceClient();
+
+  // ── Auth path 1: Session cookie ──────────────────────────────────
+  let email: string | undefined;
+
   const cookieStore = await cookies();
   const raw = cookieStore.get(COOKIE_NAME)?.value;
 
-  if (!raw) {
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      const cookieEmail = parsed.email?.trim().toLowerCase();
+      const cookieToken = parsed.token;
+
+      if (cookieEmail && cookieToken) {
+        const { data: session } = await supabase
+          .from("verification_codes")
+          .select("id")
+          .eq("email", cookieEmail)
+          .eq("code", `session:${cookieToken}`)
+          .eq("used", false)
+          .gte("expires_at", new Date().toISOString())
+          .limit(1)
+          .maybeSingle();
+
+        if (session) email = cookieEmail;
+      }
+    } catch { /* invalid cookie — fall through */ }
+  }
+
+  // ── Auth path 2: Magic link token via query params ───────────────
+  if (!email) {
+    const url = new URL(req.url);
+    const queryToken = url.searchParams.get("token")?.trim();
+    const queryEmail = url.searchParams.get("email")?.trim().toLowerCase();
+
+    if (queryToken && queryEmail && queryToken.length >= 32) {
+      const { data: magicToken } = await supabase
+        .from("verification_codes")
+        .select("id")
+        .eq("email", queryEmail)
+        .eq("code", `magic:${queryToken}`)
+        .eq("used", false)
+        .gte("expires_at", new Date().toISOString())
+        .limit(1)
+        .maybeSingle();
+
+      if (magicToken) email = queryEmail;
+    }
+  }
+
+  // ── No valid auth → redirect to pricing ──────────────────────────
+  if (!email) {
     return Response.redirect(new URL("/pricing", req.url));
   }
 
-  let email: string | undefined;
-  let token: string | undefined;
-
-  try {
-    const parsed = JSON.parse(raw);
-    email = parsed.email?.trim().toLowerCase();
-    token = parsed.token;
-  } catch {
-    return Response.redirect(new URL("/pricing", req.url));
-  }
-
-  if (!email || !token) {
-    return Response.redirect(new URL("/pricing", req.url));
-  }
-
-  const supabase = createServiceClient();
-
-  // Verify session token
-  const { data: session } = await supabase
-    .from("verification_codes")
-    .select("id")
-    .eq("email", email)
-    .eq("code", `session:${token}`)
-    .eq("used", false)
-    .gte("expires_at", new Date().toISOString())
-    .limit(1)
-    .maybeSingle();
-
-  if (!session) {
-    return Response.redirect(new URL("/pricing", req.url));
-  }
-
-  // Check subscriber tier
+  // ── Check subscriber tier ────────────────────────────────────────
   const { data: subscriber } = await supabase
     .from("subscribers")
     .select("tier")
@@ -65,7 +81,7 @@ export async function GET(
     return Response.redirect(new URL("/pricing", req.url));
   }
 
-  // Pro user — generate a short-lived signed URL (not a permanent public link)
+  // ── Pro user: generate short-lived signed URL ────────────────────
   const filename = `btc-today-${date}.pdf`;
   const { data, error } = await supabase.storage
     .from("briefing-pdfs")

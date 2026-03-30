@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getBaseUrl } from "@/lib/url";
 import WelcomeEmail from "../../../../emails/welcome";
 
 const NAME_MAX = 50;
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
   if (resendKey) {
     try {
       const resend = new Resend(resendKey);
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+      const siteUrl = getBaseUrl();
 
       const html = await render(WelcomeEmail({ email, name: name ?? undefined, siteUrl }));
 

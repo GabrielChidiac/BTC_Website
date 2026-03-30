@@ -61,18 +61,42 @@ export async function POST(request: Request) {
     );
   }
 
-  // Mark magic link as used
-  await supabase
-    .from("verification_codes")
-    .update({ used: true })
-    .eq("id", magicToken.id);
+  // Magic token stays valid until its 7-day expiry so all email links
+  // (briefing, PDF, chat) keep working across devices.
 
-  // Fetch subscriber name for personalized display
+  // Verify subscriber is still active before creating a session
   const { data: subscriber } = await supabase
     .from("subscribers")
-    .select("name")
+    .select("name, status")
     .eq("email", email)
     .maybeSingle();
+
+  if (!subscriber || subscriber.status !== "active") {
+    return NextResponse.json(
+      { error: "Your subscription is no longer active." },
+      { status: 403 }
+    );
+  }
+
+  // Enforce max 3 concurrent sessions — evict oldest if at limit
+  const MAX_SESSIONS = 3;
+  const { data: activeSessions } = await supabase
+    .from("verification_codes")
+    .select("id")
+    .eq("email", email)
+    .like("code", "session:%")
+    .eq("used", false)
+    .gte("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: true });
+
+  if (activeSessions && activeSessions.length >= MAX_SESSIONS) {
+    // Delete oldest sessions to make room for the new one
+    const toEvict = activeSessions.slice(0, activeSessions.length - MAX_SESSIONS + 1);
+    await supabase
+      .from("verification_codes")
+      .update({ used: true })
+      .in("id", toEvict.map((s) => s.id));
+  }
 
   // Generate a long-lived session token
   const sessionBytes = new Uint8Array(32);

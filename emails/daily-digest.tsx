@@ -428,7 +428,7 @@ export default function DailyDigest({
                 Chat with AI
               </Link>
               <Text style={styles.communityText}>
-                As a Pro subscriber, you have exclusive access to our AI assistant, daily PDF briefings, and the BTC Today community.
+                As a Pro subscriber, you have exclusive access to our AI assistant, daily PDF briefings, and deep-dive analysis.
               </Text>
             </Section>
           ) : (

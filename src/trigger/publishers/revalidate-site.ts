@@ -1,9 +1,10 @@
 import { task, logger } from "@trigger.dev/sdk/v3";
+import { getBaseUrl } from "@/lib/url";
 
 export const revalidateSiteTask = task({
   id: "revalidate-site",
   run: async (): Promise<{ revalidated: true }> => {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    const siteUrl = getBaseUrl();
     const secret = process.env.REVALIDATION_SECRET;
 
     if (!secret) {

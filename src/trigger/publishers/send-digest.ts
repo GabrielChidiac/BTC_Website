@@ -6,6 +6,7 @@ import type { BriefingJSON } from "@/lib/types";
 import DailyDigest from "../../../emails/daily-digest";
 import { DailySummaryPDF } from "../../../emails/daily-summary-pdf";
 import { renderToBuffer } from "@react-pdf/renderer";
+import { getBaseUrl } from "@/lib/url";
 
 interface SendDigestPayload {
   date: string; // "YYYY-MM-DD"
@@ -51,10 +52,10 @@ export const sendDigestTask = task({
     logger.info("Sending digest", { subscriberCount: activeEmails.length, date });
 
     // Step 3: Build email content
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    const siteUrl = getBaseUrl();
     const { market_snapshot, top_stories } = briefing;
 
-    const subject = `BTC Today — $${market_snapshot.price_usd.toLocaleString("en-US")} (${market_snapshot.change_24h_pct >= 0 ? "+" : ""}${market_snapshot.change_24h_pct.toFixed(2)}%)`;
+    const subject = `BTC Today: $${market_snapshot.price_usd.toLocaleString("en-US")} (${market_snapshot.change_24h_pct >= 0 ? "+" : ""}${market_snapshot.change_24h_pct.toFixed(2)}%)`;
 
     // Render React Email templates — one per tier (with placeholders for per-subscriber values)
     const htmlTemplatePro = await render(DailyDigest({ briefing, siteUrl, name: "%%NAME%%", tier: "pro" }));
@@ -155,9 +156,14 @@ Chat with our AI: %%CHAT_URL%%
           ? `${siteUrl}/sign-in?token=${token}&email=${encodeURIComponent(email)}`
           : `${siteUrl}/archive/${date}`;
 
+        // Append auth token to PDF URL so Pro subscribers can download without a prior session
+        const subscriberPdfUrl = (pdfUrl && token)
+          ? `${pdfUrl}?token=${token}&email=${encodeURIComponent(email)}`
+          : pdfUrl;
+
         let html = (subscriberTier === "pro" ? htmlTemplatePro : htmlTemplateFree)
           .replace(/%%CHAT_URL%%/g, chatUrl)
-          .replace(/%%PDF_URL%%/g, pdfUrl)
+          .replace(/%%PDF_URL%%/g, subscriberPdfUrl)
           .replace(/%%BRIEFING_URL%%/g, briefingUrl);
         let text = textTemplate
           .replace(/%%CHAT_URL%%/g, chatUrl)
