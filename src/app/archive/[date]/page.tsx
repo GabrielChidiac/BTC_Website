@@ -199,7 +199,7 @@ export default async function ArchiveDatePage({
             </>
           ) : (
             <div className="mt-10">
-              <ProGateCompact message="Full briefing content for older dates is available to Pro subscribers. Recent briefings (last 7 days) are free." />
+              <ProGateCompact message="Full briefing content for older dates is available to Pro subscribers. Upgrade for the daily email, AI chat, PDF downloads, and full archive." />
             </div>
           )}
 

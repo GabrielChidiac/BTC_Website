@@ -56,15 +56,15 @@ export function ProGate() {
           <div className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
             <Link
               href="/pricing"
-              className="inline-flex items-center rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
-            >
-              Go Pro — $9/month
-            </Link>
-            <Link
-              href="/pricing"
               className="text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
             >
               or $69/year (save 36%)
+            </Link>
+            <Link
+              href="/pricing"
+              className="inline-flex items-center rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
+            >
+              Go Pro — $9/month
             </Link>
           </div>
         </CardContent>

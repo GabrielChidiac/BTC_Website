@@ -42,7 +42,7 @@ export function SubscribeForm() {
 
       if (res.ok) {
         setStatus("success");
-        setMessage(data.message ?? "Subscribed!");
+        setMessage(data.message ?? "You're in!");
       } else {
         setStatus("error");
         setMessage(data.error ?? "Something went wrong");
@@ -111,7 +111,7 @@ export function SubscribeForm() {
             disabled={status === "loading"}
             className="h-10 shrink-0 rounded-lg bg-[var(--color-accent)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 disabled:opacity-60"
           >
-            {status === "loading" ? "..." : "Subscribe"}
+            {status === "loading" ? "..." : "Sign up"}
           </MotionButton>
         </div>
       </form>

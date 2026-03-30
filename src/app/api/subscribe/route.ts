@@ -98,7 +98,7 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(
-    { success: true, message: "Subscribed!" },
+    { success: true, message: "You're in!" },
     { status: 201 }
   );
 }
