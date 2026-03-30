@@ -70,7 +70,7 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - Custom CSS variables defined in `@theme`: `--color-bg-base`, `--color-accent`, `--font-heading`, etc.
 
 ### Authentication
-- **Magic link auth** — no passwords. Email subscribers get magic link tokens (7-day expiry, not consumed on use)
+- **Magic link auth** — no passwords. Email subscribers get magic link tokens (10-min expiry, not consumed on use)
 - `verify-send` sends magic link → `verify-check` validates token, checks subscriber is active, creates 30-day session
 - Session cookie (`btc-session`): httpOnly, secure in production, sameSite lax
 - **Max 3 concurrent sessions** per email — oldest evicted on 4th login
@@ -125,12 +125,12 @@ RLS: briefings are publicly readable; subscribers and verification codes are ser
 2 AM CET daily (Trigger.dev cron):
 
   ┌─ news collector ──────┐
-  │  (7 RSS feeds)         │
-  │                        │──→ AI Brain (Claude) ──→ Enrichment (Perplexity x4)
+  │  (11 RSS feeds +       │
+  │   SearchAPI)           │──→ AI Brain (Claude) ──→ Enrichment (Perplexity x4)
   └─ market collector ─────┘         │                       │
      (CoinGecko, Mempool,           │                       ├── looking_ahead
-      Yahoo Finance)               v                       ├── institutional_flows
-                               BriefingJSON ◄───────────────├── expert_insights
+      Yahoo Finance,                v                       ├── institutional_flows
+      Alternative.me)          BriefingJSON ◄───────────────├── expert_insights
                                     │                       └── supply_dynamics
                                     ├──→ Save to Supabase
                                     ├──→ Revalidate Next.js (ISR)
@@ -147,8 +147,8 @@ RLS: briefings are publicly readable; subscribers and verification codes are ser
 - **Invoke the `frontend-design` skill** before writing any frontend code. No exceptions.
 
 ### Design System
-- Light/platinum theme: bg `#F4F3F1`, surfaces `#FFFFFF`/`#F9F8F6`, accent `#F7931A` (BTC orange) + `#3B82F6` (atmospheric blue, background only)
-- Space Grotesk (headings, tracking `-0.03em`, line-height `1.2`) + Inter (body, line-height `1.7`)
+- Light/cool gray theme: bg `#E2E5EE`, surfaces translucent `rgba(240,240,246,0.65)`, accent `#F7931A` (BTC orange) + `#3B82F6` (atmospheric blue, background only)
+- Space Grotesk (headings, tracking `-0.04em`, line-height `1.1`) + Inter (body, weight `300`, line-height `1.8`)
 - Bloomberg terminal / editorial aesthetic
 - Mobile-first, `max-w-3xl`, information-dense
 - Font variables: `--font-space-grotesk`, `--font-inter` (set in `layout.tsx`)
