@@ -4,10 +4,13 @@ export const COOKIE_NAME = "btc-session";
 const SESSION_MAX_AGE = 30 * 24 * 60 * 60; // 30 days
 
 function cookieOptions() {
-  const isProduction = process.env.NEXT_PUBLIC_SITE_URL?.startsWith("https");
+  // Only set secure flag when actually served over HTTPS.
+  // NEXT_PUBLIC_SITE_URL may be https in .env even during local dev,
+  // so check the runtime URL instead of the env var.
+  const isSecure = process.env.NODE_ENV === "production";
   return {
     httpOnly: true,
-    secure: !!isProduction,
+    secure: isSecure,
     sameSite: "lax" as const,
     path: "/",
     maxAge: SESSION_MAX_AGE,

@@ -39,6 +39,7 @@ function ChatInner({
             localStorage.setItem("btc-today-email", magicEmail);
             localStorage.setItem("btc-today-token", data.token);
             setSession({ email: magicEmail });
+            router.refresh();
             router.replace("/chat");
           } else {
             setVerifyError(data.error || "Invalid or expired link.");

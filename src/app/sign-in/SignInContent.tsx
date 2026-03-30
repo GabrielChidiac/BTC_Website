@@ -29,7 +29,10 @@ function SignInInner() {
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
-            // Cookie is set by the API response. Redirect home.
+            // Cookie is set by the API response. Force full server
+            // re-render so layout picks up the new session cookie,
+            // then navigate home.
+            router.refresh();
             router.replace("/");
           } else {
             setError(data.error || "Invalid or expired link. Try again.");
