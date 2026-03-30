@@ -186,9 +186,9 @@ RLS: briefings are publicly readable; subscribers and verification codes are ser
 ## Pre-Deployment Checklist
 - [x] Set `NEXT_PUBLIC_SITE_URL` to production domain (`getBaseUrl()` falls back to `https://www.btctoday.co`)
 - [ ] Set all env vars in Vercel/hosting provider (never commit `.env`)
-- [ ] Verify Supabase RLS policies are applied (`001_initial_schema.sql`)
-- [ ] Verify `digest@btctoday.co` domain is verified in Resend
+- [x] Verify Supabase RLS policies are applied (`001_initial_schema.sql`)
+- [x] Verify `digest@btctoday.co` domain is verified in Resend
 - [ ] Add `error.tsx` and `not-found.tsx` for branded error pages
-- [ ] Add rate limiting to `/api/chat` (unthrottled Claude proxy risk)
+- [x] Add rate limiting to `/api/chat` (unthrottled Claude proxy risk)
 - [ ] Consider adding `middleware.ts` for security headers (CSP, X-Frame-Options)
-- [ ] Remove unused dependency `youtube-transcript` from `package.json`
+- [x] Remove unused dependency `youtube-transcript` from `package.json`
