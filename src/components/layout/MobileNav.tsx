@@ -89,20 +89,37 @@ export function MobileNav({ signedInEmail, displayName }: { signedInEmail?: stri
         {/* Auth */}
         <div className="mt-4 border-t border-[var(--color-border)] pt-4 px-4">
           {signedInEmail ? (
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2">
               <p className="text-[11px] text-[var(--color-text-muted)] truncate">
                 {displayName ?? signedInEmail}
               </p>
-              <button
-                onClick={async () => {
-                  await fetch("/api/logout", { method: "POST" });
-                  setOpen(false);
-                  window.location.reload();
-                }}
-                className="cursor-pointer text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
-              >
-                Log out
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={async () => {
+                    await fetch("/api/logout", { method: "POST" });
+                    setOpen(false);
+                    window.location.reload();
+                  }}
+                  className="cursor-pointer text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+                >
+                  Log out
+                </button>
+                <span className="h-3 w-px bg-[var(--color-border)]" />
+                <button
+                  onClick={async () => {
+                    if (confirm("Stop all emails and delete your account?")) {
+                      const res = await fetch("/api/unsubscribe", { method: "POST" });
+                      if (res.ok) {
+                        setOpen(false);
+                        window.location.href = "/";
+                      }
+                    }
+                  }}
+                  className="cursor-pointer text-[11px] text-[var(--color-text-muted)] hover:text-red-500 transition-colors"
+                >
+                  Unsubscribe
+                </button>
+              </div>
             </div>
           ) : (
             <Link

@@ -14,7 +14,15 @@ export function getBaseUrl(): string {
   const explicit =
     process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL;
 
-  if (explicit) return explicit.replace(/\/+$/, "");
+  if (explicit) {
+    const cleaned = explicit.replace(/\/+$/, "");
+    // Safety: never return localhost unless explicitly in local dev.
+    // Catches misconfigured env vars (e.g. .env.example read during Trigger.dev deploy).
+    if (/localhost|127\.0\.0\.1/.test(cleaned) && process.env.NODE_ENV !== "development") {
+      return "https://www.btctoday.co";
+    }
+    return cleaned;
+  }
 
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { Container } from "./Container";
 import { MobileNav } from "./MobileNav";
-import { LogoutButton } from "./LogoutButton";
+import { UserMenu } from "./UserMenu";
 import { COOKIE_NAME } from "@/lib/session";
 import { createServerClient } from "@/lib/supabase/server";
 
@@ -106,16 +106,8 @@ export async function Header({ date }: { date?: string }) {
             </time>
           )}
           {signedInEmail ? (
-            <div className="hidden md:flex items-center gap-2">
-              {displayName && (
-                <>
-                  <span className="text-[11px] font-medium text-[var(--color-text-muted)] whitespace-nowrap">
-                    {displayName}
-                  </span>
-                  <span className="h-3 w-px bg-[var(--color-border)]" />
-                </>
-              )}
-              <LogoutButton className="text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors whitespace-nowrap" />
+            <div className="hidden md:flex items-center">
+              <UserMenu displayName={displayName} />
             </div>
           ) : (
             <Link

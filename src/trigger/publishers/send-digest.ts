@@ -167,6 +167,11 @@ Chat with our AI: %%CHAT_URL%%
           .replace(/%%CHAT_URL%%/g, chatUrl)
           .replace(/%%BRIEFING_URL%%/g, briefingUrl);
 
+        // If no PDF was generated, remove the PDF section from the email
+        if (!subscriberPdfUrl) {
+          html = html.replace(/Download today[\s\S]*?Download PDF Summary<\/a>/i, "");
+        }
+
         if (subscriberName) {
           html = html.replace(/%%NAME%%/g, subscriberName);
           text = `Hi ${subscriberName},\n\n${text}`;
