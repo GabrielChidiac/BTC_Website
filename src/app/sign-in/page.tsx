@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { COOKIE_NAME } from "@/lib/session";
@@ -5,9 +6,10 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { SignInContent } from "./SignInContent";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Login | BTC Today",
   description: "Login to access your BTC Today Pro subscription.",
+  robots: { index: false, follow: true },
 };
 
 export default async function SignInPage() {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -6,9 +7,23 @@ import { Container } from "@/components/layout/Container";
 import { COOKIE_NAME } from "@/lib/session";
 import { getSubscriberTier } from "@/lib/tier";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Pricing | BTC Today",
-  description: "Upgrade to BTC Today Pro for institutional-grade Bitcoin intelligence.",
+  description:
+    "Upgrade to BTC Today Pro for institutional-grade Bitcoin intelligence.",
+  openGraph: {
+    title: "Pricing | BTC Today",
+    description:
+      "Upgrade to BTC Today Pro for institutional-grade Bitcoin intelligence.",
+    type: "website",
+    siteName: "BTC Today",
+  },
+  twitter: {
+    card: "summary",
+    title: "Pricing | BTC Today",
+    description:
+      "Upgrade to BTC Today Pro for institutional-grade Bitcoin intelligence.",
+  },
 };
 
 const FREE_FEATURES = [

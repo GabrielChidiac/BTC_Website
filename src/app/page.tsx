@@ -27,7 +27,8 @@ import { InstitutionalFlows } from "@/components/briefing/InstitutionalFlows";
 import { TechnicalSignals } from "@/components/briefing/TechnicalSignals";
 import { NetworkHealth } from "@/components/briefing/NetworkHealth";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
-import { ProGate } from "@/components/premium/ProGate";
+import { ProTeaser } from "@/components/premium/ProTeaser";
+import { NextBriefingCountdown } from "@/components/briefing/NextBriefingCountdown";
 
 
 export const revalidate = 3600;
@@ -334,9 +335,9 @@ export default async function Home() {
             </>
           ) : (
             /* ═══════════════════════════════════════════════════════════════
-               FREE TIER: Show upgrade CTA instead of sections 05-06
+               FREE TIER: Blurred teaser of sections 05-06 with upgrade CTA
                ═══════════════════════════════════════════════════════════════ */
-            <ProGate />
+            <ProTeaser briefing={briefing} />
           )}
 
           {/* ═══════════════════════════════════════════════════════════════
@@ -346,9 +347,7 @@ export default async function Home() {
             <p className="font-[family-name:var(--font-heading)] text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-accent)]">
               You&rsquo;re caught up
             </p>
-            <p className="text-xs text-[var(--color-accent)]">
-              Next briefing: 2 AM CET tomorrow
-            </p>
+            <NextBriefingCountdown />
           </div>
 
           {/* ═══════════════════════════════════════════════════════════════

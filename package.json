@@ -31,7 +31,6 @@
     "yahoo-finance2": "^3.13.2"
   },
   "devDependencies": {
-    "@react-email/preview-server": "^5.2.10",
     "@tailwindcss/postcss": "^4",
     "@trigger.dev/build": "^4.4.3",
     "@types/node": "^20.19.37",

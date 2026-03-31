@@ -15,6 +15,7 @@ AI-curated daily Bitcoin intelligence for high-net-worth individuals and busines
 | Database | Supabase (Postgres + RLS) | `@supabase/ssr@^0.9.0` |
 | Styling | Tailwind CSS v4 | CSS-only config via `@theme` |
 | AI | Claude Sonnet (briefing) + Perplexity sonar-pro (enrichment) | Kie.ai fallback for Claude |
+| Payments | LemonSqueezy | Free/Pro tiers, $9/month or $69/year |
 | Email | Resend + React Email | |
 | UI Components | shadcn/ui (base-nova) | `npx shadcn@latest add <component>` |
 | Animation | Framer Motion + GSAP | Only animate `transform` and `opacity` |
@@ -78,6 +79,14 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - All email links (briefing, PDF, chat) share the same per-subscriber magic token
 - `getBaseUrl()` (`src/lib/url.ts`) resolves site URL — never falls back to localhost
 
+### Subscription Tiers
+- **Free tier:** Basic market overview, top stories, comparisons, regulatory/adoption signals, weekly recap
+- **Pro tier:** All free features + daily briefing email, institutional flows, technical signals, network health, expert insights, forward outlook, AI chat, PDF downloads, full archive
+- Tiers stored in `subscribers.tier` column (`'free'` | `'pro'`)
+- LemonSqueezy handles payments (webhook not yet implemented)
+- `getSubscriberTier()` in `src/lib/tier.ts` reads session cookie → checks tier
+- All existing active subscribers were gifted Pro tier at launch
+
 ### Native fetch
 - All HTTP calls use native `fetch` — no axios
 
@@ -98,23 +107,29 @@ All listed in `.env.example`. Required keys:
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role (server-side writes) |
 | `REVALIDATION_SECRET` | Protects `/api/revalidate` endpoint |
 | `NEXT_PUBLIC_SITE_URL` | Site URL (fallback: `https://www.btctoday.co` via `getBaseUrl()` in `src/lib/url.ts`) |
+| `LEMONSQUEEZY_API_KEY` | LemonSqueezy (subscription payments) |
+| `LEMONSQUEEZY_WEBHOOK_SECRET` | LemonSqueezy webhook signature verification |
+| `NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_URL` | LemonSqueezy checkout URL ($9/month) |
+| `NEXT_PUBLIC_LEMONSQUEEZY_ANNUAL_URL` | LemonSqueezy checkout URL ($69/year) |
 
 ## Database (Supabase)
-3 tables, migrations in `supabase/migrations/`:
+4 tables, migrations in `supabase/migrations/`:
 | Table | Purpose |
 |---|---|
 | `daily_briefings` | `date` PK + `content` JSONB (the full `BriefingJSON`) |
-| `subscribers` | Email list (`email`, `name`, `status`: active/unsubscribed) |
+| `subscribers` | Email list (`email`, `name`, `status`: active/unsubscribed, `tier`: free/pro, LemonSqueezy IDs) |
 | `verification_codes` | Magic link tokens, session tokens (`email`, `code`, `expires_at`, `used`) |
+| `chat_rate_limits` | Serverless rate limiting for `/api/chat` (20 msgs / 10 min per email) |
 
-RLS: briefings are publicly readable; subscribers and verification codes are service-role only.
+RLS: briefings are publicly readable; all other tables are service-role only.
 
 ## API Routes
 | Endpoint | Method | Purpose |
 |---|---|---|
 | `/api/subscribe` | POST | Add email subscriber |
+| `/api/unsubscribe` | POST | Unsubscribe logged-in user |
 | `/api/revalidate` | POST | ISR revalidation (requires `REVALIDATION_SECRET`) |
-| `/api/chat` | POST | Claude chat — requires session token, sends last 7 days of briefings as context |
+| `/api/chat` | POST | Claude chat — requires session token, rate-limited (20/10min), sends last 7 days of briefings as context |
 | `/api/chat/verify-send` | POST | Send magic link to subscriber email |
 | `/api/chat/verify-check` | POST | Verify magic link token, create 30-day session (max 3 concurrent devices) |
 | `/api/logout` | POST | Clear session cookie |
@@ -125,7 +140,7 @@ RLS: briefings are publicly readable; subscribers and verification codes are ser
 2 AM CET daily (Trigger.dev cron):
 
   ┌─ news collector ──────┐
-  │  (11 RSS feeds +       │
+  │  (RSS feeds +          │
   │   SearchAPI)           │──→ AI Brain (Claude) ──→ Enrichment (Perplexity x4)
   └─ market collector ─────┘         │                       │
      (CoinGecko, Mempool,           │                       ├── looking_ahead
@@ -140,6 +155,8 @@ RLS: briefings are publicly readable; subscribers and verification codes are ser
 - AI Brain → Enrichment → Save → Revalidate → Email run **sequential**
 - Enrichment is **non-fatal** — briefing publishes even if Perplexity fails
 - Enrichment runs 4 Perplexity queries in parallel: forward outlook, institutional flows, expert insights, supply dynamics
+- `send-weekly-recap` task exists for weekly aggregated email
+- `src/trigger/lib/fetch-timeout.ts` provides `fetchWithTimeout()` and `withTimeout()` helpers for API calls
 
 ## Frontend Rules
 
@@ -183,12 +200,25 @@ RLS: briefings are publicly readable; subscribers and verification codes are ser
 - **Anti-skeptic by data** — let BTC vs Everything comparisons (24h, YTD, 1Y) speak for themselves
 - **Expert voices** — Perplexity-sourced insights from recognized analysts (Lyn Alden, Saylor, etc.), not YouTube influencers
 
+## Pages
+| Route | Purpose |
+|---|---|
+| `/` | Homepage — latest briefing |
+| `/archive` | Briefing archive list |
+| `/archive/[date]` | Single archived briefing |
+| `/chat` | AI chat interface (requires auth, Pro only) |
+| `/sign-in` | Magic link sign-in page |
+| `/pricing` | Free vs Pro comparison, LemonSqueezy checkout links |
+| `/pdf/[date]` | PDF download (auth required, Pro only) |
+
 ## Pre-Deployment Checklist
 - [x] Set `NEXT_PUBLIC_SITE_URL` to production domain (`getBaseUrl()` falls back to `https://www.btctoday.co`)
 - [ ] Set all env vars in Vercel/hosting provider (never commit `.env`)
 - [x] Verify Supabase RLS policies are applied (`001_initial_schema.sql`)
 - [x] Verify `digest@btctoday.co` domain is verified in Resend
-- [ ] Add `error.tsx` and `not-found.tsx` for branded error pages
-- [x] Add rate limiting to `/api/chat` (unthrottled Claude proxy risk)
+- [x] Add `error.tsx` and `not-found.tsx` for branded error pages
+- [x] Add rate limiting to `/api/chat` (database-backed, 20 msgs / 10 min)
 - [ ] Consider adding `middleware.ts` for security headers (CSP, X-Frame-Options)
 - [x] Remove unused dependency `youtube-transcript` from `package.json`
+- [ ] Implement LemonSqueezy webhook endpoint for subscription lifecycle events
+- [ ] Set LemonSqueezy env vars in production

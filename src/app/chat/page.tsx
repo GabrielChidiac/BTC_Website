@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { ChatContent } from "./ChatContent";
 import { COOKIE_NAME } from "@/lib/session";
+
+export const metadata: Metadata = {
+  title: "Ask AI | BTC Today",
+  description: "Ask questions about today's Bitcoin market data, powered by AI.",
+  robots: { index: false, follow: true },
+};
 
 export default async function ChatPage({
   searchParams,

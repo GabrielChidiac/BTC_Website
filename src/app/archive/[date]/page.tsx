@@ -43,9 +43,25 @@ export async function generateMetadata({
   const { date } = await params;
   if (!isValidDate(date)) return { title: "Not Found | BTC Today" };
 
+  const displayDate = formatDisplayDate(date);
+  const title = `Bitcoin Market Analysis — ${displayDate} | BTC Today`;
+  const description = `AI-curated Bitcoin market analysis for ${displayDate} with institutional flows, technical signals, and expert insights.`;
+
   return {
-    title: `${formatDisplayDate(date)} | BTC Today`,
-    description: `AI-curated Bitcoin briefing for ${formatDisplayDate(date)}.`,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      siteName: "BTC Today",
+      publishedTime: `${date}T01:00:00Z`,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
   };
 }
 

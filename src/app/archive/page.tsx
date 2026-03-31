@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { createServerClient } from "@/lib/supabase/server";
 import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
 import { formatDisplayDate, formatUSD, formatPctChange } from "@/lib/utils";
@@ -9,9 +10,23 @@ import { Container } from "@/components/layout/Container";
 
 export const revalidate = 3600;
 
-export const metadata = {
-  title: "Archive | BTC Today",
-  description: "Browse past daily Bitcoin briefings.",
+export const metadata: Metadata = {
+  title: "Bitcoin Daily Intelligence Archive | BTC Today",
+  description:
+    "Browse AI-curated daily Bitcoin briefings with market analysis, institutional flows, technical signals, and expert insights.",
+  openGraph: {
+    title: "Bitcoin Daily Intelligence Archive | BTC Today",
+    description:
+      "Browse AI-curated daily Bitcoin briefings with market analysis, institutional flows, technical signals, and expert insights.",
+    type: "website",
+    siteName: "BTC Today",
+  },
+  twitter: {
+    card: "summary",
+    title: "Bitcoin Daily Intelligence Archive | BTC Today",
+    description:
+      "Browse AI-curated daily Bitcoin briefings with market analysis, institutional flows, technical signals, and expert insights.",
+  },
 };
 
 function pctColor(pct: number): string {

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { Space_Grotesk, Inter, Geist } from "next/font/google";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { SubscribeBanner } from "@/components/subscribe/SubscribeBanner";
+import { FloatingChatButton } from "@/components/layout/FloatingChatButton";
 import { COOKIE_NAME } from "@/lib/session";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -24,9 +25,23 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.btctoday.co"),
   title: "BTC Today | AI-Curated Bitcoin Intelligence",
   description:
     "Daily AI-curated Bitcoin intelligence for investors: market data, institutional flows, macro analysis, and expert insights.",
+  openGraph: {
+    title: "BTC Today | AI-Curated Bitcoin Intelligence",
+    description:
+      "Daily AI-curated Bitcoin intelligence for investors: market data, institutional flows, macro analysis, and expert insights.",
+    type: "website",
+    siteName: "BTC Today",
+  },
+  twitter: {
+    card: "summary",
+    title: "BTC Today | AI-Curated Bitcoin Intelligence",
+    description:
+      "Daily AI-curated Bitcoin intelligence for investors: market data, institutional flows, macro analysis, and expert insights.",
+  },
 };
 
 export default async function RootLayout({
@@ -49,6 +64,7 @@ export default async function RootLayout({
         <ScrollProgress />
         {!isLoggedIn && <SubscribeBanner />}
         {children}
+        <FloatingChatButton />
       </body>
     </html>
   );
