@@ -43,6 +43,8 @@ export function SubscribeForm() {
       if (res.ok) {
         setStatus("success");
         setMessage(data.message ?? "You're in!");
+        setName("");
+        setEmail("");
       } else {
         setStatus("error");
         setMessage(data.error ?? "Something went wrong");

@@ -33,8 +33,16 @@ export function UserMenu({ displayName }: { displayName: string | null }) {
   }, [open]);
 
   async function handleLogout() {
-    await fetch("/api/logout", { method: "POST" });
-    window.location.reload();
+    try {
+      const res = await fetch("/api/logout", { method: "POST" });
+      if (res.ok) {
+        window.location.reload();
+      } else {
+        alert("Logout failed. Please try again.");
+      }
+    } catch {
+      alert("Network error. Please try again.");
+    }
   }
 
   async function handleUnsubscribe() {
@@ -43,8 +51,12 @@ export function UserMenu({ displayName }: { displayName: string | null }) {
       const res = await fetch("/api/unsubscribe", { method: "POST" });
       if (res.ok) {
         window.location.href = "/";
+      } else {
+        alert("Unsubscribe failed. Please try again.");
+        setLoading(false);
       }
     } catch {
+      alert("Network error. Please try again.");
       setLoading(false);
     }
   }

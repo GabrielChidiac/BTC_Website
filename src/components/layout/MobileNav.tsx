@@ -96,9 +96,17 @@ export function MobileNav({ signedInEmail, displayName }: { signedInEmail?: stri
               <div className="flex items-center gap-3">
                 <button
                   onClick={async () => {
-                    await fetch("/api/logout", { method: "POST" });
-                    setOpen(false);
-                    window.location.reload();
+                    try {
+                      const res = await fetch("/api/logout", { method: "POST" });
+                      if (res.ok) {
+                        setOpen(false);
+                        window.location.reload();
+                      } else {
+                        alert("Logout failed. Please try again.");
+                      }
+                    } catch {
+                      alert("Network error. Please try again.");
+                    }
                   }}
                   className="cursor-pointer text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
                 >
@@ -108,10 +116,16 @@ export function MobileNav({ signedInEmail, displayName }: { signedInEmail?: stri
                 <button
                   onClick={async () => {
                     if (confirm("Stop all emails and delete your account?")) {
-                      const res = await fetch("/api/unsubscribe", { method: "POST" });
-                      if (res.ok) {
-                        setOpen(false);
-                        window.location.href = "/";
+                      try {
+                        const res = await fetch("/api/unsubscribe", { method: "POST" });
+                        if (res.ok) {
+                          setOpen(false);
+                          window.location.href = "/";
+                        } else {
+                          alert("Unsubscribe failed. Please try again.");
+                        }
+                      } catch {
+                        alert("Network error. Please try again.");
                       }
                     }
                   }}

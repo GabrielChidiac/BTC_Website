@@ -1,5 +1,6 @@
 import type { Result } from "@/lib/types";
 import { MEMPOOL_BASE } from "@/lib/constants";
+import { fetchWithTimeout } from "./fetch-timeout";
 
 export async function fetchMempoolData(): Promise<
   Result<{
@@ -16,11 +17,11 @@ export async function fetchMempoolData(): Promise<
   try {
     const [hashrateRes, difficultyRes, blockHeightRes, mempoolRes, feesRes] =
       await Promise.allSettled([
-        fetch(`${MEMPOOL_BASE}/v1/mining/hashrate/1w`),
-        fetch(`${MEMPOOL_BASE}/v1/difficulty-adjustment`),
-        fetch(`${MEMPOOL_BASE}/blocks/tip/height`),
-        fetch(`${MEMPOOL_BASE}/mempool`),
-        fetch(`${MEMPOOL_BASE}/v1/fees/recommended`),
+        fetchWithTimeout(`${MEMPOOL_BASE}/v1/mining/hashrate/1w`),
+        fetchWithTimeout(`${MEMPOOL_BASE}/v1/difficulty-adjustment`),
+        fetchWithTimeout(`${MEMPOOL_BASE}/blocks/tip/height`),
+        fetchWithTimeout(`${MEMPOOL_BASE}/mempool`),
+        fetchWithTimeout(`${MEMPOOL_BASE}/v1/fees/recommended`),
       ]);
 
     // Parse hashrate + difficulty from the same endpoint

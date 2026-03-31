@@ -1,5 +1,6 @@
 import { PERPLEXITY_BASE } from "@/lib/constants";
 import type { Result } from "@/lib/types";
+import { fetchWithTimeout } from "./fetch-timeout";
 
 export async function queryPerplexity(params: {
   system: string;
@@ -11,7 +12,7 @@ export async function queryPerplexity(params: {
       return { data: null, error: "[perplexity] PERPLEXITY_API_KEY env var is not set" };
     }
 
-    const res = await fetch(PERPLEXITY_BASE, {
+    const res = await fetchWithTimeout(PERPLEXITY_BASE, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${key}`,
@@ -33,6 +34,9 @@ export async function queryPerplexity(params: {
 
     const json = await res.json();
     const text = json.choices?.[0]?.message?.content ?? "";
+    if (!text.trim()) {
+      return { data: null, error: "[perplexity] API returned empty response" };
+    }
     return { data: text, error: null };
   } catch (e) {
     return { data: null, error: `[perplexity] ${(e as Error).message}` };

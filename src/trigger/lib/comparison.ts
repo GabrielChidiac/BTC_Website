@@ -1,5 +1,6 @@
 import type { Result } from "@/lib/types";
 import YahooFinance from "yahoo-finance2";
+import { withTimeout } from "./fetch-timeout";
 
 const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
@@ -18,7 +19,7 @@ async function fetchYahooAsset(
   label: string
 ): Promise<Result<AssetData>> {
   try {
-    const quote = (await yahooFinance.quote(ticker)) as Record<string, unknown>;
+    const quote = (await withTimeout(yahooFinance.quote(ticker), 30_000, `yahoo-${label}`)) as Record<string, unknown>;
     const change = quote.regularMarketChangePercent as number | undefined;
 
     if (change === undefined || change === null) {
@@ -36,11 +37,11 @@ async function fetchYahooAsset(
         const oneYearAgo = new Date(now);
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-        const historical = (await yahooFinance.chart(ticker, {
+        const historical = (await withTimeout(yahooFinance.chart(ticker, {
           period1: oneYearAgo,
           period2: now,
           interval: "1mo",
-        })) as { quotes: { close: number; date: Date }[] };
+        }), 30_000, `yahoo-chart-${label}`)) as { quotes: { close: number; date: Date }[] };
 
         if (historical.quotes && historical.quotes.length > 0) {
           const firstClose = historical.quotes[0].close;

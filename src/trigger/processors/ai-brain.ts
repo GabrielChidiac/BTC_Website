@@ -253,42 +253,42 @@ function buildComparisons(
 
 function buildFallbackBriefing(
   date: string,
-  market: MarketCollectorOutput | null,
+  market: MarketCollectorOutput,
   halving: { progressPct: number; blocksRemaining: number }
 ): AiBrainOutput {
-  const btcChange = market?.price.change_24h_pct ?? 0;
+  const btcChange = market.price.change_24h_pct;
 
   return {
     date,
     top_stories: [],
     market_snapshot: {
-      price_usd: market?.price.usd ?? 0,
-      change_24h_pct: market?.price.change_24h_pct ?? 0,
-      change_7d_pct: market?.price.change_7d_pct ?? 0,
-      market_cap_usd: market?.price.market_cap_usd ?? 0,
-      volume_24h_usd: market?.price.volume_24h_usd ?? 0,
-      dominance_pct: market?.dominance_pct ?? 0,
-      ath_usd: market?.ath_usd ?? null,
-      ath_date: market?.ath_date ?? null,
+      price_usd: market.price.usd,
+      change_24h_pct: market.price.change_24h_pct,
+      change_7d_pct: market.price.change_7d_pct,
+      market_cap_usd: market.price.market_cap_usd,
+      volume_24h_usd: market.price.volume_24h_usd,
+      dominance_pct: market.dominance_pct,
+      ath_usd: market.ath_usd ?? null,
+      ath_date: market.ath_date ?? null,
     },
     technical_signals: {
-      rsi_14: market?.technical.rsi_14 ?? 0,
-      sma_50: market?.technical.sma_50 ?? 0,
-      sma_200: market?.technical.sma_200 ?? 0,
-      support_level: market?.technical.support_level ?? 0,
-      resistance_level: market?.technical.resistance_level ?? 0,
-      signal_summary: market ? "Data available but AI analysis failed" : "Market data unavailable",
+      rsi_14: market.technical.rsi_14,
+      sma_50: market.technical.sma_50,
+      sma_200: market.technical.sma_200,
+      support_level: market.technical.support_level,
+      resistance_level: market.technical.resistance_level,
+      signal_summary: "Data available but AI analysis failed",
     },
     btc_vs_everything: buildComparisons(market, btcChange),
     network_health: {
-      hashrate_eh_s: market?.network.hashrate_eh_s ?? 0,
-      difficulty: market?.network.difficulty ?? 0,
-      block_height: market?.network.block_height ?? 0,
-      mempool_tx_count: market?.network.mempool_tx_count ?? 0,
-      mempool_size_mb: market?.network.mempool_size_mb ?? 0,
-      fee_fast_sat_vb: market?.network.fee_fast_sat_vb ?? 0,
-      fee_medium_sat_vb: market?.network.fee_medium_sat_vb ?? 0,
-      fee_slow_sat_vb: market?.network.fee_slow_sat_vb ?? 0,
+      hashrate_eh_s: market.network.hashrate_eh_s,
+      difficulty: market.network.difficulty,
+      block_height: market.network.block_height,
+      mempool_tx_count: market.network.mempool_tx_count,
+      mempool_size_mb: market.network.mempool_size_mb,
+      fee_fast_sat_vb: market.network.fee_fast_sat_vb,
+      fee_medium_sat_vb: market.network.fee_medium_sat_vb,
+      fee_slow_sat_vb: market.network.fee_slow_sat_vb,
       halving_progress_pct: halving.progressPct,
       blocks_until_halving: halving.blocksRemaining,
     },
@@ -470,7 +470,11 @@ export const aiBrainTask = task({
     });
 
     if (result.error) {
-      logger.error("Claude call failed, using fallback briefing", {
+      if (!market) {
+        // Both Claude and market collector failed — no real data to publish
+        throw new Error(`Claude failed and no market data available: ${result.error}`);
+      }
+      logger.error("Claude call failed, using fallback briefing with real market data", {
         error: result.error,
       });
       return buildFallbackBriefing(date, market, halving);

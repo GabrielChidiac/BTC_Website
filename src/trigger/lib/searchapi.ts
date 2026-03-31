@@ -1,5 +1,6 @@
 import type { Result, RawArticle } from "@/lib/types";
 import { SEARCHAPI_BASE, SEARCH_QUERIES } from "@/lib/constants";
+import { fetchWithTimeout } from "./fetch-timeout";
 
 function normalizeUrl(url: string): string {
   return url.toLowerCase().replace(/\/+$/, "");
@@ -18,7 +19,7 @@ export async function fetchSearchApiNews(): Promise<Result<RawArticle[]>> {
     for (const query of SEARCH_QUERIES) {
       try {
         const url = `${SEARCHAPI_BASE}?engine=google_news&q=${encodeURIComponent(query)}&api_key=${apiKey}`;
-        const res = await fetch(url);
+        const res = await fetchWithTimeout(url);
 
         if (!res.ok) {
           console.warn(`[searchapi] Query "${query}" failed (${res.status})`);

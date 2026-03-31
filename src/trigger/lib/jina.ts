@@ -1,4 +1,5 @@
 import type { Result } from "@/lib/types";
+import { fetchWithTimeout } from "./fetch-timeout";
 
 const JINA_BASE = "https://r.jina.ai";
 const MAX_CONTENT_LENGTH = 3000; // ~3000 chars per article to keep AI Brain prompt manageable
@@ -24,7 +25,7 @@ export async function extractArticleText(url: string): Promise<Result<string>> {
       headers.Authorization = `Bearer ${apiKey}`;
     }
 
-    const res = await fetch(`${JINA_BASE}/${url}`, { headers });
+    const res = await fetchWithTimeout(`${JINA_BASE}/${url}`, { headers }, 20_000);
 
     if (!res.ok) {
       return { data: null, error: `[jina] HTTP ${res.status} for ${url}` };

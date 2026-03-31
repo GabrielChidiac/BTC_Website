@@ -8,24 +8,36 @@ import type { ChatMessage, BriefingJSON, DailyBriefingRow } from "@/lib/types";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_HISTORY = 20;
 
-// Simple in-memory rate limiter: 20 messages per 10 minutes per email
+// Rate limit: 20 messages per 10 minutes per email (Supabase-backed for serverless)
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const RATE_LIMIT_MAX = 20;
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-function checkRateLimit(email: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(email);
+async function checkRateLimit(email: string): Promise<boolean> {
+  try {
+    const supabase = createServiceClient();
+    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
 
-  if (!entry || now >= entry.resetAt) {
-    rateLimitMap.set(email, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    const { count, error } = await supabase
+      .from("chat_rate_limits")
+      .select("*", { count: "exact", head: true })
+      .eq("email", email)
+      .gte("created_at", windowStart);
+
+    if (error) {
+      // If table doesn't exist or query fails, fall through (don't block the user)
+      console.warn("[chat] Rate limit check failed:", error.message);
+      return true;
+    }
+
+    if ((count ?? 0) >= RATE_LIMIT_MAX) return false;
+
+    // Record this message
+    await supabase.from("chat_rate_limits").insert({ email });
+    return true;
+  } catch {
+    // Non-fatal: allow the request if rate limiting is broken
     return true;
   }
-
-  if (entry.count >= RATE_LIMIT_MAX) return false;
-
-  entry.count++;
-  return true;
 }
 
 interface ChatRequest {
@@ -333,7 +345,7 @@ export async function POST(request: Request) {
   }
 
   // Rate limit: 20 messages per 10 minutes per user
-  if (!checkRateLimit(email.trim().toLowerCase())) {
+  if (!(await checkRateLimit(email.trim().toLowerCase()))) {
     return NextResponse.json(
       { error: "You've sent too many messages. Please wait a few minutes." },
       { status: 429 }

@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Result } from "@/lib/types";
+import { fetchWithTimeout } from "./fetch-timeout";
 
 export async function callClaude(params: {
   system: string;
@@ -39,7 +40,7 @@ export async function callClaude(params: {
       return { data: null, error: "[anthropic] KIE_API_KEY env var is not set for fallback" };
     }
 
-    const res = await fetch("https://api.kie.ai/v1/chat/completions", {
+    const res = await fetchWithTimeout("https://api.kie.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${kieKey}`,

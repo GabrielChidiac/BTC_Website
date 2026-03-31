@@ -1,6 +1,7 @@
 import type { Result, RawArticle } from "@/lib/types";
 import { RSS_FEEDS } from "@/lib/constants";
 import Parser from "rss-parser";
+import { withTimeout } from "./fetch-timeout";
 
 const parser = new Parser();
 
@@ -10,7 +11,7 @@ export async function fetchRssArticles(): Promise<Result<RawArticle[]>> {
 
     for (const feed of RSS_FEEDS) {
       try {
-        const parsed = await parser.parseURL(feed.url);
+        const parsed = await withTimeout(parser.parseURL(feed.url), 15_000, `rss-${feed.name}`);
 
         for (const item of parsed.items ?? []) {
           allArticles.push({

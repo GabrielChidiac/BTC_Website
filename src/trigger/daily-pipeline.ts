@@ -108,8 +108,12 @@ export const dailyPipelineTask = schedules.task({
     await saveBriefingTask.triggerAndWait({ date, briefing: finalBriefing }).unwrap();
     logger.info("Briefing saved to Supabase");
 
-    await revalidateSiteTask.triggerAndWait().unwrap();
-    logger.info("Site revalidated");
+    const revalResult = await revalidateSiteTask.triggerAndWait();
+    if (revalResult.ok && revalResult.output.revalidated) {
+      logger.info("Site revalidated");
+    } else {
+      logger.warn("Site revalidation failed (non-fatal, cached content may be stale)");
+    }
 
     await sendDigestTask.triggerAndWait({ date, briefing: finalBriefing }).unwrap();
     logger.info("Email digest sent");

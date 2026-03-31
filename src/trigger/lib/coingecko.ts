@@ -1,5 +1,6 @@
 import type { Result } from "@/lib/types";
 import { COINGECKO_BASE } from "@/lib/constants";
+import { fetchWithTimeout } from "./fetch-timeout";
 
 function headers(): HeadersInit {
   const key = process.env.COINGECKO_API_KEY;
@@ -7,7 +8,7 @@ function headers(): HeadersInit {
 }
 
 async function cgFetch(path: string): Promise<Response> {
-  return fetch(`${COINGECKO_BASE}${path}`, { headers: headers() });
+  return fetchWithTimeout(`${COINGECKO_BASE}${path}`, { headers: headers() });
 }
 
 export async function fetchBtcPrice(): Promise<
