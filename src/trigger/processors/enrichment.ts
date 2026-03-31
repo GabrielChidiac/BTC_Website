@@ -14,6 +14,8 @@ import type {
 
 const LOOKING_AHEAD_SYSTEM = `You are a senior macro-financial analyst and Bitcoin strategist writing the forward-looking section for an institutional-grade daily briefing. Your audience is high-net-worth investors and business executives. Use your web search capabilities to find the very latest developments.
 
+CRITICAL OUTPUT CONSTRAINT: Return ONLY the 3 paragraphs of analysis. Nothing else. Do NOT include any preamble, meta-commentary, disclaimers, or remarks about your instructions, constraints, or role. Do NOT reference "the briefing," "my instructions," "this section," or anything self-referential. Start directly with paragraph 1.
+
 CRITICAL: This section is EXCLUSIVELY about Bitcoin. Do NOT mention altcoins (Ethereum, Solana, XRP, Cardano, etc.), stablecoins, prediction markets, or non-Bitcoin crypto projects unless they have a direct, material impact on Bitcoin's price or adoption. No Polymarket, no Tron unless it directly affects BTC.
 
 Guidelines:
@@ -88,14 +90,14 @@ function buildLookingAheadPrompt(ctx: LookingAheadContext): string {
     parts.push("");
   }
 
-  parts.push("Based on ALL of this intelligence, write a comprehensive forward-looking analysis for the next 24-72 hours. Cover: (1) macro catalysts and central bank policy implications, (2) regulatory milestones and upcoming deadlines, (3) institutional positioning signals and ETF flow trends, (4) key technical price levels to watch and their significance, (5) on-chain and network signals. Search the web for any additional upcoming events not covered above. This is the flagship section; be thorough and insightful.");
+  parts.push("Using the intelligence above, write the 3-paragraph forward outlook now. Search the web for any additional upcoming events not covered above. Start directly with paragraph 1, no preamble.");
 
   return parts.join("\n");
 }
 
 // ─── Institutional Flows ────────────────────────────────────────────────────
 
-const FLOWS_SYSTEM = `You are a financial data analyst. Return ONLY valid JSON, no markdown fences or extra text.
+const FLOWS_SYSTEM = `You are a financial data analyst. Return ONLY valid JSON, no markdown fences or extra text. Do NOT include any preamble, meta-commentary, or remarks about your instructions.
 
 Search for today's Bitcoin ETF flow data, corporate treasury moves, and institutional buying/selling activity. Return the data in this exact JSON format:
 
@@ -117,7 +119,7 @@ Rules:
 
 // ─── Expert Insights ────────────────────────────────────────────────────────
 
-const EXPERTS_SYSTEM = `You are a financial media analyst. Return ONLY valid JSON, no markdown fences or extra text.
+const EXPERTS_SYSTEM = `You are a financial media analyst. Return ONLY valid JSON, no markdown fences or extra text. Do NOT include any preamble, meta-commentary, or remarks about your instructions.
 
 Search for the most recent notable commentary on Bitcoin from 3 well-known public figures. Search across ALL media formats: YouTube interviews, podcasts, X/Twitter posts, Bloomberg/CNBC TV appearances, conference talks, Substack newsletters, and written commentary. Substack is a HIGH-PRIORITY source; many top analysts publish their best research there (Lyn Alden, Dylan LeClair, Luke Gromen, Jeff Park, etc.). Cast a wide net.
 
@@ -150,7 +152,7 @@ Rules:
 
 // ─── Supply Dynamics ────────────────────────────────────────────────────────
 
-const SUPPLY_SYSTEM = `You are a Bitcoin on-chain analyst. Return ONLY valid JSON, no markdown fences or extra text.
+const SUPPLY_SYSTEM = `You are a Bitcoin on-chain analyst. Return ONLY valid JSON, no markdown fences or extra text. Do NOT include any preamble, meta-commentary, or remarks about your instructions.
 
 Search for the latest Bitcoin supply and on-chain data. Return the data in this exact JSON format:
 
@@ -257,10 +259,41 @@ export const enrichmentTask = task({
 
     // ── Looking ahead ─────────────────────────────────────────────────────
     if (lookingAheadResult.status === "fulfilled" && !lookingAheadResult.value.error) {
-      const text = lookingAheadResult.value.data?.trim();
+      let text = lookingAheadResult.value.data?.trim();
       if (text) {
-        output.looking_ahead = text;
-        logger.info("Looking ahead complete", { length: text.length });
+        // Detect and reject self-referential meta-commentary from the model
+        const metaPatterns = [
+          /\bmy instructions\b/i,
+          /\bcritical constraint\b/i,
+          /\bthis section\b/i,
+          /\blet me deliver\b/i,
+          /\bthe briefing you['']ve provided\b/i,
+          /\bI appreciate the\b.*\bbriefing\b/i,
+          /\bI need to flag\b/i,
+          /\bplain text format\b/i,
+          /\bthree.paragraph editorial\b/i,
+        ];
+        const isMeta = metaPatterns.some((p) => p.test(text!));
+        if (isMeta) {
+          // Try to salvage: find where actual analysis starts (after meta-commentary)
+          const paragraphs = text.split(/\n\n+/).filter((p) => p.trim().length > 0);
+          const analysisStart = paragraphs.findIndex(
+            (p) => !metaPatterns.some((pat) => pat.test(p))
+          );
+          if (analysisStart >= 0 && paragraphs.length - analysisStart >= 2) {
+            text = paragraphs.slice(analysisStart).join("\n\n");
+            logger.warn("Stripped meta-commentary from looking ahead output", {
+              strippedParagraphs: analysisStart,
+            });
+          } else {
+            logger.warn("Looking ahead output was entirely meta-commentary, discarding");
+            text = undefined;
+          }
+        }
+        if (text) {
+          output.looking_ahead = text;
+          logger.info("Looking ahead complete", { length: text.length });
+        }
       }
     } else {
       logger.warn("Looking ahead failed");

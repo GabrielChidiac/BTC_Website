@@ -4,9 +4,12 @@ import { MotionCard } from "@/components/ui/MotionCard";
 export function LookingAhead({ content }: { content: string }) {
   if (!content) return null;
 
+  const metaPattern = /\b(my instructions|critical constraint|let me deliver|briefing you['']ve provided|I appreciate the.*briefing|I need to flag|plain text format|three.paragraph editorial)\b/i;
+
   const paragraphs = content
     .split(/\n\n+/)
     .filter((p) => !p.match(/^#{1,6}\s/))
+    .filter((p) => !metaPattern.test(p))
     .filter(Boolean)
     .slice(0, 4);
 
