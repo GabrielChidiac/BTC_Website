@@ -102,25 +102,40 @@ export default async function ArchiveDatePage({
   const briefing: BriefingJSON = (data as DailyBriefingRow).content;
 
   const { tier } = await getSubscriberTier();
+  const isPro = tier === "pro";
   const now = new Date();
   const sevenDaysAgo = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 7));
   const briefingDate = new Date(date + "T00:00:00Z");
   const isOldBriefing = briefingDate < sevenDaysAgo;
-  const canViewFull = tier === "pro" || !isOldBriefing;
+  // Free-tier content (market, stories, signals, macro, BTC vs everything) — recent only
+  const canViewFree = isPro || !isOldBriefing;
+  // Pro-only content (institutional flows, technical signals, network health, experts, supply, looking ahead)
+  const canViewPro = isPro;
+
+  const cutoffDate = isPro ? undefined : sevenDaysAgo.toISOString().split("T")[0];
+
+  let prevQuery = supabase
+    .from("daily_briefings")
+    .select("date")
+    .lt("date", date)
+    .order("date", { ascending: false })
+    .limit(1);
+
+  let nextQuery = supabase
+    .from("daily_briefings")
+    .select("date")
+    .gt("date", date)
+    .order("date", { ascending: true })
+    .limit(1);
+
+  // Free users can only navigate within the 7-day window
+  if (cutoffDate) {
+    prevQuery = prevQuery.gte("date", cutoffDate);
+  }
 
   const [{ data: prevRows }, { data: nextRows }] = await Promise.all([
-    supabase
-      .from("daily_briefings")
-      .select("date")
-      .lt("date", date)
-      .order("date", { ascending: false })
-      .limit(1),
-    supabase
-      .from("daily_briefings")
-      .select("date")
-      .gt("date", date)
-      .order("date", { ascending: true })
-      .limit(1),
+    prevQuery,
+    nextQuery,
   ]);
 
   const prevDate = prevRows?.[0]?.date as string | undefined;
@@ -188,13 +203,12 @@ export default async function ArchiveDatePage({
           <DailyDiffBanner dailyDiff={briefing.daily_diff} />
           <MarketSnapshot market={briefing.market_snapshot} />
 
-          {canViewFull ? (
+          {canViewFree ? (
             <>
-              <InstitutionalFlows flows={briefing.institutional_flows} />
+              {/* Free-tier sections */}
               <MacroContext macro={briefing.macro_context} />
               <BtcVsEverything comparisons={briefing.btc_vs_everything} />
               <TopStories stories={briefing.top_stories} />
-              <ExpertInsights insights={briefing.expert_insights} />
               <Adoption updates={briefing.adoption} />
               <Regulatory updates={briefing.regulatory} />
 
@@ -207,11 +221,22 @@ export default async function ArchiveDatePage({
                 </div>
               )}
 
-              <TechnicalSignals signals={briefing.technical_signals} />
-              <NetworkHealth network={briefing.network_health} />
-              <SupplyDynamics supply={briefing.supply_dynamics} />
-              <CountdownEvents events={briefing.countdown_events} />
-              <LookingAhead content={briefing.looking_ahead} />
+              {/* Pro-only sections */}
+              {canViewPro ? (
+                <>
+                  <InstitutionalFlows flows={briefing.institutional_flows} />
+                  <TechnicalSignals signals={briefing.technical_signals} />
+                  <NetworkHealth network={briefing.network_health} />
+                  <ExpertInsights insights={briefing.expert_insights} />
+                  <SupplyDynamics supply={briefing.supply_dynamics} />
+                  <CountdownEvents events={briefing.countdown_events} />
+                  <LookingAhead content={briefing.looking_ahead} />
+                </>
+              ) : (
+                <div className="mt-10">
+                  <ProGateCompact message="Institutional flows, technical signals, expert insights, and more are available to Pro subscribers." />
+                </div>
+              )}
             </>
           ) : (
             <div className="mt-10">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createServerClient } from "@/lib/supabase/server";
+import { getSubscriberTier } from "@/lib/tier";
 import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
 import { formatDisplayDate, formatUSD, formatPctChange } from "@/lib/utils";
 
@@ -34,12 +35,24 @@ function pctColor(pct: number): string {
 }
 
 export default async function ArchivePage() {
+  const { tier } = await getSubscriberTier();
+  const isPro = tier === "pro";
+
   const supabase = await createServerClient();
-  const { data: rows } = await supabase
+
+  let query = supabase
     .from("daily_briefings")
     .select("*")
     .order("date", { ascending: false });
 
+  // Free users only see the last 7 days
+  if (!isPro) {
+    const cutoff = new Date();
+    cutoff.setUTCDate(cutoff.getUTCDate() - 7);
+    query = query.gte("date", cutoff.toISOString().split("T")[0]);
+  }
+
+  const { data: rows } = await query;
   const briefings = (rows as DailyBriefingRow[] | null) ?? [];
 
   return (
@@ -53,7 +66,7 @@ export default async function ArchivePage() {
               Archive
             </h1>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              {briefings.length} briefing{briefings.length !== 1 ? "s" : ""}
+              {briefings.length} briefing{briefings.length !== 1 ? "s" : ""}{!isPro && " · Last 7 days"}
             </p>
           </div>
 
@@ -71,6 +84,20 @@ export default async function ArchivePage() {
             </div>
           ) : (
             <>
+              {!isPro && (
+                <div className="mb-6 flex items-center gap-3 rounded-lg border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/5 px-4 py-3">
+                  <p className="flex-1 text-sm text-[var(--color-text-secondary)]">
+                    Unlock the full archive with Pro
+                  </p>
+                  <Link
+                    href="/pricing"
+                    className="shrink-0 rounded-md bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--color-accent-hover)] transition-colors"
+                  >
+                    Go Pro
+                  </Link>
+                </div>
+              )}
+
               {/* Table header — hidden on mobile, visible on sm+ */}
               <div className="hidden sm:grid sm:grid-cols-[1fr_auto_auto] sm:gap-4 sm:px-4 sm:pb-3 sm:border-b sm:border-[var(--color-border)]">
                 <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">

@@ -1,31 +1,34 @@
 import Link from "next/link";
-import type { BriefingJSON } from "@/lib/types";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { Card, CardContent } from "@/components/ui/card";
-import { InstitutionalFlows } from "@/components/briefing/InstitutionalFlows";
-import { TechnicalSignals } from "@/components/briefing/TechnicalSignals";
-import { NetworkHealth } from "@/components/briefing/NetworkHealth";
-import { ExpertExpandable } from "@/components/briefing/ExpertExpandable";
-import { ProGate } from "@/components/premium/ProGate";
 
-export function ProTeaser({ briefing }: { briefing: BriefingJSON }) {
-  const hasFlows = briefing.institutional_flows != null;
-  const hasSignals = briefing.technical_signals != null;
-  const hasNetwork = briefing.network_health != null;
-  const hasExperts =
-    briefing.expert_insights && briefing.expert_insights.length > 0;
+function SkeletonCard({ lines = 4 }: { lines?: number }) {
+  return (
+    <Card className="h-full gap-0 py-0 ring-1 ring-[var(--color-border)]">
+      <CardContent className="p-4 sm:p-5 space-y-3">
+        <div className="h-3 w-24 rounded bg-[var(--color-border)]/60" />
+        <div className="space-y-2">
+          {Array.from({ length: lines }).map((_, i) => (
+            <div
+              key={i}
+              className="h-2.5 rounded bg-[var(--color-border)]/40"
+              style={{ width: `${75 + Math.sin(i * 2) * 20}%` }}
+            />
+          ))}
+        </div>
+        <div className="h-6 w-16 rounded bg-[var(--color-border)]/30" />
+      </CardContent>
+    </Card>
+  );
+}
 
-  // Fall back to plain ProGate if we have nothing meaningful to tease
-  if (!hasFlows && !hasSignals && !hasNetwork && !hasExperts) {
-    return <ProGate />;
-  }
-
+export function ProTeaser() {
   return (
     <div className="mt-10 scroll-mt-16">
       {/* Section header — fully visible */}
       <SectionLabel number="05" title="Deep Dive" className="mb-4" />
 
-      {/* Blurred content preview */}
+      {/* Skeleton content preview */}
       <div className="relative overflow-hidden">
         <div
           className="max-h-[420px] select-none overflow-hidden"
@@ -34,31 +37,24 @@ export function ProTeaser({ briefing }: { briefing: BriefingJSON }) {
         >
           {/* 3-column grid matching the real Deep Dive layout */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <Card className="h-full gap-0 py-0 ring-1 ring-[var(--color-border)]">
-              <CardContent className="p-4 sm:p-5">
-                <InstitutionalFlows flows={briefing.institutional_flows} />
-              </CardContent>
-            </Card>
+            <SkeletonCard lines={5} />
+            <SkeletonCard lines={4} />
+            <SkeletonCard lines={6} />
+          </div>
 
-            <Card className="h-full gap-0 py-0 ring-1 ring-[var(--color-border)]">
-              <CardContent className="p-4 sm:p-5">
-                <TechnicalSignals signals={briefing.technical_signals} />
-              </CardContent>
-            </Card>
-
-            <Card className="h-full gap-0 py-0 ring-1 ring-[var(--color-border)]">
-              <CardContent className="p-4 sm:p-5">
-                <NetworkHealth network={briefing.network_health} />
+          {/* Expert row skeleton */}
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Card className="gap-0 py-0 ring-1 ring-[var(--color-border)]">
+              <CardContent className="flex items-start gap-3 p-4">
+                <div className="h-10 w-10 shrink-0 rounded-full bg-[var(--color-border)]/50" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-20 rounded bg-[var(--color-border)]/60" />
+                  <div className="h-2.5 w-full rounded bg-[var(--color-border)]/40" />
+                  <div className="h-2.5 w-3/4 rounded bg-[var(--color-border)]/40" />
+                </div>
               </CardContent>
             </Card>
           </div>
-
-          {/* First expert insight */}
-          {hasExperts && (
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <ExpertExpandable insight={briefing.expert_insights[0]} />
-            </div>
-          )}
         </div>
 
         {/* Gradient fade overlay */}
@@ -75,7 +71,7 @@ export function ProTeaser({ briefing }: { briefing: BriefingJSON }) {
             </p>
             <p className="max-w-xs text-sm text-[var(--color-text-secondary)] leading-relaxed">
               Daily email briefing, institutional flows, technical signals,
-              expert insights, and what's next for BTC.
+              expert insights, and what&rsquo;s next for BTC.
             </p>
             <Link
               href="/pricing"

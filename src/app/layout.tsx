@@ -5,6 +5,7 @@ import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { SubscribeBanner } from "@/components/subscribe/SubscribeBanner";
 import { FloatingChatButton } from "@/components/layout/FloatingChatButton";
 import { COOKIE_NAME } from "@/lib/session";
+import { getSubscriberTier } from "@/lib/tier";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -50,9 +51,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   let isLoggedIn = false;
+  let isPro = false;
   try {
     const cookieStore = await cookies();
     isLoggedIn = !!cookieStore.get(COOKIE_NAME)?.value;
+    if (isLoggedIn) {
+      const { tier } = await getSubscriberTier();
+      isPro = tier === "pro";
+    }
   } catch { /* no session */ }
 
   return (
@@ -64,7 +70,7 @@ export default async function RootLayout({
         <ScrollProgress />
         {!isLoggedIn && <SubscribeBanner />}
         {children}
-        <FloatingChatButton />
+        {isPro && <FloatingChatButton />}
       </body>
     </html>
   );

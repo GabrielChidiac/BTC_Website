@@ -1,0 +1,21 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/chat/route": "/api/chat",
+  "/api/chat/verify-check/route": "/api/chat/verify-check",
+  "/api/chat/verify-send/route": "/api/chat/verify-send",
+  "/api/logout/route": "/api/logout",
+  "/api/revalidate/route": "/api/revalidate",
+  "/api/subscribe/route": "/api/subscribe",
+  "/api/unsubscribe/route": "/api/unsubscribe",
+  "/archive/[date]/page": "/archive/[date]",
+  "/archive/page": "/archive",
+  "/chat/page": "/chat",
+  "/favicon.ico/route": "/favicon.ico",
+  "/page": "/",
+  "/pdf/[date]/route": "/pdf/[date]",
+  "/pricing/page": "/pricing",
+  "/robots.txt/route": "/robots.txt",
+  "/sign-in/page": "/sign-in",
+  "/sitemap.xml/route": "/sitemap.xml"
+}

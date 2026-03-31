@@ -167,7 +167,7 @@ export default async function Home() {
                   value={`${market.dominance_pct.toFixed(1)}%`}
                   size="sm"
                 />
-                {briefing.institutional_flows?.etf_net_flow_usd != null && (
+                {isPro && briefing.institutional_flows?.etf_net_flow_usd != null && (
                   <StatTile
                     label="ETF Flow"
                     value={formatFlowUSD(briefing.institutional_flows.etf_net_flow_usd)}
@@ -194,7 +194,7 @@ export default async function Home() {
                 <div className="lg:col-span-3">
                   <DayInBriefExpandable
                     macro={briefing.macro_context}
-                    events={briefing.countdown_events}
+                    events={isPro ? briefing.countdown_events : undefined}
                   />
                 </div>
                 <div className="lg:col-span-2">
@@ -337,7 +337,7 @@ export default async function Home() {
             /* ═══════════════════════════════════════════════════════════════
                FREE TIER: Blurred teaser of sections 05-06 with upgrade CTA
                ═══════════════════════════════════════════════════════════════ */
-            <ProTeaser briefing={briefing} />
+            <ProTeaser />
           )}
 
           {/* ═══════════════════════════════════════════════════════════════

@@ -61,9 +61,9 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 
 ### Supabase
 - `@supabase/ssr` only — never import `@supabase/supabase-js` directly
-- `createServerClient` for server components, route handlers, and Trigger.dev tasks
-- `createBrowserClient` for client components
-- Service role key (`SUPABASE_SERVICE_ROLE_KEY`) for pipeline writes
+- `createServerClient()` in `src/lib/supabase/server.ts` — for Server Components (respects RLS)
+- `createServiceClient()` in `src/lib/supabase/server.ts` — for Trigger tasks + API route handlers (bypasses RLS via `SUPABASE_SERVICE_ROLE_KEY`)
+- `createClient()` in `src/lib/supabase/client.ts` — for client components
 
 ### Tailwind v4
 - Config lives in `src/app/globals.css` via `@import "tailwindcss"` + `@theme inline`
@@ -73,19 +73,32 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 ### Authentication
 - **Magic link auth** — no passwords. Email subscribers get magic link tokens (10-min expiry, not consumed on use)
 - `verify-send` sends magic link → `verify-check` validates token, checks subscriber is active, creates 30-day session
-- Session cookie (`btc-session`): httpOnly, secure in production, sameSite lax
+- Session cookie (`btc-session`): httpOnly, secure in production, sameSite lax, 30-day maxAge
+- Session tokens stored as `session:<uuid>` in `verification_codes.code`; cookie stores `{ email, token }` JSON where `token` is the UUID portion
 - **Max 3 concurrent sessions** per email — oldest evicted on 4th login
 - PDF route (`/pdf/[date]`) accepts both session cookie and magic link token via query params
 - All email links (briefing, PDF, chat) share the same per-subscriber magic token
 - `getBaseUrl()` (`src/lib/url.ts`) resolves site URL — never falls back to localhost
 
 ### Subscription Tiers
-- **Free tier:** Basic market overview, top stories, comparisons, regulatory/adoption signals, weekly recap
-- **Pro tier:** All free features + daily briefing email, institutional flows, technical signals, network health, expert insights, forward outlook, AI chat, PDF downloads, full archive
+- **Free tier:** Market overview, top stories, BTC vs everything, macro context, regulatory/adoption signals, weekly recap email — **available for 7 days only**
+- **Pro tier:** All free features + daily briefing email, institutional flows, technical signals, network health, expert insights, supply dynamics, forward outlook, countdown events, AI chat, PDF downloads, full archive (all dates)
 - Tiers stored in `subscribers.tier` column (`'free'` | `'pro'`)
 - LemonSqueezy handles payments (webhook not yet implemented)
 - `getSubscriberTier()` in `src/lib/tier.ts` reads session cookie → checks tier
 - All existing active subscribers were gifted Pro tier at launch
+
+**Tier gating rules:**
+- **Homepage:** Free users see sections 01–04 (hero, market, what happened, top stories). Sections 05–06 (deep dive, looking ahead) are behind `ProTeaser` blur.
+- **Archive list:** Free users see only last 7 days. Pro users see all dates.
+- **Archive [date]:** Free users on recent briefings (≤7 days) see free-tier sections only; pro-only sections show `ProGateCompact`. Old briefings (>7 days) show only DailyDiff + MarketSnapshot for free users.
+- **Chat:** Pro only — free users redirected to `/pricing` at page level.
+- **PDF:** Pro only — auth checked in route handler.
+
+### Claude API Integration
+- `callClaudeJSON<T>()` in `src/trigger/lib/anthropic.ts` auto-retries once with a "fix your JSON" prompt on parse failure
+- Fallback chain: Anthropic SDK (Claude Sonnet) → Kie.ai (OpenAI-compatible endpoint) on 429/5xx errors
+- All wrappers return `Result<T>` — never throw
 
 ### Native fetch
 - All HTTP calls use native `fetch` — no axios
@@ -153,10 +166,25 @@ RLS: briefings are publicly readable; all other tables are service-role only.
 ```
 - Collectors run **parallel** via `batch.triggerAndWait`
 - AI Brain → Enrichment → Save → Revalidate → Email run **sequential**
-- Enrichment is **non-fatal** — briefing publishes even if Perplexity fails
-- Enrichment runs 4 Perplexity queries in parallel: forward outlook, institutional flows, expert insights, supply dynamics
-- `send-weekly-recap` task exists for weekly aggregated email
 - `src/trigger/lib/fetch-timeout.ts` provides `fetchWithTimeout()` and `withTimeout()` helpers for API calls
+
+**Fault tolerance:**
+- Collectors: **non-fatal** — failed sources default to empty/null, pipeline continues
+- AI Brain: **FATAL** — if Claude fails, entire pipeline stops (no briefing published)
+- Enrichment: **non-fatal** — Perplexity failures default to fallback text; runs 4 queries in parallel (forward outlook, institutional flows, expert insights, supply dynamics)
+- Publishers: **sequential** — if save fails, email is never sent
+
+**BriefingJSON composition:**
+- AI Brain generates the base `BriefingJSON` structure (stories, market, technical, narrative, macro, etc.)
+- Enrichment *overwrites* 4 fields: `looking_ahead`, `institutional_flows`, `expert_insights`, `supply_dynamics`
+- `fear_greed` comes from market collector directly (not AI Brain or enrichment)
+
+**News pipeline:** Articles deduped by normalized URL (lowercase, trimmed), filtered by BTC-relevance keyword regex, top 10 scraped for full text via Jina Reader (non-fatal per article)
+
+**Email & PDF:**
+- Digest emails batched in chunks of 100 (Resend limit)
+- PDF generated via `@react-pdf/renderer`, uploaded to Supabase Storage bucket `briefing-pdfs`
+- `send-weekly-recap` runs Sunday 9 AM UTC, sent to free-tier subscribers only
 
 ## Frontend Rules
 
@@ -215,7 +243,7 @@ RLS: briefings are publicly readable; all other tables are service-role only.
 - [x] Set `NEXT_PUBLIC_SITE_URL` to production domain (`getBaseUrl()` falls back to `https://www.btctoday.co`)
 - [ ] Set all env vars in Vercel/hosting provider (never commit `.env`)
 - [x] Verify Supabase RLS policies are applied (`001_initial_schema.sql`)
-- [x] Verify `digest@btctoday.co` domain is verified in Resend
+- [x] Verify `btctoday.co` domain is verified in Resend (all emails sent from `hello@btctoday.co`)
 - [x] Add `error.tsx` and `not-found.tsx` for branded error pages
 - [x] Add rate limiting to `/api/chat` (database-backed, 20 msgs / 10 min)
 - [ ] Consider adding `middleware.ts` for security headers (CSP, X-Frame-Options)

@@ -75,7 +75,7 @@ export async function GET(
     .from("subscribers")
     .select("tier")
     .eq("email", email)
-    .single();
+    .maybeSingle();
 
   if (subscriber?.tier !== "pro") {
     return Response.redirect(new URL("/pricing", req.url));

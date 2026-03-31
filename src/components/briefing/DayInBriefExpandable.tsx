@@ -95,7 +95,7 @@ export function DayInBriefExpandable({
               )}
 
               {/* Key macro events */}
-              {!open && macro?.key_macro_events && macro.key_macro_events.length > 0 && urgentEvents.length === 0 && (
+              {macro?.key_macro_events && macro.key_macro_events.length > 0 && urgentEvents.length === 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {macro.key_macro_events.map((event) => (
                     <span

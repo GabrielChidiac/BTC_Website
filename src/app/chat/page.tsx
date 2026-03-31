@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { ChatContent } from "./ChatContent";
 import { COOKIE_NAME } from "@/lib/session";
+import { getSubscriberTier } from "@/lib/tier";
 
 export const metadata: Metadata = {
   title: "Ask AI | BTC Today",
@@ -34,6 +35,14 @@ export default async function ChatPage({
   // No session and no magic link → redirect to login
   if (!initialSession && !hasMagicLink) {
     redirect("/sign-in");
+  }
+
+  // Pro tier required for chat — free users go to pricing
+  if (initialSession && !hasMagicLink) {
+    const { tier } = await getSubscriberTier();
+    if (tier !== "pro") {
+      redirect("/pricing");
+    }
   }
 
   return (
