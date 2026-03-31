@@ -126,10 +126,10 @@ export function SubscribeBanner() {
               <div className="border-b border-[var(--color-border)] bg-[var(--color-bg-base)]/95 backdrop-blur-xl">
                 <div className="mx-auto max-w-md px-4 py-5">
                   <p className="mb-1 text-center font-[family-name:var(--font-heading)] text-base font-bold tracking-tight text-[var(--color-text-primary)]">
-                    Access daily Bitcoin intelligence
+                    Never miss a week in Bitcoin
                   </p>
                   <p className="mb-4 text-center text-xs text-[var(--color-text-muted)]">
-                    Free access to daily briefings, market data & a weekly email recap
+                    Free weekly to weekly e-mail briefings, daily market updates & top stories
                   </p>
 
                   {status === "success" ? (

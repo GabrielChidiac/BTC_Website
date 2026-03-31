@@ -359,10 +359,10 @@ export default async function Home() {
                 <Card className="gap-0 py-0 ring-0">
                   <CardContent className="flex flex-col items-center gap-3 p-8">
                     <p className="font-[family-name:var(--font-heading)] text-base font-bold text-[var(--color-text-primary)]">
-                      Stay informed, for free
+                      Never miss a week in Bitcoin
                     </p>
                     <p className="text-sm text-[var(--color-text-secondary)]">
-                      Access daily briefings, market data & a weekly email recap
+                      Free weekly recap of what you missed — market data, top stories & key signals
                     </p>
                     <SubscribeForm />
                   </CardContent>

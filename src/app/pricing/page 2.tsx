@@ -125,10 +125,10 @@ export default async function PricingPage() {
                 Pro
               </p>
               <p className="mt-2 font-[family-name:var(--font-heading)] text-3xl font-bold text-[var(--color-text-primary)]">
-                $69<span className="text-lg font-medium text-[var(--color-text-muted)]">/year</span>
+                $9<span className="text-lg font-medium text-[var(--color-text-muted)]">/mo</span>
               </p>
               <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                or $9/month
+                or $69/year (save 36%)
               </p>
 
               <ul className="mt-6 space-y-2.5">
@@ -144,28 +144,19 @@ export default async function PricingPage() {
                 <div className="mt-6 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-center">
                   <p className="text-sm font-medium text-emerald-700">Active</p>
                 </div>
-              ) : !sessionEmail ? (
-                <div className="mt-6 flex flex-col gap-2">
-                  <Link
-                    href="/sign-in"
-                    className="block rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
-                  >
-                    Sign in to subscribe
-                  </Link>
-                </div>
-              ) : annualCheckout ? (
+              ) : monthlyCheckout ? (
                 <div className="mt-6 flex flex-col gap-2">
                   <a
-                    href={annualCheckout}
+                    href={monthlyCheckout}
                     className="lemonsqueezy-button block rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
                   >
-                    Go Pro — $69/year (save 36%)
+                    Go Pro — $9/month
                   </a>
                   <a
-                    href={monthlyCheckout ?? "#"}
+                    href={annualCheckout ?? "#"}
                     className="lemonsqueezy-button block rounded-lg border border-[var(--color-accent)]/30 px-4 py-2.5 text-center text-sm font-medium text-[var(--color-accent)] hover:bg-[var(--color-accent)]/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50"
                   >
-                    or $9/month
+                    $69/year (save 36%)
                   </a>
                 </div>
               ) : (

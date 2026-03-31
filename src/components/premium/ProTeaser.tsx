@@ -74,8 +74,8 @@ export function ProTeaser({ briefing }: { briefing: BriefingJSON }) {
               Unlock the full briefing
             </p>
             <p className="max-w-xs text-sm text-[var(--color-text-secondary)] leading-relaxed">
-              Institutional flows, technical signals, expert insights, and
-              forward outlook.
+              Daily email briefing, institutional flows, technical signals,
+              expert insights, and what's next for BTC.
             </p>
             <Link
               href="/pricing"

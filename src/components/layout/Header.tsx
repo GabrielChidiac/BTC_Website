@@ -18,7 +18,7 @@ const sectionLinks = [
   { href: "#news", label: "News" },
   { href: "#stories", label: "Stories" },
   { href: "#deep-dive", label: "Deep Dive" },
-  { href: "#outlook", label: "Outlook" },
+  { href: "#outlook", label: "What's Next" },
 ] as const;
 
 function formatBriefingDate(isoDate: string): string {
