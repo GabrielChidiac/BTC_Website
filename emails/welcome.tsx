@@ -158,6 +158,11 @@ export default function WelcomeEmail({
                 Archive
               </Link>
             </Text>
+            <Text style={styles.footerText}>
+              <Link href={`${siteUrl}/sign-in`} style={styles.footerLink}>
+                Unsubscribe
+              </Link>
+            </Text>
           </Section>
 
         </Container>

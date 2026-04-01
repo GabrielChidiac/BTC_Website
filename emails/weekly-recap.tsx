@@ -404,7 +404,7 @@ export default function WeeklyRecap({
               Want the full picture?
             </Text>
             <Link href={`${siteUrl}/pricing`} style={styles.ctaChatButton}>
-              Go Pro — $9/month
+              Go Pro — $69/year
             </Link>
             <Text style={styles.proText}>
               Pro subscribers get the full briefing delivered to their inbox every morning,
@@ -428,6 +428,11 @@ export default function WeeklyRecap({
               {" / "}
               <Link href={`${siteUrl}/archive`} style={styles.footerLink}>
                 Archive
+              </Link>
+            </Text>
+            <Text style={styles.footerText}>
+              <Link href="%%UNSUBSCRIBE_URL%%" style={styles.footerLink}>
+                Unsubscribe
               </Link>
             </Text>
           </Section>

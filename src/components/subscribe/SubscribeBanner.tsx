@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 type Status = "idle" | "loading" | "success" | "error";
 
+const COOKIE_NAME = "btc-session";
+
 export function SubscribeBanner() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -12,6 +14,14 @@ export function SubscribeBanner() {
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
   const [visible, setVisible] = useState(true);
+  const [hidden, setHidden] = useState(false);
+
+  // Hide if user is logged in (client-side check as safety net)
+  useEffect(() => {
+    if (document.cookie.includes(COOKIE_NAME)) {
+      setHidden(true);
+    }
+  }, []);
 
   // Hide on scroll down
   useEffect(() => {
@@ -63,7 +73,7 @@ export function SubscribeBanner() {
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name: name.trim() }),
+        body: JSON.stringify({ email: trimmedEmail, name: trimmedName }),
       });
 
       const data = await res.json();
@@ -80,6 +90,8 @@ export function SubscribeBanner() {
       setMessage("Network error. Try again.");
     }
   }
+
+  if (hidden) return null;
 
   return (
     <>
@@ -129,7 +141,7 @@ export function SubscribeBanner() {
                     Never miss a week in Bitcoin
                   </p>
                   <p className="mb-4 text-center text-xs text-[var(--color-text-muted)]">
-                    Free weekly to weekly e-mail briefings, daily market updates & top stories
+                    Free weekly e-mail recaps, daily market updates & top stories
                   </p>
 
                   {status === "success" ? (

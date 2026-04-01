@@ -145,10 +145,11 @@ export const sendWeeklyRecapTask = schedules.task({
 
     // Step 2: Fetch last 7 days of briefings
     const supabase = createServiceClient();
-    const endDate = new Date().toISOString().split("T")[0];
-    const startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const endDate = yesterday.toISOString().split("T")[0]; // Saturday
+    const startDate = new Date(yesterday.getTime() - 6 * 24 * 60 * 60 * 1000)
       .toISOString()
-      .split("T")[0];
+      .split("T")[0]; // Previous Sunday
 
     const { data: rows, error: briefingError } = await supabase
       .from("daily_briefings")
@@ -224,6 +225,8 @@ Read the latest briefing: %%BRIEFING_URL%%
 Want the full picture? Go Pro for daily emails, AI chat, and more:
 ${siteUrl}/pricing
 
+Unsubscribe: %%UNSUBSCRIBE_URL%%
+
 — BTC Today`;
 
     // Step 6: Generate magic link tokens
@@ -270,10 +273,16 @@ ${siteUrl}/pricing
           ? `${siteUrl}/sign-in?token=${token}&email=${encodeURIComponent(email)}`
           : `${siteUrl}/archive/${latestDate}`;
 
+        const unsubscribeUrl = token
+          ? `${siteUrl}/sign-in?token=${token}&email=${encodeURIComponent(email)}`
+          : `${siteUrl}/sign-in`;
+
         let html = htmlTemplate
-          .replace(/%%BRIEFING_URL%%/g, briefingUrl);
+          .replace(/%%BRIEFING_URL%%/g, briefingUrl)
+          .replace(/%%UNSUBSCRIBE_URL%%/g, unsubscribeUrl);
         let text = textTemplate
-          .replace(/%%BRIEFING_URL%%/g, briefingUrl);
+          .replace(/%%BRIEFING_URL%%/g, briefingUrl)
+          .replace(/%%UNSUBSCRIBE_URL%%/g, unsubscribeUrl);
 
         if (subscriberName) {
           html = html.replace(/%%NAME%%/g, subscriberName);

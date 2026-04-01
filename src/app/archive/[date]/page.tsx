@@ -95,7 +95,7 @@ export default async function ArchiveDatePage({
     .from("daily_briefings")
     .select("*")
     .eq("date", date)
-    .single();
+    .maybeSingle();
 
   if (!data) notFound();
 

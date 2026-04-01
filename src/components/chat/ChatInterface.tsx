@@ -4,10 +4,10 @@ import { useState, useRef, useEffect } from "react";
 import type { ChatMessage } from "@/lib/types";
 
 const STARTERS = [
-  "What's happening with Bitcoin today?",
-  "Explain the halving to me",
-  "How do I store Bitcoin safely?",
-  "What is the Lightning Network?",
+  "What's driving Bitcoin's price action today?",
+  "Summarize today's institutional flows and ETF data",
+  "What are the key macro catalysts to watch this week?",
+  "What are experts saying about Bitcoin right now?",
 ];
 
 export function ChatInterface({ email, legacyToken, onSessionExpired }: { email: string; legacyToken?: string; onSessionExpired: () => void }) {
@@ -52,7 +52,7 @@ export function ChatInterface({ email, legacyToken, onSessionExpired }: { email:
         if (res.status === 403 && data.error?.includes("Pro subscription required")) {
           setMessages([
             ...updated,
-            { role: "assistant", content: "AI Chat is available for Pro subscribers. Visit btctoday.co/pricing to upgrade and unlock conversations about today's briefing data." },
+            { role: "assistant", content: "AI Chat is available for Pro subscribers. Upgrade to Pro to unlock conversations about today's briefing data." },
           ]);
           setLoading(false);
           return;
@@ -104,7 +104,7 @@ export function ChatInterface({ email, legacyToken, onSessionExpired }: { email:
                   <button
                     key={q}
                     onClick={() => sendMessage(q)}
-                    className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:shadow-[0_0_12px_var(--color-accent-glow)] transition-all duration-200"
+                    className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:shadow-[0_0_12px_var(--color-accent-glow)] transition-colors duration-200"
                   >
                     {q}
                   </button>
@@ -162,12 +162,12 @@ export function ChatInterface({ email, legacyToken, onSessionExpired }: { email:
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about Bitcoin..."
             disabled={loading}
-            className="flex-1 rounded-xl border border-[var(--color-border)]/60 bg-white/70 backdrop-blur-sm px-4 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/40 focus-visible:border-[var(--color-accent)]/30 transition-all duration-200 disabled:opacity-60"
+            className="flex-1 rounded-xl border border-[var(--color-border)]/60 bg-white/70 backdrop-blur-sm px-4 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/40 focus-visible:border-[var(--color-accent)]/30 transition-colors duration-200 disabled:opacity-60"
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="rounded-xl bg-gradient-to-b from-[#F7931A] to-[#E67E0D] px-5 py-2.5 text-sm font-medium text-white shadow-[0_2px_8px_rgba(247,147,26,0.3)] hover:shadow-[0_4px_16px_rgba(247,147,26,0.4)] hover:from-[#E8850F] hover:to-[#D4750A] transition-all duration-200 disabled:opacity-40 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.97] shrink-0"
+            className="rounded-xl bg-gradient-to-b from-[#F7931A] to-[#E67E0D] px-5 py-2.5 text-sm font-medium text-white shadow-[0_2px_8px_rgba(247,147,26,0.3)] hover:shadow-[0_4px_16px_rgba(247,147,26,0.4)] hover:from-[#E8850F] hover:to-[#D4750A] transition-[opacity,transform,box-shadow] duration-200 disabled:opacity-40 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.97] shrink-0"
           >
             Send
           </button>

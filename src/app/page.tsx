@@ -58,7 +58,7 @@ export default async function Home() {
     .select("*")
     .order("date", { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (!data) {
     return (

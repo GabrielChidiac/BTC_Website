@@ -107,7 +107,7 @@ export function UserMenu({ displayName }: { displayName: string | null }) {
           ) : (
             <div className="px-3 py-2">
               <p className="text-xs text-[var(--color-text-secondary)]">
-                Stop all emails and delete your account?
+                Stop all emails and deactivate your account?
               </p>
               <div className="mt-2 flex gap-2">
                 <button

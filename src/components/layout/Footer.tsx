@@ -12,6 +12,15 @@ export function Footer() {
           </p>
           <BitcoinCoin className="relative z-10 size-10 drop-shadow-[0_2px_8px_rgba(247,147,26,0.35)]" />
         </div>
+        <p className="text-xs text-[var(--color-text-muted)]">
+          Questions?{" "}
+          <a
+            href="mailto:hello@btctoday.co"
+            className="text-[var(--color-accent)] hover:underline transition-colors"
+          >
+            hello@btctoday.co
+          </a>
+        </p>
       </Container>
     </footer>
   );

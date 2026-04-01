@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     .from("subscribers")
     .select("email, status")
     .eq("email", email)
-    .single();
+    .maybeSingle();
 
   if (existing?.status === "active") {
     return NextResponse.json(
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
         to: email,
         subject: "Welcome to BTC Today",
         html,
-        text: `Welcome to BTC Today!\n\nA new briefing publishes every morning at 2 AM CET. Visit btctoday.co to read the latest. You'll also receive a weekly recap every Sunday.\n\nRead today's briefing: ${siteUrl}\n\nUpgrade to Pro for the daily email, AI chat, PDF downloads, and more: ${siteUrl}/pricing\n\n— BTC Today`,
+        text: `Welcome to BTC Today!\n\nA new briefing publishes every morning at 2 AM CET. Visit btctoday.co to read the latest. You'll also receive a weekly recap every Sunday.\n\nRead today's briefing: ${siteUrl}\n\nUpgrade to Pro for the daily email, AI chat, PDF downloads, and more: ${siteUrl}/pricing\n\nUnsubscribe: ${siteUrl}/sign-in\n\n— BTC Today`,
       });
     } catch {
       // Non-fatal — subscriber is already saved

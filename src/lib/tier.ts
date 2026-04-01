@@ -37,7 +37,7 @@ export async function getSubscriberTier(): Promise<{
       .eq("used", false)
       .gte("expires_at", new Date().toISOString())
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (!session) return FREE;
 
@@ -46,7 +46,7 @@ export async function getSubscriberTier(): Promise<{
       .from("subscribers")
       .select("tier, status")
       .eq("email", email)
-      .single();
+      .maybeSingle();
 
     if (!subscriber || subscriber.status !== "active") {
       return { tier: "free", email };

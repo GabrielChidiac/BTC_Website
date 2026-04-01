@@ -193,7 +193,7 @@ export default async function PricingPage() {
               <div>
                 <p className="text-sm font-medium text-[var(--color-text-primary)]">Can I switch between monthly and annual?</p>
                 <p className="mt-1 text-sm text-[var(--color-text-secondary)] leading-relaxed">
-                  Yes. Contact us and we&apos;ll adjust your plan. The annual plan saves you 36%.
+                  Yes. Email us at hello@btctoday.co and we&apos;ll adjust your plan. The annual plan saves you 36%.
                 </p>
               </div>
               <div>

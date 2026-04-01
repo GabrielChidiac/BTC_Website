@@ -115,7 +115,7 @@ export function MobileNav({ signedInEmail, displayName }: { signedInEmail?: stri
                 <span className="h-3 w-px bg-[var(--color-border)]" />
                 <button
                   onClick={async () => {
-                    if (confirm("Stop all emails and delete your account?")) {
+                    if (confirm("Stop all emails and deactivate your account?")) {
                       try {
                         const res = await fetch("/api/unsubscribe", { method: "POST" });
                         if (res.ok) {

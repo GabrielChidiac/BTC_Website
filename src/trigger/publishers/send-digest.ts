@@ -105,6 +105,8 @@ Read the full briefing: %%BRIEFING_URL%%
 
 Chat with our AI: %%CHAT_URL%%
 
+Unsubscribe: %%UNSUBSCRIBE_URL%%
+
 — BTC Today`;
 
     // Step 3.5: Generate per-subscriber magic link tokens (all subscribers for auto-login)
@@ -159,13 +161,19 @@ Chat with our AI: %%CHAT_URL%%
           ? `${pdfUrl}?token=${token}&email=${encodeURIComponent(email)}`
           : pdfUrl;
 
+        const unsubscribeUrl = token
+          ? `${siteUrl}/sign-in?token=${token}&email=${encodeURIComponent(email)}`
+          : `${siteUrl}/sign-in`;
+
         let html = htmlTemplate
           .replace(/%%CHAT_URL%%/g, chatUrl)
           .replace(/%%PDF_URL%%/g, subscriberPdfUrl)
-          .replace(/%%BRIEFING_URL%%/g, briefingUrl);
+          .replace(/%%BRIEFING_URL%%/g, briefingUrl)
+          .replace(/%%UNSUBSCRIBE_URL%%/g, unsubscribeUrl);
         let text = textTemplate
           .replace(/%%CHAT_URL%%/g, chatUrl)
-          .replace(/%%BRIEFING_URL%%/g, briefingUrl);
+          .replace(/%%BRIEFING_URL%%/g, briefingUrl)
+          .replace(/%%UNSUBSCRIBE_URL%%/g, unsubscribeUrl);
 
         // If no PDF was generated, remove the PDF section from the email
         if (!subscriberPdfUrl) {
