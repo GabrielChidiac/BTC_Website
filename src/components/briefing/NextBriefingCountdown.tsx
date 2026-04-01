@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from "react";
 
+/** Pipeline runs at 01:00 UTC every day. */
+const PIPELINE_UTC_HOUR = 1;
+
 function getTimeUntilNextBriefing(): { hours: number; minutes: number } {
   const now = new Date();
   const target = new Date(now);
-  target.setUTCHours(1, 0, 0, 0);
+  target.setUTCHours(PIPELINE_UTC_HOUR, 0, 0, 0);
 
   if (now >= target) {
     target.setUTCDate(target.getUTCDate() + 1);

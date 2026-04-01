@@ -64,6 +64,7 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - `createServerClient()` in `src/lib/supabase/server.ts` — for Server Components (respects RLS)
 - `createServiceClient()` in `src/lib/supabase/server.ts` — for Trigger tasks + API route handlers (bypasses RLS via `SUPABASE_SERVICE_ROLE_KEY`)
 - `createClient()` in `src/lib/supabase/client.ts` — for client components
+- **Always use `.maybeSingle()`** for single-row queries — never `.single()` (which throws on 0 results). All queries in the codebase follow this pattern.
 
 ### Tailwind v4
 - Config lives in `src/app/globals.css` via `@import "tailwindcss"` + `@theme inline`
@@ -84,7 +85,7 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - **Free tier:** Market overview, top stories, BTC vs everything, macro context, regulatory/adoption signals, weekly recap email — **available for 7 days only**
 - **Pro tier:** All free features + daily briefing email, institutional flows, technical signals, network health, expert insights, supply dynamics, forward outlook, countdown events, AI chat, PDF downloads, full archive (all dates)
 - Tiers stored in `subscribers.tier` column (`'free'` | `'pro'`)
-- LemonSqueezy handles payments (webhook not yet implemented)
+- LemonSqueezy handles payments (**webhook not yet implemented** — last remaining blocker for paid subscriptions)
 - `getSubscriberTier()` in `src/lib/tier.ts` reads session cookie → checks tier
 - All existing active subscribers were gifted Pro tier at launch
 
@@ -185,6 +186,11 @@ RLS: briefings are publicly readable; all other tables are service-role only.
 - Digest emails batched in chunks of 100 (Resend limit)
 - PDF generated via `@react-pdf/renderer`, uploaded to Supabase Storage bucket `briefing-pdfs`
 - `send-weekly-recap` runs Sunday 9 AM UTC, sent to free-tier subscribers only
+- Weekly recap date range: yesterday (Saturday) back 6 days (previous Sunday) — avoids including Sunday with no briefing
+- All emails (daily-digest, weekly-recap, welcome) include unsubscribe links in footers
+- Daily-digest and weekly-recap use `%%UNSUBSCRIBE_URL%%` placeholder, replaced per-subscriber with a magic-token sign-in URL
+- Welcome email links directly to `/sign-in` (no magic token available at subscribe time)
+- Contact/support email: `hello@btctoday.co` (used in email FROM, website footer, pricing FAQ)
 
 ## Frontend Rules
 
@@ -227,6 +233,7 @@ RLS: briefings are publicly readable; all other tables are service-role only.
 - **Institutional lens** — frame everything through where money flows, macro implications, long-term value
 - **Anti-skeptic by data** — let BTC vs Everything comparisons (24h, YTD, 1Y) speak for themselves
 - **Expert voices** — Perplexity-sourced insights from recognized analysts (Lyn Alden, Saylor, etc.), not YouTube influencers
+- **Chat starter prompts** must be institutional-grade (macro catalysts, ETF data, expert commentary) — never beginner questions
 
 ## Pages
 | Route | Purpose |
@@ -248,5 +255,10 @@ RLS: briefings are publicly readable; all other tables are service-role only.
 - [x] Add rate limiting to `/api/chat` (database-backed, 20 msgs / 10 min)
 - [ ] Consider adding `middleware.ts` for security headers (CSP, X-Frame-Options)
 - [x] Remove unused dependency `youtube-transcript` from `package.json`
-- [ ] Implement LemonSqueezy webhook endpoint for subscription lifecycle events
+- [ ] **Implement LemonSqueezy webhook endpoint** — last blocker for paid subscriptions (handle `subscription_created` → set tier to pro, `subscription_cancelled`/`expired` → set tier to free)
 - [ ] Set LemonSqueezy env vars in production
+- [x] Add unsubscribe links to all email templates (CAN-SPAM/GDPR compliance)
+- [x] Add contact email to website footer and pricing FAQ (`hello@btctoday.co`)
+- [x] Fix all `.single()` → `.maybeSingle()` across codebase
+- [x] Fix weekly recap date range (uses yesterday, not today)
+- [x] SubscribeBanner hides for logged-in users (server + client-side check)
