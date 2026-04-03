@@ -93,8 +93,15 @@ function buildBriefingContext(briefing: BriefingJSON): string {
     : "Macro Context: Not available";
 
   const flows = briefing.institutional_flows;
-  const flowsSection = flows
-    ? `Institutional Flows:\nETF net flow: ${flows.etf_net_flow_usd != null ? "$" + (flows.etf_net_flow_usd / 1e6).toFixed(1) + "M" : "N/A"}\nETF total AUM: ${flows.etf_total_aum_usd != null ? "$" + (flows.etf_total_aum_usd / 1e9).toFixed(1) + "B" : "N/A"}\nTrend: ${flows.etf_flow_trend}\nNotable moves: ${(flows.notable_moves ?? []).join("; ")}`
+  const etf = briefing.etf_flows;
+  const etfLines: string[] = [];
+  if (etf?.daily_net_flow_usd != null) etfLines.push(`ETF 24h net flow: $${(etf.daily_net_flow_usd / 1e6).toFixed(1)}M`);
+  if (etf?.mtd_net_flow_usd != null) etfLines.push(`ETF MTD net flow: $${(etf.mtd_net_flow_usd / 1e6).toFixed(1)}M`);
+  if (etf?.total_net_assets_usd != null) etfLines.push(`ETF total AUM: $${(etf.total_net_assets_usd / 1e9).toFixed(1)}B`);
+  if (flows?.etf_flow_trend && flows.etf_flow_trend !== "Data unavailable") etfLines.push(`Trend: ${flows.etf_flow_trend}`);
+  if (flows?.notable_moves?.length) etfLines.push(`Notable moves: ${flows.notable_moves.join("; ")}`);
+  const flowsSection = etfLines.length > 0
+    ? `Institutional Flows:\n${etfLines.join("\n")}`
     : "Institutional Flows: Not available";
 
   const experts = (briefing.expert_insights ?? [])

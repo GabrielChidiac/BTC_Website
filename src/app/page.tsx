@@ -167,15 +167,15 @@ export default async function Home() {
                   value={`${market.dominance_pct.toFixed(1)}%`}
                   size="sm"
                 />
-                {isPro && briefing.institutional_flows?.etf_net_flow_usd != null && (
+                {isPro && briefing.etf_flows?.daily_net_flow_usd != null && (
                   <StatTile
                     label="ETF Flow"
-                    value={formatFlowUSD(briefing.institutional_flows.etf_net_flow_usd)}
+                    value={formatFlowUSD(briefing.etf_flows.daily_net_flow_usd)}
                     delta={{
-                      value: briefing.institutional_flows.etf_flow_trend !== "Data unavailable"
-                        ? briefing.institutional_flows.etf_flow_trend.slice(0, 40)
+                      value: briefing.etf_flows.mtd_net_flow_usd != null
+                        ? `MTD: ${formatFlowUSD(briefing.etf_flows.mtd_net_flow_usd)}`
                         : "",
-                      positive: briefing.institutional_flows.etf_net_flow_usd >= 0,
+                      positive: briefing.etf_flows.daily_net_flow_usd >= 0,
                     }}
                     size="sm"
                   />
@@ -251,7 +251,7 @@ export default async function Home() {
                     <MotionCard className="h-full">
                       <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
                         <CardContent className="p-4 sm:p-5">
-                          <InstitutionalFlows flows={briefing.institutional_flows} />
+                          <InstitutionalFlows flows={briefing.institutional_flows} etfFlows={briefing.etf_flows} />
                         </CardContent>
                       </Card>
                     </MotionCard>

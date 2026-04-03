@@ -296,12 +296,21 @@ export function DailySummaryPDF({ briefing }: { briefing: BriefingJSON }) {
             <Text style={s.statLabel}>Dominance</Text>
             <Text style={s.statValue}>{mkt.dominance_pct.toFixed(1)}%</Text>
           </View>
-          {briefing.institutional_flows?.etf_net_flow_usd != null && (
+          {briefing.etf_flows?.daily_net_flow_usd != null && (
             <View style={s.statBox}>
-              <Text style={s.statLabel}>ETF Flow</Text>
+              <Text style={s.statLabel}>ETF Flow (24h)</Text>
               <Text style={s.statValue}>
-                {briefing.institutional_flows.etf_net_flow_usd >= 0 ? "+" : ""}
-                ${compactNumber(Math.abs(briefing.institutional_flows.etf_net_flow_usd))}
+                {briefing.etf_flows.daily_net_flow_usd >= 0 ? "+" : ""}
+                ${compactNumber(Math.abs(briefing.etf_flows.daily_net_flow_usd))}
+              </Text>
+            </View>
+          )}
+          {briefing.etf_flows?.mtd_net_flow_usd != null && (
+            <View style={s.statBox}>
+              <Text style={s.statLabel}>ETF Flow (MTD)</Text>
+              <Text style={s.statValue}>
+                {briefing.etf_flows.mtd_net_flow_usd >= 0 ? "+" : ""}
+                ${compactNumber(Math.abs(briefing.etf_flows.mtd_net_flow_usd))}
               </Text>
             </View>
           )}

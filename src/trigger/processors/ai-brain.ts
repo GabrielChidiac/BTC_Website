@@ -14,7 +14,7 @@ import type {
 
 type AiBrainOutput = Omit<
   BriefingJSON,
-  "looking_ahead" | "institutional_flows" | "supply_dynamics" | "expert_insights" | "fear_greed"
+  "looking_ahead" | "institutional_flows" | "supply_dynamics" | "expert_insights" | "fear_greed" | "etf_flows"
 > & { one_line?: string };
 
 interface AiBrainPayload {

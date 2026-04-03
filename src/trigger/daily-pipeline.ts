@@ -102,6 +102,7 @@ export const dailyPipelineTask = schedules.task({
       supply_dynamics: enrichment.supply_dynamics,
       expert_insights: enrichment.expert_insights,
       fear_greed: marketRun?.ok ? marketRun.output.fear_greed : null,
+      etf_flows: marketRun?.ok ? marketRun.output.etf_flows : null,
     };
 
     // ── Step 4: Publish (sequential) ──────────────────────────────────────

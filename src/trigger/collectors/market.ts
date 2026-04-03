@@ -17,6 +17,7 @@ import {
   fetchSOL,
 } from "@/trigger/lib/comparison";
 import { fetchFearGreedIndex } from "@/trigger/lib/alternativeme";
+import { fetchETFFlows } from "@/trigger/lib/sosovalue";
 
 export const marketCollector = task({
   id: "market-collector",
@@ -37,6 +38,7 @@ export const marketCollector = task({
       ethResult,
       solResult,
       fearGreedResult,
+      etfFlowsResult,
     ] = await Promise.allSettled([
       fetchBtcPrice(),
       fetchGlobalData(),
@@ -50,6 +52,7 @@ export const marketCollector = task({
       fetchETH(),
       fetchSOL(),
       fetchFearGreedIndex(),
+      fetchETFFlows(),
     ]);
 
     // ── Step 2: Unwrap results ──────────────────────────────────────────────
@@ -86,6 +89,7 @@ export const marketCollector = task({
     const eth = unwrap(ethResult, "eth");
     const sol = unwrap(solResult, "sol");
     const fearGreed = unwrap(fearGreedResult, "fearGreed");
+    const etfFlows = unwrap(etfFlowsResult, "etfFlows");
 
     // ── Step 3: Compute technical indicators ────────────────────────────────
     let technical = { rsi_14: 0, sma_50: 0, sma_200: 0, support_level: 0, resistance_level: 0 };
@@ -183,6 +187,7 @@ export const marketCollector = task({
       btc_change_ytd_pct: btcYtdPct,
       btc_change_1y_pct: btc1yPct,
       fear_greed: fearGreed ? { value: fearGreed.value, label: fearGreed.label } : null,
+      etf_flows: etfFlows ?? null,
     };
 
     // ── Step 6: Log summary and return ──────────────────────────────────────

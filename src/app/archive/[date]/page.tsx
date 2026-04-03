@@ -224,7 +224,7 @@ export default async function ArchiveDatePage({
               {/* Pro-only sections */}
               {canViewPro ? (
                 <>
-                  <InstitutionalFlows flows={briefing.institutional_flows} />
+                  <InstitutionalFlows flows={briefing.institutional_flows} etfFlows={briefing.etf_flows} />
                   <TechnicalSignals signals={briefing.technical_signals} />
                   <NetworkHealth network={briefing.network_health} />
                   <ExpertInsights insights={briefing.expert_insights} />

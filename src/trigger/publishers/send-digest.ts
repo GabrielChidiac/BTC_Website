@@ -53,7 +53,12 @@ export const sendDigestTask = task({
 
     // Step 3: Build email content
     const siteUrl = getBaseUrl();
-    const { market_snapshot, top_stories } = briefing;
+    const {
+      market_snapshot, top_stories, daily_diff, technical_signals,
+      network_health, institutional_flows, supply_dynamics, expert_insights,
+      macro_context, looking_ahead, btc_vs_everything, regulatory, adoption,
+      fear_greed, narrative_consensus, etf_flows,
+    } = briefing;
 
     const subject = `BTC Today: $${market_snapshot.price_usd.toLocaleString("en-US")} (${market_snapshot.change_24h_pct >= 0 ? "+" : ""}${market_snapshot.change_24h_pct.toFixed(2)}%)`;
 
@@ -87,27 +92,91 @@ export const sendDigestTask = task({
       });
     }
 
-    // Plain text fallback for clients that don't render HTML
-    const storySummaries = top_stories
-      .slice(0, 3)
-      .map((s, i) => `${i + 1}. ${s.headline} (${s.source})\n   ${s.summary}`)
-      .join("\n\n");
+    // Plain text fallback — full Pro content
+    const fmtPct = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
+    const compact = (n: number) => {
+      if (n >= 1e12) return (n / 1e12).toFixed(2) + "T";
+      if (n >= 1e9) return (n / 1e9).toFixed(2) + "B";
+      if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
+      return n.toLocaleString("en-US");
+    };
+    const fmtFlow = (n: number) => `${n >= 0 ? "+" : "-"}$${compact(Math.abs(n))}`;
 
-    const textTemplate = `BTC Today — ${date}
+    const sections: string[] = [];
 
-Market: $${market_snapshot.price_usd.toLocaleString("en-US")} | 24h: ${market_snapshot.change_24h_pct >= 0 ? "+" : ""}${market_snapshot.change_24h_pct.toFixed(2)}% | 7d: ${market_snapshot.change_7d_pct >= 0 ? "+" : ""}${market_snapshot.change_7d_pct.toFixed(2)}%
+    sections.push(`BTC Today — ${date}`);
+    if (briefing.one_line) sections.push(briefing.one_line);
 
-Top Stories:
+    sections.push(
+      `${daily_diff.price_change}\n` +
+      `Market: $${market_snapshot.price_usd.toLocaleString("en-US")} | 24h: ${fmtPct(market_snapshot.change_24h_pct)} | 7d: ${fmtPct(market_snapshot.change_7d_pct)}\n` +
+      `Mkt Cap: $${compact(market_snapshot.market_cap_usd)} | Vol: $${compact(market_snapshot.volume_24h_usd)} | Dom: ${market_snapshot.dominance_pct.toFixed(1)}%` +
+      (fear_greed ? `\nF&G: ${fear_greed.value} (${fear_greed.label})` : "") +
+      `\nConsensus: ${narrative_consensus.score > 0 ? "+" : ""}${narrative_consensus.score} (${narrative_consensus.label})`
+    );
 
-${storySummaries || "No stories today."}
+    // Flows
+    const flowLines: string[] = [];
+    if (etf_flows?.daily_net_flow_usd != null) flowLines.push(`24h Flow: ${fmtFlow(etf_flows.daily_net_flow_usd)}`);
+    if (etf_flows?.mtd_net_flow_usd != null) flowLines.push(`MTD Flow: ${fmtFlow(etf_flows.mtd_net_flow_usd)}`);
+    if (etf_flows?.total_net_assets_usd != null) flowLines.push(`ETF AUM: $${compact(etf_flows.total_net_assets_usd)}`);
+    if (institutional_flows?.etf_flow_trend && !institutional_flows.etf_flow_trend.toLowerCase().includes("unavailable")) {
+      flowLines.push(institutional_flows.etf_flow_trend);
+    }
+    if (institutional_flows?.notable_moves?.length) {
+      flowLines.push(...institutional_flows.notable_moves.map((m) => `• ${m}`));
+    }
+    if (flowLines.length > 0) sections.push(`--- FLOWS ---\n${flowLines.join("\n")}`);
 
-Read the full briefing: %%BRIEFING_URL%%
+    // Stories
+    const storyLines = top_stories.slice(0, 3).map((s, i) => `${i + 1}. ${s.headline} (${s.source})`).join("\n");
+    if (storyLines) sections.push(`--- STORIES ---\n${storyLines}`);
 
-Chat with our AI: %%CHAT_URL%%
+    // Technicals
+    sections.push(
+      `--- TECHNICALS ---\n` +
+      `RSI: ${technical_signals.rsi_14.toFixed(1)} | SMA-50: $${Math.round(technical_signals.sma_50).toLocaleString()} | SMA-200: $${Math.round(technical_signals.sma_200).toLocaleString()}\n` +
+      `Support: $${Math.round(technical_signals.support_level).toLocaleString()} | Resistance: $${Math.round(technical_signals.resistance_level).toLocaleString()}`
+    );
 
-Unsubscribe: %%UNSUBSCRIBE_URL%%
+    // On-chain
+    const chainLines = [
+      `Hashrate: ${Math.round(network_health.hashrate_eh_s)} EH/s | Halving: ${network_health.halving_progress_pct.toFixed(1)}% | Fees: ${network_health.fee_fast_sat_vb}/${network_health.fee_medium_sat_vb}/${network_health.fee_slow_sat_vb}`,
+    ];
+    if (supply_dynamics?.supply_narrative && !supply_dynamics.supply_narrative.toLowerCase().includes("unavailable")) {
+      chainLines.push(supply_dynamics.long_term_holder_pct != null ? `${supply_dynamics.long_term_holder_pct}% LTH` : "");
+    }
+    sections.push(`--- ON-CHAIN ---\n${chainLines.filter(Boolean).join("\n")}`);
 
-— BTC Today`;
+    // Expert
+    if (expert_insights?.length > 0) {
+      const e = expert_insights[0];
+      sections.push(`--- EXPERT ---\n"${e.quote_or_summary.slice(0, 120)}" — ${e.expert_name}, ${e.role}`);
+    }
+
+    // Outlook
+    const outlookLines: string[] = [];
+    if (macro_context?.narrative) outlookLines.push(macro_context.narrative.split(/\.\s/)[0] + ".");
+    if (macro_context?.btc_correlation_note) outlookLines.push(macro_context.btc_correlation_note.split(/\.\s/)[0] + ".");
+    if (macro_context?.key_macro_events?.length) outlookLines.push(macro_context.key_macro_events.join(" · "));
+    if (looking_ahead && !looking_ahead.toLowerCase().includes("unavailable")) outlookLines.push(looking_ahead.split(/\.\s/)[0] + ".");
+    if (outlookLines.length > 0) sections.push(`--- OUTLOOK ---\n${outlookLines.join("\n")}`);
+
+    // VS Everything
+    if (btc_vs_everything?.length > 0) {
+      const vs = btc_vs_everything.slice(0, 3).map((a) => `${a.ticker} YTD: ${a.change_ytd_pct != null ? fmtPct(a.change_ytd_pct) : "N/A"}`).join(" | ");
+      sections.push(`--- VS EVERYTHING ---\nBTC 24h: ${fmtPct(market_snapshot.change_24h_pct)} | ${vs}`);
+    }
+
+    // Signals
+    const sigLines: string[] = [];
+    if (regulatory?.length) sigLines.push(`${regulatory[0].region}: ${regulatory[0].summary.split(/\.\s/)[0]}.`);
+    if (adoption?.length) sigLines.push(`${adoption[0].category}: ${adoption[0].summary.split(/\.\s/)[0]}.`);
+    if (sigLines.length > 0) sections.push(`--- SIGNALS ---\n${sigLines.join("\n")}`);
+
+    sections.push(`Read full briefing: %%BRIEFING_URL%%\nDownload PDF: %%PDF_URL%%\nChat with AI: %%CHAT_URL%%\nUnsubscribe: %%UNSUBSCRIBE_URL%%\n\n— BTC Today`);
+
+    const textTemplate = sections.join("\n\n");
 
     // Step 3.5: Generate per-subscriber magic link tokens (all subscribers for auto-login)
     const authTokens = new Map<string, string>();
@@ -175,9 +244,9 @@ Unsubscribe: %%UNSUBSCRIBE_URL%%
           .replace(/%%BRIEFING_URL%%/g, briefingUrl)
           .replace(/%%UNSUBSCRIBE_URL%%/g, unsubscribeUrl);
 
-        // If no PDF was generated, remove the PDF section from the email
+        // If no PDF was generated, remove the PDF link from the email
         if (!subscriberPdfUrl) {
-          html = html.replace(/Download today[\s\S]*?Download PDF Summary<\/a>/i, "");
+          html = html.replace(/<a[^>]*href=""[^>]*>[\s\S]*?Download PDF[\s\S]*?<\/a>/i, "");
         }
 
         if (subscriberName) {

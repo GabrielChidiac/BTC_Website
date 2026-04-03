@@ -132,6 +132,14 @@ export interface NarrativeConsensus {
   rationale: string;
 }
 
+// ─── ETF Flows (direct from SoSoValue API, no AI) ─────────────────────────
+
+export interface ETFFlows {
+  daily_net_flow_usd: number | null;   // Latest day's net flow
+  mtd_net_flow_usd: number | null;     // Month-to-date cumulative
+  total_net_assets_usd: number | null;  // Current total AUM
+}
+
 // ─── Fear & Greed (direct from Alternative.me API, no AI) ──────────────────
 
 export interface FearGreedIndex {
@@ -162,6 +170,7 @@ export interface BriefingJSON {
   expert_insights: ExpertInsight[];
   // Direct API data (no AI processing)
   fear_greed: FearGreedIndex | null;
+  etf_flows: ETFFlows | null;
 }
 
 // ─── Collector output types ─────────────────────────────────────────────────
@@ -230,6 +239,7 @@ export interface MarketCollectorOutput {
   btc_change_ytd_pct: number | null;
   btc_change_1y_pct: number | null;
   fear_greed: FearGreedIndex | null;
+  etf_flows: ETFFlows | null;
 }
 
 // ─── Subscriber tier ────────────────────────────────────────────────────────
@@ -251,8 +261,8 @@ export interface SubscriberRow {
   name: string | null;
   status: "active" | "unsubscribed";
   tier: SubscriberTier;
-  ls_customer_id: string | null;
-  ls_subscription_id: string | null;
+  whop_user_id: string | null;
+  whop_membership_id: string | null;
   created_at: string;
   tier_updated_at: string | null;
 }
