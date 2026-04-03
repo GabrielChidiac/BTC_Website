@@ -110,7 +110,7 @@ Search for today's Bitcoin ETF flow data, corporate treasury moves, and institut
 
 Rules:
 - etf_net_flow_usd: net inflow (positive) or outflow (negative) in USD for today/yesterday. null if unavailable.
-- etf_total_aum_usd: total Bitcoin ETF AUM in USD. null if unavailable.
+- etf_total_aum_usd: total combined AUM (assets under management) across ALL US spot Bitcoin ETFs in USD. This is a critical field. Search for "Bitcoin ETF total AUM", "Bitcoin ETF total net assets", or "Bitcoin ETF assets under management". As of early 2026, this figure is typically in the $80B-$120B range. Return the raw USD number (e.g. 95000000000 for $95B). null ONLY if you truly cannot find any estimate.
 - etf_flow_trend: describe the recent trend, e.g. "5 consecutive days of net inflows totaling $1.2B"
 - notable_moves: 2-4 notable institutional moves, e.g. "MicroStrategy purchased 12,000 BTC ($780M)"
 - Use real, verified data only. Do not fabricate numbers.
@@ -245,7 +245,7 @@ export const enrichmentTask = task({
         }),
         queryPerplexity({
           system: FLOWS_SYSTEM,
-          prompt: "What are today's Bitcoin spot ETF flow numbers and any notable institutional Bitcoin purchases or sales in the last 24-48 hours?",
+          prompt: "What are today's Bitcoin spot ETF flow numbers, the total combined AUM (assets under management) across all US spot Bitcoin ETFs, and any notable institutional Bitcoin purchases or sales in the last 24-48 hours? Make sure to include the total ETF AUM figure.",
         }),
         queryPerplexity({
           system: EXPERTS_SYSTEM,

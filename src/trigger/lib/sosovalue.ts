@@ -18,7 +18,7 @@ export async function fetchETFFlows(): Promise<Result<ETFFlows>> {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: "us-btc-spot" }),
       },
-      15_000,
+      30_000,
     );
 
     if (!res.ok) {

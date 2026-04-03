@@ -4,6 +4,7 @@ import { getSubscriberTier } from "@/lib/tier";
 import { COOKIE_NAME } from "@/lib/session";
 import type { BriefingJSON, DailyBriefingRow, AdoptionUpdate, RegulatoryUpdate } from "@/lib/types";
 import { compactNumber } from "@/lib/utils";
+import { BLOCKED_EVENT_KEYWORDS } from "@/lib/constants";
 
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -99,7 +100,7 @@ export default async function Home() {
   // Filter countdown events for reuse
   const filteredEvents = briefing.countdown_events
     ? [...briefing.countdown_events]
-        .filter((e) => !/conference|summit|expo|convention|meetup|hackathon/i.test(e.name) && !/conference|summit|expo|convention|meetup|hackathon/i.test(e.description))
+        .filter((e) => !BLOCKED_EVENT_KEYWORDS.test(e.name) && !BLOCKED_EVENT_KEYWORDS.test(e.description))
         .sort((a, b) => {
           if (a.days_away === null && b.days_away === null) return 0;
           if (a.days_away === null) return 1;
@@ -167,26 +168,34 @@ export default async function Home() {
                   value={`${market.dominance_pct.toFixed(1)}%`}
                   size="sm"
                 />
-                {isPro && briefing.etf_flows?.daily_net_flow_usd != null && (
-                  <StatTile
-                    label="ETF Flow"
-                    value={formatFlowUSD(briefing.etf_flows.daily_net_flow_usd)}
-                    delta={{
-                      value: briefing.etf_flows.mtd_net_flow_usd != null
-                        ? `MTD: ${formatFlowUSD(briefing.etf_flows.mtd_net_flow_usd)}`
-                        : "",
-                      positive: briefing.etf_flows.daily_net_flow_usd >= 0,
-                    }}
-                    size="sm"
-                  />
-                )}
-                {isPro && briefing.etf_flows?.total_net_assets_usd != null && (
-                  <StatTile
-                    label="Total ETF AUM"
-                    value={`$${compactNumber(briefing.etf_flows.total_net_assets_usd)}`}
-                    size="sm"
-                  />
-                )}
+                {isPro && (() => {
+                  const flow = briefing.etf_flows?.daily_net_flow_usd ?? briefing.institutional_flows?.etf_net_flow_usd ?? null;
+                  if (flow == null) return null;
+                  return (
+                    <StatTile
+                      label="ETF Flow"
+                      value={formatFlowUSD(flow)}
+                      delta={{
+                        value: briefing.etf_flows?.mtd_net_flow_usd != null
+                          ? `MTD: ${formatFlowUSD(briefing.etf_flows.mtd_net_flow_usd)}`
+                          : "",
+                        positive: flow >= 0,
+                      }}
+                      size="sm"
+                    />
+                  );
+                })()}
+                {isPro && (() => {
+                  const aum = briefing.etf_flows?.total_net_assets_usd ?? briefing.institutional_flows?.etf_total_aum_usd ?? null;
+                  if (aum == null) return null;
+                  return (
+                    <StatTile
+                      label="Total ETF AUM"
+                      value={`$${compactNumber(aum)}`}
+                      size="sm"
+                    />
+                  );
+                })()}
               </BentoGrid>
             </ScrollReveal>
           </div>
@@ -258,7 +267,7 @@ export default async function Home() {
                     <MotionCard className="h-full">
                       <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
                         <CardContent className="p-4 sm:p-5">
-                          <InstitutionalFlows flows={briefing.institutional_flows} etfFlows={briefing.etf_flows} />
+                          <InstitutionalFlows flows={briefing.institutional_flows} />
                         </CardContent>
                       </Card>
                     </MotionCard>

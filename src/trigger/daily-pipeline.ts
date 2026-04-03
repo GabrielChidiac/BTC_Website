@@ -95,6 +95,17 @@ export const dailyPipelineTask = schedules.task({
       });
     }
 
+    // Merge ETF data: SoSoValue (market collector) is primary, Perplexity (enrichment) fills gaps
+    const sosoEtf = marketRun?.ok ? marketRun.output.etf_flows : null;
+    const perplexityFlows = enrichment.institutional_flows;
+    const mergedEtfFlows = (sosoEtf || perplexityFlows?.etf_net_flow_usd != null || perplexityFlows?.etf_total_aum_usd != null)
+      ? {
+          daily_net_flow_usd: sosoEtf?.daily_net_flow_usd ?? perplexityFlows?.etf_net_flow_usd ?? null,
+          mtd_net_flow_usd: sosoEtf?.mtd_net_flow_usd ?? null,
+          total_net_assets_usd: sosoEtf?.total_net_assets_usd ?? perplexityFlows?.etf_total_aum_usd ?? null,
+        }
+      : null;
+
     const finalBriefing: BriefingJSON = {
       ...briefing,
       looking_ahead: enrichment.looking_ahead,
@@ -102,7 +113,7 @@ export const dailyPipelineTask = schedules.task({
       supply_dynamics: enrichment.supply_dynamics,
       expert_insights: enrichment.expert_insights,
       fear_greed: marketRun?.ok ? marketRun.output.fear_greed : null,
-      etf_flows: marketRun?.ok ? marketRun.output.etf_flows : null,
+      etf_flows: mergedEtfFlows,
     };
 
     // ── Step 4: Publish (sequential) ──────────────────────────────────────

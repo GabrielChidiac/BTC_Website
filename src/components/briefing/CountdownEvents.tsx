@@ -1,4 +1,5 @@
 import type { CountdownEvent } from "@/lib/types";
+import { BLOCKED_EVENT_KEYWORDS } from "@/lib/constants";
 
 export function CountdownEvents({
   events,
@@ -10,8 +11,7 @@ export function CountdownEvents({
   if (!events || events.length === 0) return null;
 
   // Filter out conferences/summits — only hard-scheduled macro/protocol events
-  const BLOCKED_KEYWORDS = /conference|summit|expo|convention|meetup|hackathon/i;
-  const filtered = events.filter((e) => !BLOCKED_KEYWORDS.test(e.name) && !BLOCKED_KEYWORDS.test(e.description));
+  const filtered = events.filter((e) => !BLOCKED_EVENT_KEYWORDS.test(e.name) && !BLOCKED_EVENT_KEYWORDS.test(e.description));
 
   if (filtered.length === 0) return null;
 

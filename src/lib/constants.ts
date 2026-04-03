@@ -32,6 +32,10 @@ export const ALTERNATIVE_ME_FNG = "https://api.alternative.me/fng/";
 export const PERPLEXITY_BASE = "https://api.perplexity.ai/chat/completions";
 export const SOSOVALUE_ETF_HISTORY = "https://api.sosovalue.xyz/openapi/v2/etf/historicalInflowChart";
 
+// ─── Event Filtering ────────────────────────────────────────────────────────
+
+export const BLOCKED_EVENT_KEYWORDS = /conference|summit|expo|convention|meetup|hackathon/i;
+
 // ─── Halving ────────────────────────────────────────────────────────────────
 
 export const HALVING_INTERVAL = 210_000;

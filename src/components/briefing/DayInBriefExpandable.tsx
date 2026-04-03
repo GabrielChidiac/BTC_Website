@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { MacroContext, CountdownEvent } from "@/lib/types";
+import { BLOCKED_EVENT_KEYWORDS } from "@/lib/constants";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Collapsible,
@@ -36,9 +37,8 @@ export function DayInBriefExpandable({
   const hiddenBullets = bullets.slice(2);
 
   /* Upcoming events within 7 days (exclude conferences/summits) */
-  const BLOCKED = /conference|summit|expo|convention|meetup|hackathon/i;
   const urgentEvents = events
-    ?.filter((e) => e.days_away !== null && e.days_away <= 7 && !BLOCKED.test(e.name) && !BLOCKED.test(e.description))
+    ?.filter((e) => e.days_away !== null && e.days_away <= 7 && !BLOCKED_EVENT_KEYWORDS.test(e.name) && !BLOCKED_EVENT_KEYWORDS.test(e.description))
     .slice(0, 4) ?? [];
 
   const hasMore = hiddenBullets.length > 0 || urgentEvents.length > 0;
