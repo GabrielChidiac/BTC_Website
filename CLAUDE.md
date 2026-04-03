@@ -15,7 +15,7 @@ AI-curated daily Bitcoin intelligence for high-net-worth individuals and busines
 | Database | Supabase (Postgres + RLS) | `@supabase/ssr@^0.9.0` |
 | Styling | Tailwind CSS v4 | CSS-only config via `@theme` |
 | AI | Claude Sonnet (briefing) + Perplexity sonar-pro (enrichment) | Kie.ai fallback for Claude |
-| Payments | LemonSqueezy | Free/Pro tiers, $7/month or $59/year |
+| Payments | Whop | Free/Pro tiers, $7/month or $59/year |
 | Email | Resend + React Email | |
 | UI Components | shadcn/ui (base-nova) | `npx shadcn@latest add <component>` |
 | Animation | Framer Motion + GSAP | Only animate `transform` and `opacity` |
@@ -83,9 +83,12 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 
 ### Subscription Tiers
 - **Free tier:** Market overview, top stories, BTC vs everything, macro context, regulatory/adoption signals, weekly recap email — **available for 7 days only**
-- **Pro tier:** All free features + daily briefing email, institutional flows, technical signals, network health, expert insights, supply dynamics, forward outlook, countdown events, AI chat, PDF downloads, full archive (all dates)
+- **Pro tier:** All free features + daily briefing email, ETF flows, institutional activity, technical signals, network health, expert insights, supply dynamics, forward outlook, countdown events, AI chat, PDF downloads, full archive (all dates)
 - Tiers stored in `subscribers.tier` column (`'free'` | `'pro'`)
-- LemonSqueezy handles payments (**webhook not yet implemented** — last remaining blocker for paid subscriptions)
+- Whop handles payments via webhook at `/api/webhooks/whop`
+- `verifyWhopWebhook()` in `src/lib/whop.ts` validates webhook signatures via HMAC-SHA256
+- Webhook handles `membership.went_valid` (→ pro) and `membership.went_invalid` (→ free)
+- If a paying user isn't already a subscriber, the webhook auto-creates them as active/pro
 - `getSubscriberTier()` in `src/lib/tier.ts` reads session cookie → checks tier
 - All existing active subscribers were gifted Pro tier at launch
 
@@ -109,7 +112,7 @@ All listed in `.env.example`. Required keys:
 | Key | Service |
 |---|---|
 | `ANTHROPIC_API_KEY` | Claude Sonnet (briefing generation) |
-| `PERPLEXITY_API_KEY` | sonar-pro (enrichment: forward outlook, institutional flows, expert insights, supply dynamics) |
+| `PERPLEXITY_API_KEY` | sonar-pro (enrichment: forward outlook, institutional activity, expert insights, supply dynamics) |
 | `KIE_API_KEY` | Kie.ai (Claude fallback, OpenAI-compatible) |
 | `COINGECKO_API_KEY` | CoinGecko Demo (free, `x-cg-demo-api-key` header) |
 | `SEARCHAPI_KEY` | SearchAPI.io (Google News scraping for news collector) |
@@ -121,17 +124,16 @@ All listed in `.env.example`. Required keys:
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role (server-side writes) |
 | `REVALIDATION_SECRET` | Protects `/api/revalidate` endpoint |
 | `NEXT_PUBLIC_SITE_URL` | Site URL (fallback: `https://www.btctoday.co` via `getBaseUrl()` in `src/lib/url.ts`) |
-| `LEMONSQUEEZY_API_KEY` | LemonSqueezy (subscription payments) |
-| `LEMONSQUEEZY_WEBHOOK_SECRET` | LemonSqueezy webhook signature verification |
-| `NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_URL` | LemonSqueezy checkout URL ($7/month) |
-| `NEXT_PUBLIC_LEMONSQUEEZY_ANNUAL_URL` | LemonSqueezy checkout URL ($59/year) |
+| `WHOP_WEBHOOK_KEY` | Whop webhook signature verification (HMAC-SHA256) |
+| `NEXT_PUBLIC_WHOP_MONTHLY_URL` | Whop checkout URL ($7/month) |
+| `NEXT_PUBLIC_WHOP_ANNUAL_URL` | Whop checkout URL ($59/year) |
 
 ## Database (Supabase)
 4 tables, migrations in `supabase/migrations/`:
 | Table | Purpose |
 |---|---|
 | `daily_briefings` | `date` PK + `content` JSONB (the full `BriefingJSON`) |
-| `subscribers` | Email list (`email`, `name`, `status`: active/unsubscribed, `tier`: free/pro, LemonSqueezy IDs) |
+| `subscribers` | Email list (`email`, `name`, `status`: active/unsubscribed, `tier`: free/pro, `whop_user_id`, `whop_membership_id`) |
 | `verification_codes` | Magic link tokens, session tokens (`email`, `code`, `expires_at`, `used`) |
 | `chat_rate_limits` | Serverless rate limiting for `/api/chat` (20 msgs / 10 min per email) |
 
@@ -147,6 +149,7 @@ RLS: briefings are publicly readable; all other tables are service-role only.
 | `/api/chat/verify-send` | POST | Send magic link to subscriber email |
 | `/api/chat/verify-check` | POST | Verify magic link token, create 30-day session (max 3 concurrent devices) |
 | `/api/logout` | POST | Clear session cookie |
+| `/api/webhooks/whop` | POST | Whop webhook — membership lifecycle (valid → pro, invalid → free) |
 | `/pdf/[date]` | GET | PDF download — auth via session cookie or magic link token, Pro only |
 
 ## Pipeline Architecture
@@ -159,8 +162,8 @@ RLS: briefings are publicly readable; all other tables are service-role only.
   └─ market collector ─────┘         │                       │
      (CoinGecko, Mempool,           │                       ├── looking_ahead
       Yahoo Finance,                v                       ├── institutional_flows
-      Alternative.me)          BriefingJSON ◄───────────────├── expert_insights
-                                    │                       └── supply_dynamics
+      Alternative.me,          BriefingJSON ◄───────────────├── expert_insights
+      SoSoValue ETF)                │                       └── supply_dynamics
                                     ├──→ Save to Supabase
                                     ├──→ Revalidate Next.js (ISR)
                                     └──→ Send email digest (Resend)
@@ -172,13 +175,15 @@ RLS: briefings are publicly readable; all other tables are service-role only.
 **Fault tolerance:**
 - Collectors: **non-fatal** — failed sources default to empty/null, pipeline continues
 - AI Brain: **FATAL** — if Claude fails, entire pipeline stops (no briefing published)
-- Enrichment: **non-fatal** — Perplexity failures default to fallback text; runs 4 queries in parallel (forward outlook, institutional flows, expert insights, supply dynamics)
+- Enrichment: **non-fatal** — Perplexity failures default to fallback text; runs 4 queries in parallel (forward outlook, institutional activity, expert insights, supply dynamics)
 - Publishers: **sequential** — if save fails, email is never sent
 
 **BriefingJSON composition:**
 - AI Brain generates the base `BriefingJSON` structure (stories, market, technical, narrative, macro, etc.)
 - Enrichment *overwrites* 4 fields: `looking_ahead`, `institutional_flows`, `expert_insights`, `supply_dynamics`
 - `fear_greed` comes from market collector directly (not AI Brain or enrichment)
+- `etf_flows` comes from SoSoValue API via market collector (not enrichment) — daily net flow, MTD, total AUM
+- `institutional_flows` from Perplexity focuses on non-ETF activity: corporate treasury, whale movements, fund allocations, OTC desk, mining companies
 
 **News pipeline:** Articles deduped by normalized URL (lowercase, trimmed), filtered by BTC-relevance keyword regex, top 10 scraped for full text via Jina Reader (non-fatal per article)
 
@@ -243,7 +248,7 @@ RLS: briefings are publicly readable; all other tables are service-role only.
 | `/archive/[date]` | Single archived briefing |
 | `/chat` | AI chat interface (requires auth, Pro only) |
 | `/sign-in` | Magic link sign-in page |
-| `/pricing` | Free vs Pro comparison, LemonSqueezy checkout links |
+| `/pricing` | Free vs Pro comparison, Whop checkout links |
 | `/pdf/[date]` | PDF download (auth required, Pro only) |
 
 ## Pre-Deployment Checklist
@@ -255,8 +260,9 @@ RLS: briefings are publicly readable; all other tables are service-role only.
 - [x] Add rate limiting to `/api/chat` (database-backed, 20 msgs / 10 min)
 - [ ] Consider adding `middleware.ts` for security headers (CSP, X-Frame-Options)
 - [x] Remove unused dependency `youtube-transcript` from `package.json`
-- [ ] **Implement LemonSqueezy webhook endpoint** — last blocker for paid subscriptions (handle `subscription_created` → set tier to pro, `subscription_cancelled`/`expired` → set tier to free)
-- [ ] Set LemonSqueezy env vars in production
+- [x] Implement Whop webhook endpoint (`/api/webhooks/whop`)
+- [ ] Set Whop env vars in production (`WHOP_WEBHOOK_KEY`, checkout URLs)
+- [ ] Configure webhook URL in Whop dashboard (point to `https://btctoday.co/api/webhooks/whop`)
 - [x] Add unsubscribe links to all email templates (CAN-SPAM/GDPR compliance)
 - [x] Add contact email to website footer and pricing FAQ (`hello@btctoday.co`)
 - [x] Fix all `.single()` → `.maybeSingle()` across codebase

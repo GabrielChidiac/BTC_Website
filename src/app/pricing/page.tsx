@@ -49,8 +49,8 @@ export default async function PricingPage() {
   const { tier, email } = await getSubscriberTier();
   const isPro = tier === "pro";
 
-  const monthlyUrl = process.env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_URL;
-  const annualUrl = process.env.NEXT_PUBLIC_LEMONSQUEEZY_ANNUAL_URL;
+  const monthlyUrl = process.env.NEXT_PUBLIC_WHOP_MONTHLY_URL;
+  const annualUrl = process.env.NEXT_PUBLIC_WHOP_ANNUAL_URL;
 
   // Check if user has a session (for prefilling email in checkout)
   let sessionEmail: string | null = email;
@@ -62,12 +62,12 @@ export default async function PricingPage() {
     } catch { /* no session */ }
   }
 
-  // Append email to checkout URLs if available
+  // Append email to Whop checkout URLs if available
   const monthlyCheckout = monthlyUrl
-    ? `${monthlyUrl}${monthlyUrl.includes("?") ? "&" : "?"}checkout[email]=${encodeURIComponent(sessionEmail ?? "")}`
+    ? `${monthlyUrl}${monthlyUrl.includes("?") ? "&" : "?"}email=${encodeURIComponent(sessionEmail ?? "")}`
     : null;
   const annualCheckout = annualUrl
-    ? `${annualUrl}${annualUrl.includes("?") ? "&" : "?"}checkout[email]=${encodeURIComponent(sessionEmail ?? "")}`
+    ? `${annualUrl}${annualUrl.includes("?") ? "&" : "?"}email=${encodeURIComponent(sessionEmail ?? "")}`
     : null;
 
   return (
@@ -157,13 +157,13 @@ export default async function PricingPage() {
                 <div className="mt-6 flex flex-col gap-2">
                   <a
                     href={annualCheckout}
-                    className="lemonsqueezy-button block rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
+                    className="block rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
                   >
                     Go Pro — $59/year (save 30%)
                   </a>
                   <a
                     href={monthlyCheckout ?? "#"}
-                    className="lemonsqueezy-button block rounded-lg border border-[var(--color-accent)]/30 px-4 py-2.5 text-center text-sm font-medium text-[var(--color-accent)] hover:bg-[var(--color-accent)]/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50"
+                    className="block rounded-lg border border-[var(--color-accent)]/30 px-4 py-2.5 text-center text-sm font-medium text-[var(--color-accent)] hover:bg-[var(--color-accent)]/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50"
                   >
                     or $7/month
                   </a>

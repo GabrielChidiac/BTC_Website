@@ -392,7 +392,7 @@ export default function DailyDigest({
                       </Text>
                     ))}
                   {!hasFlows && (
-                    <Text style={s.panelText}>ETF data updating shortly.</Text>
+                    <Text style={s.panelText}>Flow data updating shortly.</Text>
                   )}
                 </Column>
 
