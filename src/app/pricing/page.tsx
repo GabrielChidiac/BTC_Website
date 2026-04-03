@@ -147,7 +147,7 @@ export default async function PricingPage() {
               ) : !sessionEmail ? (
                 <div className="mt-6 flex flex-col gap-2">
                   <Link
-                    href="/sign-in"
+                    href="/"
                     className="block rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
                   >
                     Sign in to subscribe
