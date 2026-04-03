@@ -180,6 +180,13 @@ export default async function Home() {
                     size="sm"
                   />
                 )}
+                {isPro && briefing.etf_flows?.total_net_assets_usd != null && (
+                  <StatTile
+                    label="Total ETF AUM"
+                    value={`$${compactNumber(briefing.etf_flows.total_net_assets_usd)}`}
+                    size="sm"
+                  />
+                )}
               </BentoGrid>
             </ScrollReveal>
           </div>

@@ -5,8 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 type Status = "idle" | "loading" | "success" | "error";
 
-const COOKIE_NAME = "btc-session";
-
 export function SubscribeBanner() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -14,14 +12,6 @@ export function SubscribeBanner() {
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
   const [visible, setVisible] = useState(true);
-  const [hidden, setHidden] = useState(false);
-
-  // Hide if user is logged in (client-side check as safety net)
-  useEffect(() => {
-    if (document.cookie.includes(COOKIE_NAME)) {
-      setHidden(true);
-    }
-  }, []);
 
   // Hide on scroll down
   useEffect(() => {
@@ -90,8 +80,6 @@ export function SubscribeBanner() {
       setMessage("Network error. Try again.");
     }
   }
-
-  if (hidden) return null;
 
   return (
     <>
