@@ -53,9 +53,7 @@ export const dailyPipelineTask = schedules.task({
     let enrichment = {
       looking_ahead: "Forward-looking analysis unavailable today.",
       institutional_flows: {
-        etf_net_flow_usd: null as number | null,
-        etf_total_aum_usd: null as number | null,
-        etf_flow_trend: "Data unavailable",
+        summary: "Data unavailable",
         notable_moves: [] as string[],
       },
       supply_dynamics: {
@@ -95,16 +93,8 @@ export const dailyPipelineTask = schedules.task({
       });
     }
 
-    // Merge ETF data: SoSoValue (market collector) is primary, Perplexity (enrichment) fills gaps
-    const sosoEtf = marketRun?.ok ? marketRun.output.etf_flows : null;
-    const perplexityFlows = enrichment.institutional_flows;
-    const mergedEtfFlows = (sosoEtf || perplexityFlows?.etf_net_flow_usd != null || perplexityFlows?.etf_total_aum_usd != null)
-      ? {
-          daily_net_flow_usd: sosoEtf?.daily_net_flow_usd ?? perplexityFlows?.etf_net_flow_usd ?? null,
-          mtd_net_flow_usd: sosoEtf?.mtd_net_flow_usd ?? null,
-          total_net_assets_usd: sosoEtf?.total_net_assets_usd ?? perplexityFlows?.etf_total_aum_usd ?? null,
-        }
-      : null;
+    // ETF data from SoSoValue (market collector) only
+    const etfFlows = marketRun?.ok ? marketRun.output.etf_flows : null;
 
     const finalBriefing: BriefingJSON = {
       ...briefing,
@@ -113,7 +103,7 @@ export const dailyPipelineTask = schedules.task({
       supply_dynamics: enrichment.supply_dynamics,
       expert_insights: enrichment.expert_insights,
       fear_greed: marketRun?.ok ? marketRun.output.fear_greed : null,
-      etf_flows: mergedEtfFlows,
+      etf_flows: etfFlows,
     };
 
     // ── Step 4: Publish (sequential) ──────────────────────────────────────

@@ -159,9 +159,7 @@ INSERT INTO daily_briefings (date, content) VALUES (
     },
 
     "institutional_flows": {
-      "etf_net_flow_usd": 185000000,
-      "etf_total_aum_usd": 98000000000,
-      "etf_flow_trend": "Net inflows have resumed after a brief pause last week. BlackRock IBIT continues to lead daily flows. Total spot ETF AUM approaching $100B milestone.",
+      "summary": "Corporate treasuries continued accumulating with Strategy leading at 506,137 BTC. Southeast Asian firms entering the space as Bitcoin treasury adoption broadens beyond US and Japan.",
       "notable_moves": [
         "Bernstein initiates $150K BTC price target, sees 226% upside for Strategy shares",
         "Morgan Stanley expanding Bitcoin product offerings to wealth management clients",

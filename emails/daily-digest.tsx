@@ -221,7 +221,7 @@ const previewBriefing: BriefingJSON = {
   adoption: [{ headline: "Top-10 US Bank to Offer Bitcoin Custody", category: "institutional", summary: "Following relaxed SEC guidance, a major bank will offer Bitcoin custody to institutional clients by Q3 2026.", source: "CoinDesk", url: "https://coindesk.com" }],
   narrative_consensus: { score: 65, label: "Cautiously Optimistic", rationale: "Institutional positioning is net long with ETF inflows accelerating." },
   macro_context: { narrative: "The Fed held rates steady while global liquidity conditions eased. DXY weakness and expanding M2 provide a supportive backdrop for risk assets.", btc_correlation_note: "BTC decoupling from equities, trading more like a macro hedge against dollar debasement.", key_macro_events: ["FOMC meeting Mar 18-19", "PCE inflation Mar 28"] },
-  institutional_flows: { etf_net_flow_usd: 420_000_000, etf_total_aum_usd: 115_000_000_000, etf_flow_trend: "5 consecutive days of net inflows totaling $1.8B", notable_moves: ["MicroStrategy purchased 12,000 BTC ($1.1B)"] },
+  institutional_flows: { summary: "Corporate treasuries continued accumulating with MicroStrategy leading. OTC desk volumes elevated as institutional buyers absorb post-halving supply compression.", notable_moves: ["MicroStrategy purchased 12,000 BTC ($1.1B)", "Metaplanet added 150 BTC to treasury reserves"] },
   supply_dynamics: { exchange_reserve_trend: "Exchange reserves at 5-year low", long_term_holder_pct: 71.2, supply_narrative: "Only 3.125 BTC mined per block and 71% of supply hasn't moved in over a year — the tightest supply conditions since 2017." },
   expert_insights: [{ expert_name: "Lyn Alden", role: "Macro analyst", quote_or_summary: "Global liquidity expansion is the dominant driver right now. Bitcoin tends to perform well when M2 is expanding, and we're seeing that across all major economies.", source: "The Investors Podcast", date: "2026-03-22" }],
   fear_greed: { value: 72, label: "Greed" },
@@ -263,9 +263,9 @@ export default function DailyDigest({
 
   // Determine which sections have data
   const hasEtf = etf && (etf.daily_net_flow_usd != null || etf.mtd_net_flow_usd != null);
-  const hasFlowTrend = isAvailable(flows?.etf_flow_trend);
+  const hasInstSummary = isAvailable(flows?.summary);
   const hasMoves = flows?.notable_moves && flows.notable_moves.length > 0;
-  const hasFlows = hasEtf || hasFlowTrend || hasMoves;
+  const hasFlows = hasEtf || hasInstSummary || hasMoves;
   const hasExpert = expert != null;
   const hasSupply = isAvailable(supply?.supply_narrative);
   const hasLooking = isAvailable(looking_ahead);
@@ -382,8 +382,8 @@ export default function DailyDigest({
                       )}
                     </>
                   )}
-                  {hasFlowTrend && (
-                    <Text style={s.panelText}>{flows.etf_flow_trend}</Text>
+                  {hasInstSummary && (
+                    <Text style={s.panelText}>{flows.summary}</Text>
                   )}
                   {hasMoves &&
                     flows.notable_moves.map((move, i) => (

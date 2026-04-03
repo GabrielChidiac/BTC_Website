@@ -97,22 +97,26 @@ function buildLookingAheadPrompt(ctx: LookingAheadContext): string {
 
 // ─── Institutional Flows ────────────────────────────────────────────────────
 
-const FLOWS_SYSTEM = `You are a financial data analyst. Return ONLY valid JSON, no markdown fences or extra text. Do NOT include any preamble, meta-commentary, or remarks about your instructions.
+const FLOWS_SYSTEM = `You are a financial data analyst covering institutional Bitcoin activity. Return ONLY valid JSON, no markdown fences or extra text. Do NOT include any preamble, meta-commentary, or remarks about your instructions.
 
-Search for today's Bitcoin ETF flow data, corporate treasury moves, and institutional buying/selling activity. Return the data in this exact JSON format:
+IMPORTANT: Do NOT include ETF flow data (daily inflows/outflows, AUM, fund-level breakdowns like GBTC/IBIT). ETF data is already sourced separately. Focus EXCLUSIVELY on non-ETF institutional activity.
+
+Search for the latest institutional Bitcoin activity and return the data in this exact JSON format:
 
 {
-  "etf_net_flow_usd": <number or null>,
-  "etf_total_aum_usd": <number or null>,
-  "etf_flow_trend": "<string describing recent trend>",
+  "summary": "<2-3 sentence overview of institutional Bitcoin activity this week>",
   "notable_moves": ["<string>", ...]
 }
 
 Rules:
-- etf_net_flow_usd: net inflow (positive) or outflow (negative) in USD for today/yesterday. null if unavailable.
-- etf_total_aum_usd: total combined AUM (assets under management) across ALL US spot Bitcoin ETFs in USD. This is a critical field. Search for "Bitcoin ETF total AUM", "Bitcoin ETF total net assets", or "Bitcoin ETF assets under management". As of early 2026, this figure is typically in the $80B-$120B range. Return the raw USD number (e.g. 95000000000 for $95B). null ONLY if you truly cannot find any estimate.
-- etf_flow_trend: describe the recent trend, e.g. "5 consecutive days of net inflows totaling $1.2B"
-- notable_moves: 2-4 notable institutional moves, e.g. "MicroStrategy purchased 12,000 BTC ($780M)"
+- summary: concise overview of institutional positioning and activity, excluding ETF flows
+- notable_moves: 3-5 notable moves from the categories below. Each should include entity name, action, and specific numbers where available.
+  Categories to cover:
+  * Corporate treasury purchases/sales (MicroStrategy, Tesla, Block, Metaplanet, etc.)
+  * Whale wallet movements (large on-chain transfers to/from exchanges, dormant wallet activity)
+  * Fund allocations and rebalancing (hedge funds, sovereign wealth funds, pension funds adding/reducing BTC exposure)
+  * OTC desk activity and trends (premium/discount signals, block trade volumes)
+  * Mining company activity (treasury strategy changes, BTC sales/accumulation)
 - Use real, verified data only. Do not fabricate numbers.
 - Do NOT include citation markers like [1], [2], [3] or any bracketed references in any string values.
 - Never use em dashes or en dashes in string values. Use commas, periods, or semicolons instead.`;
@@ -195,9 +199,7 @@ interface EnrichmentOutput {
 const DEFAULTS: EnrichmentOutput = {
   looking_ahead: "Forward-looking analysis unavailable today.",
   institutional_flows: {
-    etf_net_flow_usd: null,
-    etf_total_aum_usd: null,
-    etf_flow_trend: "Data unavailable",
+    summary: "Data unavailable",
     notable_moves: [],
   },
   supply_dynamics: {
@@ -245,7 +247,7 @@ export const enrichmentTask = task({
         }),
         queryPerplexity({
           system: FLOWS_SYSTEM,
-          prompt: "What are today's Bitcoin spot ETF flow numbers, the total combined AUM (assets under management) across all US spot Bitcoin ETFs, and any notable institutional Bitcoin purchases or sales in the last 24-48 hours? Make sure to include the total ETF AUM figure.",
+          prompt: "What are the most notable non-ETF institutional Bitcoin moves in the last 7 days? Focus on corporate treasury purchases (MicroStrategy, Metaplanet, etc.), large whale wallet movements, fund allocation changes, OTC desk activity, and mining company treasury decisions. Do NOT include ETF flow data.",
         }),
         queryPerplexity({
           system: EXPERTS_SYSTEM,

@@ -120,13 +120,17 @@ export const sendDigestTask = task({
     if (etf_flows?.daily_net_flow_usd != null) flowLines.push(`24h Flow: ${fmtFlow(etf_flows.daily_net_flow_usd)}`);
     if (etf_flows?.mtd_net_flow_usd != null) flowLines.push(`MTD Flow: ${fmtFlow(etf_flows.mtd_net_flow_usd)}`);
     if (etf_flows?.total_net_assets_usd != null) flowLines.push(`ETF AUM: $${compact(etf_flows.total_net_assets_usd)}`);
-    if (institutional_flows?.etf_flow_trend && !institutional_flows.etf_flow_trend.toLowerCase().includes("unavailable")) {
-      flowLines.push(institutional_flows.etf_flow_trend);
+    if (flowLines.length > 0) sections.push(`--- ETF FLOWS ---\n${flowLines.join("\n")}`);
+
+    // Institutional activity
+    const instLines: string[] = [];
+    if (institutional_flows?.summary && !institutional_flows.summary.toLowerCase().includes("unavailable")) {
+      instLines.push(institutional_flows.summary);
     }
     if (institutional_flows?.notable_moves?.length) {
-      flowLines.push(...institutional_flows.notable_moves.map((m) => `• ${m}`));
+      instLines.push(...institutional_flows.notable_moves.map((m) => `• ${m}`));
     }
-    if (flowLines.length > 0) sections.push(`--- FLOWS ---\n${flowLines.join("\n")}`);
+    if (instLines.length > 0) sections.push(`--- INSTITUTIONAL ACTIVITY ---\n${instLines.join("\n")}`);
 
     // Stories
     const storyLines = top_stories.slice(0, 3).map((s, i) => `${i + 1}. ${s.headline} (${s.source})`).join("\n");

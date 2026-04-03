@@ -98,11 +98,16 @@ function buildBriefingContext(briefing: BriefingJSON): string {
   if (etf?.daily_net_flow_usd != null) etfLines.push(`ETF 24h net flow: $${(etf.daily_net_flow_usd / 1e6).toFixed(1)}M`);
   if (etf?.mtd_net_flow_usd != null) etfLines.push(`ETF MTD net flow: $${(etf.mtd_net_flow_usd / 1e6).toFixed(1)}M`);
   if (etf?.total_net_assets_usd != null) etfLines.push(`ETF total AUM: $${(etf.total_net_assets_usd / 1e9).toFixed(1)}B`);
-  if (flows?.etf_flow_trend && flows.etf_flow_trend !== "Data unavailable") etfLines.push(`Trend: ${flows.etf_flow_trend}`);
-  if (flows?.notable_moves?.length) etfLines.push(`Notable moves: ${flows.notable_moves.join("; ")}`);
   const flowsSection = etfLines.length > 0
-    ? `Institutional Flows:\n${etfLines.join("\n")}`
-    : "Institutional Flows: Not available";
+    ? `ETF Flows:\n${etfLines.join("\n")}`
+    : "";
+
+  const instLines: string[] = [];
+  if (flows?.summary && flows.summary !== "Data unavailable") instLines.push(flows.summary);
+  if (flows?.notable_moves?.length) instLines.push(`Notable moves: ${flows.notable_moves.join("; ")}`);
+  const instSection = instLines.length > 0
+    ? `Institutional Activity:\n${instLines.join("\n")}`
+    : "Institutional Activity: Not available";
 
   const experts = (briefing.expert_insights ?? [])
     .map((e) => `- ${e.expert_name} (${e.role}): ${e.quote_or_summary} | Source: ${e.source}${e.date ? ", " + e.date : ""}`)
@@ -170,6 +175,8 @@ ${networkSection}
 ${macroSection}
 
 ${flowsSection}
+
+${instSection}
 
 ${supplySection}
 

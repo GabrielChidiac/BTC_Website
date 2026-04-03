@@ -98,9 +98,7 @@ export interface AdoptionUpdate {
 }
 
 export interface InstitutionalFlows {
-  etf_net_flow_usd: number | null;
-  etf_total_aum_usd: number | null;
-  etf_flow_trend: string;
+  summary: string;
   notable_moves: string[];
 }
 

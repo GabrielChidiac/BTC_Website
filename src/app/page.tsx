@@ -169,24 +169,21 @@ export default async function Home() {
                   size="sm"
                 />
                 {isPro && (() => {
-                  const flow = briefing.etf_flows?.daily_net_flow_usd ?? briefing.institutional_flows?.etf_net_flow_usd ?? null;
+                  const flow = briefing.etf_flows?.daily_net_flow_usd ?? null;
                   if (flow == null) return null;
                   return (
                     <StatTile
-                      label="ETF Flow"
+                      label="Daily ETF Flow"
                       value={formatFlowUSD(flow)}
-                      delta={{
-                        value: briefing.etf_flows?.mtd_net_flow_usd != null
-                          ? `MTD: ${formatFlowUSD(briefing.etf_flows.mtd_net_flow_usd)}`
-                          : "",
-                        positive: flow >= 0,
-                      }}
+                      delta={briefing.etf_flows?.mtd_net_flow_usd != null
+                        ? { value: `MTD: ${formatFlowUSD(briefing.etf_flows.mtd_net_flow_usd)}`, positive: briefing.etf_flows.mtd_net_flow_usd >= 0 }
+                        : undefined}
                       size="sm"
                     />
                   );
                 })()}
                 {isPro && (() => {
-                  const aum = briefing.etf_flows?.total_net_assets_usd ?? briefing.institutional_flows?.etf_total_aum_usd ?? null;
+                  const aum = briefing.etf_flows?.total_net_assets_usd ?? null;
                   if (aum == null) return null;
                   return (
                     <StatTile
