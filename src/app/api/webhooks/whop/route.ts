@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServiceClient();
 
-  if (action === "membership.went_valid") {
+  if (action === "membership.went_valid" || action === "membership_activated") {
     // Check if subscriber exists
     const { data: existing } = await supabase
       .from("subscribers")
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, action: "upgraded_to_pro" });
   }
 
-  if (action === "membership.went_invalid") {
+  if (action === "membership.went_invalid" || action === "membership_deactivated") {
     await supabase
       .from("subscribers")
       .update({

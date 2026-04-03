@@ -125,8 +125,8 @@ All listed in `.env.example`. Required keys:
 | `REVALIDATION_SECRET` | Protects `/api/revalidate` endpoint |
 | `NEXT_PUBLIC_SITE_URL` | Site URL (fallback: `https://www.btctoday.co` via `getBaseUrl()` in `src/lib/url.ts`) |
 | `WHOP_WEBHOOK_KEY` | Whop webhook signature verification (HMAC-SHA256) |
-| `NEXT_PUBLIC_WHOP_MONTHLY_URL` | Whop checkout URL ($7/month) |
-| `NEXT_PUBLIC_WHOP_ANNUAL_URL` | Whop checkout URL ($59/year) |
+| `NEXT_PUBLIC_WHOP_MONTHLY_URL` | Whop checkout link ($7/month) |
+| `NEXT_PUBLIC_WHOP_ANNUAL_URL` | Whop checkout link ($59/year) |
 
 ## Database (Supabase)
 4 tables, migrations in `supabase/migrations/`:
@@ -261,7 +261,7 @@ RLS: briefings are publicly readable; all other tables are service-role only.
 - [ ] Consider adding `middleware.ts` for security headers (CSP, X-Frame-Options)
 - [x] Remove unused dependency `youtube-transcript` from `package.json`
 - [x] Implement Whop webhook endpoint (`/api/webhooks/whop`)
-- [ ] Set Whop env vars in production (`WHOP_WEBHOOK_KEY`, checkout URLs)
+- [ ] Set Whop env vars in production (`WHOP_WEBHOOK_KEY`, `NEXT_PUBLIC_WHOP_MONTHLY_URL`, `NEXT_PUBLIC_WHOP_ANNUAL_URL`)
 - [ ] Configure webhook URL in Whop dashboard (point to `https://btctoday.co/api/webhooks/whop`)
 - [x] Add unsubscribe links to all email templates (CAN-SPAM/GDPR compliance)
 - [x] Add contact email to website footer and pricing FAQ (`hello@btctoday.co`)
