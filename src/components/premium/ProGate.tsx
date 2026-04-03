@@ -58,13 +58,13 @@ export function ProGate() {
               href="/pricing"
               className="inline-flex items-center rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
             >
-              Go Pro — $69/year (save 36%)
+              Go Pro — $59/year (save 30%)
             </Link>
             <Link
               href="/pricing"
               className="text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
             >
-              or $9/month
+              or $7/month
             </Link>
           </div>
         </CardContent>
@@ -89,13 +89,13 @@ export function ProGateCompact({ message }: { message?: string }) {
         href="/pricing"
         className="inline-flex items-center rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
       >
-        Go Pro — $69/year (save 36%)
+        Go Pro — $59/year (save 30%)
       </Link>
       <Link
         href="/pricing"
         className="text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
       >
-        or $9/month
+        or $7/month
       </Link>
     </div>
   );

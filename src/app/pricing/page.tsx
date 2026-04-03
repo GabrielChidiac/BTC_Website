@@ -125,10 +125,10 @@ export default async function PricingPage() {
                 Pro
               </p>
               <p className="mt-2 font-[family-name:var(--font-heading)] text-3xl font-bold text-[var(--color-text-primary)]">
-                $69<span className="text-lg font-medium text-[var(--color-text-muted)]">/year</span>
+                $59<span className="text-lg font-medium text-[var(--color-text-muted)]">/year</span>
               </p>
               <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                or $9/month
+                or $7/month
               </p>
 
               <ul className="mt-6 space-y-2.5">
@@ -159,13 +159,13 @@ export default async function PricingPage() {
                     href={annualCheckout}
                     className="lemonsqueezy-button block rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
                   >
-                    Go Pro — $69/year (save 36%)
+                    Go Pro — $59/year (save 30%)
                   </a>
                   <a
                     href={monthlyCheckout ?? "#"}
                     className="lemonsqueezy-button block rounded-lg border border-[var(--color-accent)]/30 px-4 py-2.5 text-center text-sm font-medium text-[var(--color-accent)] hover:bg-[var(--color-accent)]/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50"
                   >
-                    or $9/month
+                    or $7/month
                   </a>
                 </div>
               ) : (
@@ -193,7 +193,7 @@ export default async function PricingPage() {
               <div>
                 <p className="text-sm font-medium text-[var(--color-text-primary)]">Can I switch between monthly and annual?</p>
                 <p className="mt-1 text-sm text-[var(--color-text-secondary)] leading-relaxed">
-                  Yes. Email us at hello@btctoday.co and we&apos;ll adjust your plan. The annual plan saves you 36%.
+                  Yes. Email us at hello@btctoday.co and we&apos;ll adjust your plan. The annual plan saves you 30%.
                 </p>
               </div>
               <div>

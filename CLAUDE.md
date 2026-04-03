@@ -15,7 +15,7 @@ AI-curated daily Bitcoin intelligence for high-net-worth individuals and busines
 | Database | Supabase (Postgres + RLS) | `@supabase/ssr@^0.9.0` |
 | Styling | Tailwind CSS v4 | CSS-only config via `@theme` |
 | AI | Claude Sonnet (briefing) + Perplexity sonar-pro (enrichment) | Kie.ai fallback for Claude |
-| Payments | LemonSqueezy | Free/Pro tiers, $9/month or $69/year |
+| Payments | LemonSqueezy | Free/Pro tiers, $7/month or $59/year |
 | Email | Resend + React Email | |
 | UI Components | shadcn/ui (base-nova) | `npx shadcn@latest add <component>` |
 | Animation | Framer Motion + GSAP | Only animate `transform` and `opacity` |
@@ -123,8 +123,8 @@ All listed in `.env.example`. Required keys:
 | `NEXT_PUBLIC_SITE_URL` | Site URL (fallback: `https://www.btctoday.co` via `getBaseUrl()` in `src/lib/url.ts`) |
 | `LEMONSQUEEZY_API_KEY` | LemonSqueezy (subscription payments) |
 | `LEMONSQUEEZY_WEBHOOK_SECRET` | LemonSqueezy webhook signature verification |
-| `NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_URL` | LemonSqueezy checkout URL ($9/month) |
-| `NEXT_PUBLIC_LEMONSQUEEZY_ANNUAL_URL` | LemonSqueezy checkout URL ($69/year) |
+| `NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_URL` | LemonSqueezy checkout URL ($7/month) |
+| `NEXT_PUBLIC_LEMONSQUEEZY_ANNUAL_URL` | LemonSqueezy checkout URL ($59/year) |
 
 ## Database (Supabase)
 4 tables, migrations in `supabase/migrations/`:
