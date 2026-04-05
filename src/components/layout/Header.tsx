@@ -61,16 +61,32 @@ export async function Header({ date }: { date?: string }) {
   return (
     <header className="sticky top-0 z-50 bg-[var(--color-bg-base)]/80 backdrop-blur-md">
       <Container wide className="flex h-14 items-center justify-between">
-        {/* Logo + tagline */}
-        <div className="flex items-center gap-2 shrink-0">
-          <span
-            className="font-[family-name:var(--font-heading)] text-lg font-bold tracking-tight"
-            style={{ textShadow: "0 0 20px rgba(247, 147, 26, 0.15)" }}
+        {/* Logo */}
+        <Link href="/" className="flex items-end gap-[3px] shrink-0">
+          <svg
+            viewBox="0 0 19 28"
+            width="17"
+            height="25"
+            fill="var(--color-accent)"
+            aria-hidden="true"
+            className="drop-shadow-[0_0_10px_rgba(247,147,26,0.25)]"
           >
-            BTC{" "}
-            <span className="text-[var(--color-accent)]">Today</span>
+            {/* Bars — overlap into B body for seamless join */}
+            <rect x="5" y="0" width="1.6" height="5" rx="0.8"/>
+            <rect x="9.8" y="0" width="1.6" height="5" rx="0.8"/>
+            <rect x="5" y="23" width="1.6" height="5" rx="0.8"/>
+            <rect x="9.8" y="23" width="1.6" height="5" rx="0.8"/>
+            {/* B body with counter cutouts */}
+            <path fillRule="evenodd" d="
+              M0 3 H8 C15.5 3 15.5 14 8 14 C16.5 14 16.5 25 8 25 H0 Z
+              M3.5 6 H7 C12 6 12 11 7 11 H3.5 Z
+              M3.5 17 H7.5 C13 17 13 22 7.5 22 H3.5 Z
+            "/>
+          </svg>
+          <span className="font-[family-name:var(--font-heading)] text-[11px] font-bold tracking-[-0.04em] text-[var(--color-text-primary)] leading-none mb-[1px]">
+            tdy
           </span>
-        </div>
+        </Link>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-4 shrink-0">

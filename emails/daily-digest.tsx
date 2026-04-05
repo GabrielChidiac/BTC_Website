@@ -102,13 +102,6 @@ function isAvailable(text: string | null | undefined): boolean {
   return !t.includes("unavailable") && !t.includes("no data") && t.length > 10;
 }
 
-function fgColor(v: number): string {
-  if (v < 25) return c.red;
-  if (v < 46) return c.amber;
-  if (v < 55) return c.textMuted;
-  return c.green;
-}
-
 function consColor(s: number): string {
   if (s > 15) return c.green;
   if (s < -15) return c.red;
@@ -249,7 +242,6 @@ export default function DailyDigest({
     expert_insights: experts,
     macro_context: macro,
     narrative_consensus: consensus,
-    fear_greed: fg,
     etf_flows: etf,
     looking_ahead,
     countdown_events,
@@ -309,15 +301,6 @@ export default function DailyDigest({
             <Text style={s.bannerPrice}>{daily_diff.price_change}</Text>
             <Text style={s.bannerOneLine}>{oneLine}</Text>
             <Text style={s.bannerMeta}>
-              {fg && (
-                <>
-                  <span style={{ color: c.textMuted }}>F&amp;G: </span>
-                  <span style={{ fontWeight: "700", color: fgColor(fg.value) }}>
-                    {fg.value} {fg.label}
-                  </span>
-                  <span style={{ color: c.textMuted }}> {"\u00B7"} </span>
-                </>
-              )}
               <span style={{ color: c.textMuted }}>Consensus: </span>
               <span style={{ fontWeight: "700", color: consColor(consensus.score) }}>
                 {consensus.score > 0 ? "+" : ""}
@@ -455,7 +438,7 @@ export default function DailyDigest({
                 </ColHeading>
                 <DataRow label="Hashrate" value={`${Math.round(net.hashrate_eh_s)} EH/s`} />
                 <DataRow label="Halving" value={`${net.halving_progress_pct.toFixed(1)}%`} />
-                <DataRow label="Fees" value={`${net.fee_fast_sat_vb}/${net.fee_medium_sat_vb}/${net.fee_slow_sat_vb}`} />
+
                 {hasSupply && (
                   <Text style={s.panelText}>
                     {supply.long_term_holder_pct != null && (

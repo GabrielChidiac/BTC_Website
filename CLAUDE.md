@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. You are my ruthless mentor and my reflexion partner. Your role is finding the truth and give it to me as honestly as possible even if it is to the detriment of my feelings.
 
 ## Project
 AI-curated daily Bitcoin intelligence for high-net-worth individuals and business executives. Runs a Trigger.dev pipeline at 2 AM CET that collects news and market data, processes through Claude Sonnet into a structured briefing, enriches via Perplexity (institutional flows, expert insights, supply dynamics), and publishes to a Next.js site + email subscribers.
@@ -26,6 +26,7 @@ AI-curated daily Bitcoin intelligence for high-net-worth individuals and busines
 ```bash
 npm run dev                   # Next.js at http://localhost:3000
 npm run build                 # Production build (verifies all types)
+npm start                     # Start production server
 npx trigger.dev@latest dev    # Trigger.dev local runner
 ```
 
@@ -39,6 +40,7 @@ Path alias: `@/*` maps to `./src/*` (configured in `tsconfig.json`).
 - [docs/decisions.md](docs/decisions.md) — Key technical decisions
 - [docs/orchestrator.md](docs/orchestrator.md) — Pipeline orchestrator reference
 - [docs/deployment.md](docs/deployment.md) — Deployment guide
+- [docs/design-brief.md](docs/design-brief.md) — Design brief (color system, typography lockups)
 
 ## Working Rules
 - **Always verify before writing.** Read the relevant schema, types, and existing code before writing any new code. Never assume a field, type, or pattern exists — confirm it first.
@@ -207,7 +209,7 @@ RLS: briefings are publicly readable; all other tables are service-role only.
 - Space Grotesk (headings, tracking `-0.04em`, line-height `1.1`) + Inter (body, weight `300`, line-height `1.8`)
 - Bloomberg terminal / editorial aesthetic
 - Mobile-first, `max-w-3xl`, information-dense
-- Font variables: `--font-space-grotesk`, `--font-inter` (set in `layout.tsx`)
+- Font variables: `--font-space-grotesk`, `--font-inter`, `--font-sans` (Geist) (set in `layout.tsx`)
 
 ### Brand Assets
 - Check `brand_assets/` before designing. Use real assets over placeholders.
@@ -231,6 +233,12 @@ RLS: briefings are publicly readable; all other tables are service-role only.
 - Do not add sections/features not in the reference
 - Do not use `transition-all`
 - Do not use default Tailwind blue/indigo as primary color
+- Never agree with me just to be pleasant.
+- Find the weaknesses and blind spots in my thinking. Point them out to me even if I haven't asked for them.
+- No flattery, no unnecessary softening.
+- If you're unsure about something, verify it through research and provide me with the sources.
+- Remain steadfast. Force me to defend my ideas or abandon the bad ones.
+- If it seems that I am searching for validation instead of the truth point it out
 
 ## Content Philosophy
 - **Quality over quantity** — fewer sections, each must be top-notch

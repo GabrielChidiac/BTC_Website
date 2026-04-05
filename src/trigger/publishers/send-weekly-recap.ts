@@ -39,8 +39,6 @@ function buildRecapData(rows: DailyBriefingRow[]): WeeklyRecapData {
       change_24h_pct: b.market_snapshot.change_24h_pct,
       consensus_label: b.narrative_consensus?.label ?? "N/A",
       consensus_score: b.narrative_consensus?.score ?? 0,
-      fear_greed_value: b.fear_greed?.value ?? null,
-      fear_greed_label: b.fear_greed?.label ?? null,
       one_line: b.one_line ?? null,
     };
   });
@@ -122,8 +120,6 @@ function buildRecapData(rows: DailyBriefingRow[]): WeeklyRecapData {
     regulatory_highlights: regHighlights,
     adoption_highlights: adoptHighlights,
     btc_vs_everything: btcVs,
-    fear_greed_start: first.fear_greed,
-    fear_greed_end: last.fear_greed,
     market_cap_end: last.market_snapshot.market_cap_usd,
     volume_avg: volumeAvg,
     dominance_end: last.market_snapshot.dominance_pct,

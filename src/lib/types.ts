@@ -273,8 +273,6 @@ export interface DaySummary {
   change_24h_pct: number;
   consensus_label: string;
   consensus_score: number;
-  fear_greed_value: number | null;
-  fear_greed_label: string | null;
   one_line: string | null;
 }
 
@@ -313,8 +311,6 @@ export interface WeeklyRecapData {
     change_ytd_pct: number | null;
   }>;
   btc_7d_change_pct: number;
-  fear_greed_start: { value: number; label: string } | null;
-  fear_greed_end: { value: number; label: string } | null;
   market_cap_end: number;
   volume_avg: number;
   dominance_end: number;

@@ -57,7 +57,7 @@ export const sendDigestTask = task({
       market_snapshot, top_stories, daily_diff, technical_signals,
       network_health, institutional_flows, supply_dynamics, expert_insights,
       macro_context, looking_ahead, btc_vs_everything, regulatory, adoption,
-      fear_greed, narrative_consensus, etf_flows,
+      narrative_consensus, etf_flows,
     } = briefing;
 
     const subject = `BTC Today: $${market_snapshot.price_usd.toLocaleString("en-US")} (${market_snapshot.change_24h_pct >= 0 ? "+" : ""}${market_snapshot.change_24h_pct.toFixed(2)}%)`;
@@ -111,7 +111,6 @@ export const sendDigestTask = task({
       `${daily_diff.price_change}\n` +
       `Market: $${market_snapshot.price_usd.toLocaleString("en-US")} | 24h: ${fmtPct(market_snapshot.change_24h_pct)} | 7d: ${fmtPct(market_snapshot.change_7d_pct)}\n` +
       `Mkt Cap: $${compact(market_snapshot.market_cap_usd)} | Vol: $${compact(market_snapshot.volume_24h_usd)} | Dom: ${market_snapshot.dominance_pct.toFixed(1)}%` +
-      (fear_greed ? `\nF&G: ${fear_greed.value} (${fear_greed.label})` : "") +
       `\nConsensus: ${narrative_consensus.score > 0 ? "+" : ""}${narrative_consensus.score} (${narrative_consensus.label})`
     );
 
@@ -145,7 +144,7 @@ export const sendDigestTask = task({
 
     // On-chain
     const chainLines = [
-      `Hashrate: ${Math.round(network_health.hashrate_eh_s)} EH/s | Halving: ${network_health.halving_progress_pct.toFixed(1)}% | Fees: ${network_health.fee_fast_sat_vb}/${network_health.fee_medium_sat_vb}/${network_health.fee_slow_sat_vb}`,
+      `Hashrate: ${Math.round(network_health.hashrate_eh_s)} EH/s | Halving: ${network_health.halving_progress_pct.toFixed(1)}%`,
     ];
     if (supply_dynamics?.supply_narrative && !supply_dynamics.supply_narrative.toLowerCase().includes("unavailable")) {
       chainLines.push(supply_dynamics.long_term_holder_pct != null ? `${supply_dynamics.long_term_holder_pct}% LTH` : "");

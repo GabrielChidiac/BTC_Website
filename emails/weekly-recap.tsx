@@ -112,13 +112,13 @@ const previewRecap: WeeklyRecapData = {
   price_low: 87900,
   btc_7d_change_pct: 3.42,
   daily_summaries: [
-    { date: "2026-03-24", price_usd: 88235, change_24h_pct: -1.2, consensus_label: "Cautious", consensus_score: 35, fear_greed_value: 58, fear_greed_label: "Greed", one_line: null },
-    { date: "2026-03-25", price_usd: 89100, change_24h_pct: 0.98, consensus_label: "Neutral", consensus_score: 50, fear_greed_value: 60, fear_greed_label: "Greed", one_line: null },
-    { date: "2026-03-26", price_usd: 90500, change_24h_pct: 1.57, consensus_label: "Optimistic", consensus_score: 62, fear_greed_value: 63, fear_greed_label: "Greed", one_line: null },
-    { date: "2026-03-27", price_usd: 89800, change_24h_pct: -0.77, consensus_label: "Cautious", consensus_score: 40, fear_greed_value: 55, fear_greed_label: "Greed", one_line: null },
-    { date: "2026-03-28", price_usd: 91200, change_24h_pct: 1.56, consensus_label: "Optimistic", consensus_score: 65, fear_greed_value: 68, fear_greed_label: "Greed", one_line: null },
-    { date: "2026-03-29", price_usd: 94500, change_24h_pct: 3.62, consensus_label: "Bullish", consensus_score: 75, fear_greed_value: 72, fear_greed_label: "Greed", one_line: null },
-    { date: "2026-03-30", price_usd: 91247, change_24h_pct: -3.44, consensus_label: "Cautiously Optimistic", consensus_score: 65, fear_greed_value: 72, fear_greed_label: "Greed", one_line: "Institutional inflows sustain momentum despite weekend pullback." },
+    { date: "2026-03-24", price_usd: 88235, change_24h_pct: -1.2, consensus_label: "Cautious", consensus_score: 35, one_line: null },
+    { date: "2026-03-25", price_usd: 89100, change_24h_pct: 0.98, consensus_label: "Neutral", consensus_score: 50, one_line: null },
+    { date: "2026-03-26", price_usd: 90500, change_24h_pct: 1.57, consensus_label: "Optimistic", consensus_score: 62, one_line: null },
+    { date: "2026-03-27", price_usd: 89800, change_24h_pct: -0.77, consensus_label: "Cautious", consensus_score: 40, one_line: null },
+    { date: "2026-03-28", price_usd: 91200, change_24h_pct: 1.56, consensus_label: "Optimistic", consensus_score: 65, one_line: null },
+    { date: "2026-03-29", price_usd: 94500, change_24h_pct: 3.62, consensus_label: "Bullish", consensus_score: 75, one_line: null },
+    { date: "2026-03-30", price_usd: 91247, change_24h_pct: -3.44, consensus_label: "Cautiously Optimistic", consensus_score: 65, one_line: "Institutional inflows sustain momentum despite weekend pullback." },
   ],
   top_stories: [
     { headline: "Bitcoin Surges Past $90K on Institutional Demand", source: "CoinDesk", url: "https://coindesk.com", summary: "Bitcoin rallied above $90,000 driven by renewed institutional buying and record ETF inflows.", sentiment: "bullish", date: "2026-03-24" },
@@ -138,8 +138,6 @@ const previewRecap: WeeklyRecapData = {
     { name: "Gold", ticker: "XAU", change_ytd_pct: 5.3 },
     { name: "DXY", ticker: "DXY", change_ytd_pct: -2.1 },
   ],
-  fear_greed_start: { value: 58, label: "Greed" },
-  fear_greed_end: { value: 72, label: "Greed" },
   market_cap_end: 1_812_000_000_000,
   volume_avg: 48_300_000_000,
   dominance_end: 61.2,
@@ -158,8 +156,6 @@ export default function WeeklyRecap({
     regulatory_highlights,
     adoption_highlights,
     btc_vs_everything,
-    fear_greed_start,
-    fear_greed_end,
   } = recap;
 
   const briefingUrl = "%%BRIEFING_URL%%";
@@ -264,25 +260,6 @@ export default function WeeklyRecap({
             </Section>
           </Section>
 
-          {/* ── Fear & Greed ────────────────────────────────────────── */}
-          {fear_greed_start && fear_greed_end && (
-            <Section style={styles.fearGreedRow}>
-              <Text style={styles.fearGreedText}>
-                Fear &amp; Greed:{" "}
-                <span style={{ fontWeight: "700", color: colors.textPrimary }}>
-                  {fear_greed_start.value} ({fear_greed_start.label})
-                </span>
-                {" \u2192 "}
-                <span style={{ fontWeight: "700", color: colors.textPrimary }}>
-                  {fear_greed_end.value} ({fear_greed_end.label})
-                </span>
-                {"  "}
-                <span style={{ color: pctColor(fear_greed_end.value - fear_greed_start.value) }}>
-                  {fear_greed_end.value > fear_greed_start.value ? "\u25B2" : fear_greed_end.value < fear_greed_start.value ? "\u25BC" : "\u25CF"}
-                </span>
-              </Text>
-            </Section>
-          )}
 
           <Hr style={styles.hr} />
 
@@ -617,23 +594,6 @@ const styles = {
     color: colors.textPrimary,
     margin: "0",
     lineHeight: "1.3",
-  } as React.CSSProperties,
-
-  fearGreedRow: {
-    backgroundColor: colors.bgElevated,
-    borderRadius: "8px",
-    border: `1px solid ${colors.border}`,
-    padding: "12px 16px",
-    margin: "0 0 20px",
-    textAlign: "center" as const,
-  } as React.CSSProperties,
-
-  fearGreedText: {
-    fontFamily: headingStack,
-    fontSize: "13px",
-    color: colors.textSecondary,
-    margin: "0",
-    lineHeight: "1.5",
   } as React.CSSProperties,
 
   storyCard: {
