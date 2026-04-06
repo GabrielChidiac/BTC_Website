@@ -14,6 +14,7 @@ export function SubscribeForm() {
   const [step, setStep] = useState<Step>("form");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [alreadySubscribed, setAlreadySubscribed] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const codeRef = useRef<HTMLInputElement>(null);
 
@@ -36,6 +37,7 @@ export function SubscribeForm() {
 
     setLoading(true);
     setError(null);
+    setAlreadySubscribed(false);
 
     try {
       const res = await fetch("/api/subscribe", {
@@ -49,6 +51,8 @@ export function SubscribeForm() {
       if (res.ok && data.step === "verify") {
         setStep("verify");
         setTimeout(() => codeRef.current?.focus(), 100);
+      } else if (res.status === 409) {
+        setAlreadySubscribed(true);
       } else if (!res.ok) {
         setError(data.error ?? "Something went wrong");
       }
@@ -83,6 +87,9 @@ export function SubscribeForm() {
       if (res.ok) {
         setStep("success");
         setSuccessMessage(data.message ?? "You're in!");
+        if (data.loggedIn) {
+          setTimeout(() => window.location.reload(), 1500);
+        }
       } else {
         setError(data.error ?? "Invalid code");
       }
@@ -239,7 +246,15 @@ export function SubscribeForm() {
           </MotionButton>
         </div>
       </form>
-      {error && (
+      {alreadySubscribed && (
+        <p className="mt-2 text-xs text-red-600">
+          This email is already subscribed.{" "}
+          <a href="/sign-in" className="underline hover:text-red-700">
+            Sign in instead
+          </a>
+        </p>
+      )}
+      {error && !alreadySubscribed && (
         <p className="mt-2 text-xs text-red-600">{error}</p>
       )}
     </div>

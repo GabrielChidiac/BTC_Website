@@ -77,7 +77,7 @@ export async function POST() {
         to: email,
         subject: "You've been unsubscribed from BTC Today",
         html,
-        text: `Hi${name ? ` ${name}` : ""},\n\nThis confirms that ${email} has been removed from all BTC Today emails. You will no longer receive daily briefings or weekly recaps.\n\nChanged your mind? You can re-subscribe at any time at ${siteUrl}.\n\nIf you have any feedback, reach out at hello@btctoday.co.\n\n— BTC Today`,
+        text: `Hi${name ? ` ${name}` : ""},\n\nThis confirms that ${email} has been removed from all BTC Today emails. You will no longer receive daily briefings or weekly recaps.\n\nChanged your mind? You can re-subscribe at any time at ${siteUrl}.\n\nIf you have any feedback, reach out at hello@btctoday.co.\n\n- BTC Today`,
       });
     } catch {
       // Non-fatal — unsubscribe is already processed

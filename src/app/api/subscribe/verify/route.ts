@@ -4,7 +4,10 @@ import { render } from "@react-email/render";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getBaseUrl } from "@/lib/url";
 import { EMAIL_REGEX as EMAIL_RE } from "@/lib/constants";
+import { setSessionCookie } from "@/lib/session";
 import WelcomeEmail from "../../../../../emails/welcome";
+
+const SESSION_DAYS = 30;
 
 export async function POST(request: Request) {
   let body: { email?: string; code?: string };
@@ -73,12 +76,29 @@ export async function POST(request: Request) {
     );
   }
 
-  // Fetch subscriber name for welcome email
+  // Fetch subscriber name for welcome email and session
   const { data: subscriber } = await supabase
     .from("subscribers")
     .select("name")
     .eq("email", email)
     .maybeSingle();
+
+  const subscriberName = subscriber?.name ?? undefined;
+
+  // Create session so the user is logged in immediately
+  const sessionBytes = new Uint8Array(32);
+  crypto.getRandomValues(sessionBytes);
+  const sessionToken = Array.from(sessionBytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  const sessionExpiry = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+  await supabase.from("verification_codes").insert({
+    email,
+    code: `session:${sessionToken}`,
+    expires_at: sessionExpiry.toISOString(),
+    used: false,
+  });
 
   // Send welcome email (non-fatal)
   const resendKey = process.env.RESEND_API_KEY;
@@ -86,24 +106,25 @@ export async function POST(request: Request) {
     try {
       const resend = new Resend(resendKey);
       const siteUrl = getBaseUrl();
-      const name = subscriber?.name ?? undefined;
 
-      const html = await render(WelcomeEmail({ email, name, siteUrl }));
+      const html = await render(WelcomeEmail({ email, name: subscriberName, siteUrl }));
 
       await resend.emails.send({
         from: "BTC Today <hello@btctoday.co>",
         to: email,
         subject: "Welcome to BTC Today",
         html,
-        text: `Welcome to BTC Today!\n\nA new briefing publishes every morning at 2 AM CET. Visit btctoday.co to read the latest. You'll also receive a weekly recap every Sunday.\n\nRead today's briefing: ${siteUrl}\n\nUpgrade to Pro for the daily email, AI chat, PDF downloads, and more: ${siteUrl}/pricing\n\nUnsubscribe: ${siteUrl}/sign-in\n\n— BTC Today`,
+        text: `Welcome to BTC Today!\n\nA new briefing publishes every morning at 2 AM CET. Visit btctoday.co to read the latest. You'll also receive a weekly recap every Sunday.\n\nRead today's briefing: ${siteUrl}\n\nUpgrade to Pro for the daily email, AI chat, PDF downloads, and more: ${siteUrl}/pricing\n\n- BTC Today`,
       });
     } catch {
-      // Non-fatal — subscriber is already activated
+      // Non-fatal - subscriber is already activated
     }
   }
 
-  return NextResponse.json(
-    { success: true, message: "You're in!" },
+  const response = NextResponse.json(
+    { success: true, message: "You're in!", loggedIn: true },
     { status: 200 }
   );
+  setSessionCookie(response, sessionToken, email, subscriberName);
+  return response;
 }

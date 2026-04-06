@@ -381,7 +381,7 @@ export default function WeeklyRecap({
               Want the full picture?
             </Text>
             <Link href={`${siteUrl}/pricing`} style={styles.ctaChatButton}>
-              Go Pro — $59/year
+              Go Pro / $59/year
             </Link>
             <Text style={styles.proText}>
               Pro subscribers get the full briefing delivered to their inbox every morning,

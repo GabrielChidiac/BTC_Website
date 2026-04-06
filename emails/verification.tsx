@@ -72,7 +72,7 @@ export default function VerificationEmail({
 
           <Section style={styles.footer}>
             <Text style={styles.footerText}>
-              BTC Today — Daily Bitcoin intelligence for investors.
+              BTC Today / Daily Bitcoin intelligence for investors.
             </Text>
           </Section>
         </Container>

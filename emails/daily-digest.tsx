@@ -461,7 +461,7 @@ export default function DailyDigest({
                       &ldquo;{truncate(expert.quote_or_summary, 120)}&rdquo;
                     </Text>
                     <Text style={s.quoteAttrib}>
-                      — {expert.expert_name}, {expert.role}
+                      - {expert.expert_name}, {expert.role}
                     </Text>
                   </>
                 ) : (
@@ -502,7 +502,7 @@ export default function DailyDigest({
             {hasCountdown &&
               countdown_events.filter((e) => e.days_away != null).slice(0, 3).map((ev, i) => (
                 <Text key={i} style={s.bullet}>
-                  <span style={{ fontWeight: "700" }}>{ev.days_away}d</span> — {ev.name}
+                  <span style={{ fontWeight: "700" }}>{ev.days_away}d</span> - {ev.name}
                 </Text>
               ))}
           </Section>

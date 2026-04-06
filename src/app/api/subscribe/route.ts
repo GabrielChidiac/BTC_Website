@@ -71,10 +71,9 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (existing?.status === "active") {
-    // Prevent email enumeration — same response shape
     return NextResponse.json(
-      { success: true, step: "verify", message: "Check your email for a verification code" },
-      { status: 200 }
+      { success: false, error: "already_subscribed" },
+      { status: 409 }
     );
   }
 
@@ -150,7 +149,7 @@ export async function POST(request: Request) {
         to: email,
         subject: `${code} is your BTC Today verification code`,
         html,
-        text: `Your BTC Today verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\n— BTC Today`,
+        text: `Your BTC Today verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\n- BTC Today`,
       });
     } catch {
       // Non-fatal — code is stored, user can resend

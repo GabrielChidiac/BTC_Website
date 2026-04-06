@@ -114,7 +114,7 @@ export async function POST(request: Request) {
       from: "BTC Today <hello@btctoday.co>",
       to: email,
       subject: redirectPath === "/sign-in" ? "Login to BTC Today" : "Your BTC Today chat access link",
-      text: `Click the link below to ${redirectPath === "/sign-in" ? "log in to" : "access the AI assistant on"} BTC Today:\n\n${magicLink}\n\nThis link expires in ${TOKEN_EXPIRY_MINUTES} minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\n— BTC Today`,
+      text: `Click the link below to ${redirectPath === "/sign-in" ? "log in to" : "access the AI assistant on"} BTC Today:\n\n${magicLink}\n\nThis link expires in ${TOKEN_EXPIRY_MINUTES} minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\n- BTC Today`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
           <h2 style="font-size: 20px; font-weight: 700; color: #1a1a1a; margin: 0 0 8px;">BTC Today</h2>

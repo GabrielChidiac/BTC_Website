@@ -23,18 +23,21 @@ const colors = {
   border: "#E0DFDD",
 };
 
-interface WelcomeEmailProps {
+interface ProWelcomeEmailProps {
   email?: string;
   name?: string;
   siteUrl?: string;
+  magicLink?: string;
 }
 
-export default function WelcomeEmail({
+export default function ProWelcomeEmail({
   email = "subscriber@example.com",
   name,
   siteUrl = "https://btctoday.co",
-}: WelcomeEmailProps) {
-  const greeting = name ? `Welcome, ${name}.` : "Welcome.";
+  magicLink,
+}: ProWelcomeEmailProps) {
+  const greeting = name ? `${name}, you're Pro.` : "You're Pro.";
+  const loginUrl = magicLink || siteUrl;
 
   return (
     <Html lang="en" dir="ltr">
@@ -43,7 +46,7 @@ export default function WelcomeEmail({
         <meta name="color-scheme" content="light" />
         <meta name="supported-color-schemes" content="light" />
       </Head>
-      <Preview>Your free BTC Today account is live</Preview>
+      <Preview>Your BTC Today Pro access is live</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
 
@@ -51,6 +54,7 @@ export default function WelcomeEmail({
           <Section style={styles.header}>
             <Text style={styles.logo}>
               BTC <span style={{ color: colors.accent }}>Today</span>
+              <span style={styles.proBadge}>PRO</span>
             </Text>
           </Section>
 
@@ -63,20 +67,46 @@ export default function WelcomeEmail({
             </Heading>
 
             <Text style={styles.bodyText}>
-              You now have access to daily Bitcoin intelligence built for
-              investors who value signal over noise. Every morning at 2 AM CET,
-              a fresh briefing goes live on the site.
+              Thanks for upgrading. You now have the full BTC Today
+              experience, starting today.
             </Text>
 
             <Text style={styles.bodyText}>
-              Your free account includes market snapshots, the top stories
-              of the day, BTC vs. traditional asset comparisons, regulatory
-              and adoption signals, and a weekly recap email every Sunday.
+              Every morning at 2 AM CET, you will receive a comprehensive
+              briefing directly in your inbox. No need to visit the site
+              unless you want to.
             </Text>
 
+            <Section style={styles.benefitSection}>
+              <Text style={styles.benefitItem}>
+                <span style={styles.bullet}>01</span>
+                Daily briefing delivered to your inbox
+              </Text>
+              <Text style={styles.benefitItem}>
+                <span style={styles.bullet}>02</span>
+                ETF flows, institutional activity, and whale movements
+              </Text>
+              <Text style={styles.benefitItem}>
+                <span style={styles.bullet}>03</span>
+                Technical signals, network health, and on-chain data
+              </Text>
+              <Text style={styles.benefitItem}>
+                <span style={styles.bullet}>04</span>
+                Expert insights and forward outlook
+              </Text>
+              <Text style={styles.benefitItem}>
+                <span style={styles.bullet}>05</span>
+                AI chat for live questions about your briefing
+              </Text>
+              <Text style={styles.benefitItem}>
+                <span style={styles.bullet}>06</span>
+                PDF downloads and full archive access
+              </Text>
+            </Section>
+
             <Text style={styles.bodyText}>
-              Briefings are compiled from live market feeds, 7+ RSS sources,
-              and multiple AI layers. No fluff, no filler.
+              Click below to log in. For future sessions, just use the
+              same link or sign in with your email at btctoday.co.
             </Text>
           </Section>
 
@@ -84,23 +114,9 @@ export default function WelcomeEmail({
 
           {/* CTA */}
           <Section style={styles.ctaSection}>
-            <Link href={siteUrl} style={styles.ctaButton}>
-              Read Today&apos;s Briefing
+            <Link href={loginUrl} style={styles.ctaButton}>
+              Open BTC Today
             </Link>
-          </Section>
-
-          <Hr style={styles.hr} />
-
-          {/* Pro nudge - subtle, not a sales box */}
-          <Section style={styles.content}>
-            <Text style={styles.proText}>
-              When you are ready for the full picture (daily email delivery,
-              institutional flows, expert insights, AI chat, PDF downloads,
-              and unlimited archive access),{" "}
-              <Link href={`${siteUrl}/pricing`} style={styles.proLink}>
-                Pro is here
-              </Link>.
-            </Text>
           </Section>
 
           <Hr style={styles.hr} />
@@ -110,7 +126,7 @@ export default function WelcomeEmail({
             <Text style={styles.footerText}>
               Sent to{" "}
               <span style={{ color: colors.textSecondary }}>{email}</span>
-              {" "}because you signed up for BTC Today.
+              {" "}because you upgraded to BTC Today Pro.
             </Text>
             <Text style={styles.footerLinks}>
               <Link href={siteUrl} style={styles.footerLink}>
@@ -171,6 +187,16 @@ const styles = {
     color: colors.textPrimary,
   } as React.CSSProperties,
 
+  proBadge: {
+    fontFamily: headingStack,
+    fontSize: "10px",
+    fontWeight: "700",
+    color: colors.accent,
+    letterSpacing: "0.1em",
+    marginLeft: "8px",
+    verticalAlign: "super",
+  } as React.CSSProperties,
+
   hr: {
     borderColor: colors.border,
     borderTopWidth: "1px",
@@ -199,6 +225,29 @@ const styles = {
     lineHeight: "1.7",
   } as React.CSSProperties,
 
+  benefitSection: {
+    padding: "8px 0 8px",
+    margin: "0 0 8px",
+  } as React.CSSProperties,
+
+  benefitItem: {
+    fontFamily: headingStack,
+    fontSize: "13px",
+    color: colors.textSecondary,
+    margin: "0 0 10px",
+    lineHeight: "1.5",
+    paddingLeft: "4px",
+  } as React.CSSProperties,
+
+  bullet: {
+    fontFamily: headingStack,
+    fontSize: "10px",
+    fontWeight: "700",
+    color: colors.accent,
+    letterSpacing: "0.05em",
+    marginRight: "10px",
+  } as React.CSSProperties,
+
   ctaSection: {
     textAlign: "center" as const,
     padding: "24px 0",
@@ -215,19 +264,6 @@ const styles = {
     padding: "12px 32px",
     borderRadius: "8px",
     letterSpacing: "0.01em",
-  } as React.CSSProperties,
-
-  proText: {
-    fontSize: "14px",
-    color: colors.textMuted,
-    margin: "0",
-    lineHeight: "1.7",
-  } as React.CSSProperties,
-
-  proLink: {
-    color: colors.accent,
-    textDecoration: "none",
-    fontWeight: "600",
   } as React.CSSProperties,
 
   footer: {

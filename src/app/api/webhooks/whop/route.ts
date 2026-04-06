@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Resend } from "resend";
+import { render } from "@react-email/render";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getBaseUrl } from "@/lib/url";
 import { verifyWhopWebhook } from "@/lib/whop";
+import ProWelcomeEmail from "../../../../../emails/pro-welcome";
+
+const MAGIC_LINK_EXPIRY_DAYS = 7;
 
 interface WhopWebhookPayload {
   action: string;
@@ -12,6 +18,14 @@ interface WhopWebhookPayload {
     };
     status: string;
   };
+}
+
+function generateToken(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 export async function POST(req: NextRequest) {
@@ -39,18 +53,24 @@ export async function POST(req: NextRequest) {
   const supabase = createServiceClient();
 
   if (action === "membership.went_valid" || action === "membership_activated") {
-    // Check if subscriber exists
+    // Check if subscriber exists and what their current state is
     const { data: existing } = await supabase
       .from("subscribers")
-      .select("id")
+      .select("id, tier, whop_membership_id, name")
       .eq("email", email)
       .maybeSingle();
 
+    // Determine if this is actually a new upgrade (for idempotent email sending)
+    const isNewUpgrade = !existing
+      || existing.tier !== "pro"
+      || existing.whop_membership_id !== data.id;
+
     if (existing) {
-      // Upgrade existing subscriber to pro
+      // Upgrade existing subscriber to pro and reactivate if needed
       await supabase
         .from("subscribers")
         .update({
+          status: "active",
           tier: "pro",
           whop_user_id: data.user.id,
           whop_membership_id: data.id,
@@ -67,6 +87,44 @@ export async function POST(req: NextRequest) {
         whop_membership_id: data.id,
         tier_updated_at: new Date().toISOString(),
       });
+    }
+
+    // Send Pro welcome email with magic link (only on actual upgrades)
+    if (isNewUpgrade) {
+      const resendKey = process.env.RESEND_API_KEY;
+      if (resendKey) {
+        try {
+          const siteUrl = getBaseUrl();
+          const token = generateToken();
+          const expiresAt = new Date(
+            Date.now() + MAGIC_LINK_EXPIRY_DAYS * 24 * 60 * 60 * 1000
+          );
+
+          await supabase.from("verification_codes").insert({
+            email,
+            code: `magic:${token}`,
+            expires_at: expiresAt.toISOString(),
+          });
+
+          const magicLink = `${siteUrl}/sign-in?token=${token}&email=${encodeURIComponent(email)}`;
+          const subscriberName = existing?.name ?? undefined;
+
+          const resend = new Resend(resendKey);
+          const html = await render(
+            ProWelcomeEmail({ email, name: subscriberName, siteUrl, magicLink })
+          );
+
+          await resend.emails.send({
+            from: "BTC Today <hello@btctoday.co>",
+            to: email,
+            subject: "Welcome to BTC Today Pro",
+            html,
+            text: `You're Pro.\n\nThanks for upgrading. You now have the full BTC Today experience.\n\nWhat you get:\n- Daily briefing delivered to your inbox at 2 AM CET\n- ETF flows, institutional activity, and whale movements\n- Technical signals, network health, and on-chain data\n- Expert insights and forward outlook\n- AI chat for live questions\n- PDF downloads and full archive access\n\nLog in here: ${magicLink}\n\n- BTC Today`,
+          });
+        } catch {
+          // Non-fatal - upgrade already applied
+        }
+      }
     }
 
     return NextResponse.json({ ok: true, action: "upgraded_to_pro" });
@@ -93,6 +151,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, action: "downgraded_to_free" });
   }
 
-  // Unhandled event — acknowledge it
+  // Unhandled event - acknowledge it
   return NextResponse.json({ ok: true, action: "ignored" });
 }
