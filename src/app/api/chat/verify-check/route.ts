@@ -61,12 +61,9 @@ export async function POST(request: Request) {
     );
   }
 
-  // Consume the magic token so it can only be used once.
-  // The session cookie (30 days) handles all subsequent access.
-  await supabase
-    .from("verification_codes")
-    .update({ used: true })
-    .eq("id", magicToken.id);
+  // Magic tokens are NOT consumed — they remain valid until expiry so
+  // all links in a single digest email (briefing, chat, PDF) keep working.
+  // The 30-day session cookie handles ongoing authentication.
 
   // Verify subscriber is still active before creating a session
   const { data: subscriber } = await supabase

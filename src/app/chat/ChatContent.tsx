@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { SubscriberGate } from "@/components/chat/SubscriberGate";
 import { ChatInterface } from "@/components/chat/ChatInterface";
@@ -18,16 +18,18 @@ function ChatInner({
   const [verifyError, setVerifyError] = useState("");
   const searchParams = useSearchParams();
   const router = useRouter();
+  const verifiedRef = useRef(false);
 
   useEffect(() => {
     // If we already have a session (from cookie or prior effect run), skip
-    if (initialSession || session) return;
+    if (initialSession || session || verifiedRef.current) return;
 
     const magicToken = searchParams.get("token");
     const magicEmail = searchParams.get("email");
 
     // If magic link params present, verify them
     if (magicToken && magicEmail) {
+      verifiedRef.current = true;
       setVerifying(true);
       fetch("/api/chat/verify-check", {
         method: "POST",
@@ -41,13 +43,14 @@ function ChatInner({
             localStorage.setItem("btc-today-email", magicEmail);
             localStorage.setItem("btc-today-token", data.token);
             setSession({ email: magicEmail });
-            router.refresh();
             router.replace("/chat");
           } else {
+            verifiedRef.current = false;
             setVerifyError(data.error || "Invalid or expired link.");
           }
         })
         .catch(() => {
+          verifiedRef.current = false;
           setVerifyError("Network error. Please try again.");
         })
         .finally(() => {

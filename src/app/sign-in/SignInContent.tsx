@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 function SignInInner() {
@@ -12,13 +12,16 @@ function SignInInner() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const verifiedRef = useRef(false);
 
   // Handle magic link callback (?token=X&email=Y)
   useEffect(() => {
+    if (verifiedRef.current) return;
     const magicToken = searchParams.get("token");
     const magicEmail = searchParams.get("email");
 
     if (magicToken && magicEmail) {
+      verifiedRef.current = true;
       setVerifying(true);
       fetch("/api/chat/verify-check", {
         method: "POST",
@@ -29,17 +32,15 @@ function SignInInner() {
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
-            // Cookie is set by the API response. Force full server
-            // re-render so layout picks up the new session cookie,
-            // then navigate home.
-            router.refresh();
             router.replace("/");
           } else {
+            verifiedRef.current = false;
             setError(data.error || "Invalid or expired link. Try again.");
             setVerifying(false);
           }
         })
         .catch(() => {
+          verifiedRef.current = false;
           setError("Network error. Please try again.");
           setVerifying(false);
         });

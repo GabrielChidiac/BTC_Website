@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
   const email = body.email?.trim().toLowerCase();
   const rawName = body.name?.trim() || null;
-  const name = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : null;
+  const name = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase() : null;
 
   if (!name || name.length < 1) {
     return NextResponse.json(
