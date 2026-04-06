@@ -72,11 +72,20 @@ export async function POST(request: Request) {
     .eq("email", email)
     .maybeSingle();
 
-  if (!subscriber || subscriber.status !== "active") {
+  if (!subscriber) {
     return NextResponse.json(
-      { error: "Your subscription is no longer active." },
+      { error: "No account found for this email." },
       { status: 403 }
     );
+  }
+
+  // Re-activate subscribers who click a valid magic link — having a valid
+  // token proves email ownership and intent to access the site.
+  if (subscriber.status !== "active") {
+    await supabase
+      .from("subscribers")
+      .update({ status: "active" })
+      .eq("email", email);
   }
 
   // Auto-upgrade free subscribers to Pro if founding offer is still active

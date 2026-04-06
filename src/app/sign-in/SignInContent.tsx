@@ -32,6 +32,7 @@ function SignInInner() {
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
+            router.refresh();
             router.replace("/");
           } else {
             verifiedRef.current = false;
