@@ -1,7 +1,5 @@
-import { cookies } from "next/headers";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient, createServiceClient } from "@/lib/supabase/server";
 import { getSubscriberTier } from "@/lib/tier";
-import { COOKIE_NAME } from "@/lib/session";
 import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
 import { compactNumber } from "@/lib/utils";
 import { BLOCKED_EVENT_KEYWORDS } from "@/lib/constants";
@@ -45,12 +43,6 @@ function formatFlowUSD(amount: number): string {
 }
 
 export default async function Home() {
-  let isLoggedIn = false;
-  try {
-    const cookieStore = await cookies();
-    isLoggedIn = !!cookieStore.get(COOKIE_NAME)?.value;
-  } catch { /* no session */ }
-
   const supabase = await createServerClient();
   const { data } = await supabase
     .from("daily_briefings")
@@ -86,7 +78,22 @@ export default async function Home() {
 
   const briefing: BriefingJSON = (data as DailyBriefingRow).content;
   const market = briefing.market_snapshot;
-  const { tier } = await getSubscriberTier();
+  let { tier, email: sessionEmail } = await getSubscriberTier();
+  const isLoggedIn = !!sessionEmail;
+
+  // Auto-upgrade logged-in free-tier users when the founding offer is active
+  if (isLoggedIn && tier === "free") {
+    const f = await getFoundingMemberStatus();
+    if (f.isOfferActive) {
+      const svc = createServiceClient();
+      await svc
+        .from("subscribers")
+        .update({ tier: "pro", is_founding_member: true, tier_updated_at: new Date().toISOString() })
+        .eq("email", sessionEmail);
+      tier = "pro";
+    }
+  }
+
   const isPro = tier === "pro";
   const founding = isPro ? null : await getFoundingMemberStatus();
 
@@ -108,7 +115,7 @@ export default async function Home() {
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: briefing.one_line || `Bitcoin Market Analysis — ${briefing.date}`,
+    headline: briefing.one_line || `Bitcoin Market Analysis | ${briefing.date}`,
     datePublished: `${briefing.date}T01:00:00Z`,
     author: { "@type": "Organization", name: "BTC Today" },
     publisher: { "@type": "Organization", name: "BTC Today" },
@@ -388,7 +395,7 @@ export default async function Home() {
                       Never miss a week in Bitcoin
                     </p>
                     <p className="text-sm text-[var(--color-text-secondary)]">
-                      Free weekly recap of what you missed — market data, top stories & key signals
+                      Free weekly recap of what you missed: market data, top stories & key signals
                     </p>
                     <SubscribeForm />
                   </CardContent>

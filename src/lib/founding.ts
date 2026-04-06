@@ -14,14 +14,14 @@ export async function getFoundingMemberStatus(): Promise<FoundingMemberStatus> {
   const { count } = await supabase
     .from("subscribers")
     .select("*", { count: "exact", head: true })
-    .eq("status", "active");
+    .eq("is_founding_member", true);
 
-  const activeCount = count ?? 0;
-  const spotsLeft = Math.max(0, FOUNDING_MEMBER_LIMIT - activeCount);
+  const foundingCount = count ?? 0;
+  const spotsLeft = Math.max(0, FOUNDING_MEMBER_LIMIT - foundingCount);
 
   return {
-    isOfferActive: activeCount < FOUNDING_MEMBER_LIMIT,
-    activeCount,
+    isOfferActive: foundingCount < FOUNDING_MEMBER_LIMIT,
+    activeCount: foundingCount,
     limit: FOUNDING_MEMBER_LIMIT,
     spotsLeft,
   };

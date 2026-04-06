@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { Card, CardContent } from "@/components/ui/card";
+import { SubscribeForm } from "@/components/subscribe/SubscribeForm";
 
 function SkeletonCard({ lines = 4 }: { lines?: number }) {
   return (
@@ -74,7 +75,7 @@ export function ProTeaser({ foundingOffer }: { foundingOffer?: FoundingOffer | n
               {isFoundingActive ? "Founding Member" : "Pro"}
             </p>
             <p className="font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-text-primary)]">
-              {isFoundingActive ? "Get full Pro access — free" : "Unlock the full briefing"}
+              {isFoundingActive ? "Get full Pro access, free" : "Unlock the full briefing"}
             </p>
             <p className="max-w-xs text-sm text-[var(--color-text-secondary)] leading-relaxed">
               Adoption signals, institutional flows, technical analysis,
@@ -93,19 +94,23 @@ export function ProTeaser({ foundingOffer }: { foundingOffer?: FoundingOffer | n
                 </p>
               </div>
             )}
-            <Link
-              href={isFoundingActive ? "/sign-in" : "/pricing"}
-              className="inline-flex items-center rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
-            >
-              {isFoundingActive ? "Claim your free Pro access" : "Go Pro — $59/year (save 30%)"}
-            </Link>
-            {!isFoundingActive && (
-              <Link
-                href="/pricing"
-                className="text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
-              >
-                or $7/month
-              </Link>
+            {isFoundingActive ? (
+              <SubscribeForm />
+            ) : (
+              <>
+                <Link
+                  href="/pricing"
+                  className="inline-flex items-center rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
+                >
+                  Go Pro - $59/year (save 30%)
+                </Link>
+                <Link
+                  href="/pricing"
+                  className="text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
+                >
+                  or $7/month
+                </Link>
+              </>
             )}
           </div>
         </div>

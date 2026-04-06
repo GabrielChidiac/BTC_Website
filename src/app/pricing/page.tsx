@@ -41,7 +41,10 @@ export default async function PricingPage() {
 
   // Fetch subscriber count and latest briefing for social proof
   const supabase = await createServerClient();
-  const subscriberCount = founding.activeCount;
+  const { count: subscriberCount } = await supabase
+    .from("subscribers")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "active");
 
   const { data: latestBriefing } = await supabase
     .from("daily_briefings")

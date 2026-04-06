@@ -99,14 +99,14 @@ export default async function ArchivePage() {
                 <div className="mb-6 flex items-center gap-3 rounded-lg border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/5 px-4 py-3">
                   <p className="flex-1 text-sm text-[var(--color-text-secondary)]">
                     {isFoundingActive
-                      ? "Founding members get full archive access — free"
+                      ? "Founding members get full archive access, free"
                       : "Unlock the full archive with Pro"}
                   </p>
                   <Link
-                    href={isFoundingActive ? "/sign-in" : "/pricing"}
+                    href={isFoundingActive ? "/" : "/pricing"}
                     className="shrink-0 rounded-md bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--color-accent-hover)] transition-colors"
                   >
-                    {isFoundingActive ? "Claim your spot" : "Go Pro — $59/yr"}
+                    {isFoundingActive ? "Claim your spot" : "Go Pro - $59/yr"}
                   </Link>
                 </div>
               )}

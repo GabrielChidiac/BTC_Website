@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
 
 export const runtime = "nodejs";
-export const alt = "BTC Today — AI-Curated Bitcoin Intelligence";
+export const alt = "BTC Today | AI-Curated Bitcoin Intelligence";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { FEATURES } from "@/lib/constants";
+import { SubscribeForm } from "@/components/subscribe/SubscribeForm";
 
 const PRO_FEATURES = FEATURES.filter((f) => !f.freeIncluded);
 
@@ -28,7 +29,7 @@ export function ProGate({ foundingOffer }: { foundingOffer?: FoundingOffer | nul
                 {isFoundingActive ? "Founding Member" : "Pro"}
               </p>
               <h3 className="mt-1 font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-text-primary)] sm:text-xl">
-                {isFoundingActive ? "Get full Pro access — free" : "Unlock the Deep Dive"}
+                {isFoundingActive ? "Get full Pro access, free" : "Unlock the Deep Dive"}
               </h3>
               <p className="mt-1 text-sm text-[var(--color-text-secondary)] leading-relaxed">
                 The full briefing continues with institutional-grade analysis below.
@@ -67,19 +68,23 @@ export function ProGate({ foundingOffer }: { foundingOffer?: FoundingOffer | nul
 
           {/* CTA row */}
           <div className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-            <Link
-              href={isFoundingActive ? "/sign-in" : "/pricing"}
-              className="inline-flex items-center rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
-            >
-              {isFoundingActive ? "Claim your free Pro access" : "Go Pro — $59/year (save 30%)"}
-            </Link>
-            {!isFoundingActive && (
-              <Link
-                href="/pricing"
-                className="text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
-              >
-                or $7/month
-              </Link>
+            {isFoundingActive ? (
+              <SubscribeForm />
+            ) : (
+              <>
+                <Link
+                  href="/pricing"
+                  className="inline-flex items-center rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
+                >
+                  Go Pro - $59/year (save 30%)
+                </Link>
+                <Link
+                  href="/pricing"
+                  className="text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
+                >
+                  or $7/month
+                </Link>
+              </>
             )}
           </div>
         </CardContent>
@@ -102,7 +107,7 @@ export function ProGateCompact({ message, foundingOffer }: { message?: string; f
       {isFoundingActive ? (
         <>
           <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed max-w-md">
-            Join as one of the first {foundingOffer.limit} founding members and get full Pro access — free, permanently.
+            Join as one of the first {foundingOffer.limit} founding members and get full Pro access, free, permanently.
           </p>
           <div className="w-full max-w-[200px]">
             <div className="h-1.5 w-full rounded-full bg-[var(--color-border)]">
@@ -121,19 +126,23 @@ export function ProGateCompact({ message, foundingOffer }: { message?: string; f
           {message ?? "This content is available to Pro subscribers. Upgrade for the daily email briefing, AI chat, PDF downloads, and full archive."}
         </p>
       )}
-      <Link
-        href={isFoundingActive ? "/sign-in" : "/pricing"}
-        className="inline-flex items-center rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
-      >
-        {isFoundingActive ? "Claim your free Pro access" : "Go Pro — $59/year (save 30%)"}
-      </Link>
-      {!isFoundingActive && (
-        <Link
-          href="/pricing"
-          className="text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
-        >
-          or $7/month
-        </Link>
+      {isFoundingActive ? (
+        <SubscribeForm />
+      ) : (
+        <>
+          <Link
+            href="/pricing"
+            className="inline-flex items-center rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
+          >
+            Go Pro - $59/year (save 30%)
+          </Link>
+          <Link
+            href="/pricing"
+            className="text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
+          >
+            or $7/month
+          </Link>
+        </>
       )}
     </div>
   );

@@ -45,7 +45,7 @@ export async function generateMetadata({
   if (!isValidDate(date)) return { title: "Not Found | BTC Today" };
 
   const displayDate = formatDisplayDate(date);
-  const title = `Bitcoin Market Analysis — ${displayDate} | BTC Today`;
+  const title = `Bitcoin Market Analysis | ${displayDate} | BTC Today`;
   const description = `AI-curated Bitcoin market analysis for ${displayDate} with institutional flows, technical signals, and expert insights.`;
 
   return {
@@ -147,7 +147,7 @@ export default async function ArchiveDatePage({
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: briefing.one_line || `Bitcoin Market Analysis — ${formatDisplayDate(date)}`,
+    headline: briefing.one_line || `Bitcoin Market Analysis | ${formatDisplayDate(date)}`,
     datePublished: `${date}T01:00:00Z`,
     author: { "@type": "Organization", name: "BTC Today" },
     publisher: { "@type": "Organization", name: "BTC Today" },
