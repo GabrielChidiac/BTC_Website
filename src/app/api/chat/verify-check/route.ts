@@ -66,11 +66,19 @@ export async function POST(request: Request) {
   // The 30-day session cookie handles ongoing authentication.
 
   // Verify subscriber is still active before creating a session
-  const { data: subscriber } = await supabase
+  const { data: subscriber, error: subscriberError } = await supabase
     .from("subscribers")
     .select("name, status, tier, is_founding_member")
     .eq("email", email)
     .maybeSingle();
+
+  if (subscriberError) {
+    console.error("Subscriber lookup failed:", subscriberError.message);
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
+  }
 
   if (!subscriber) {
     return NextResponse.json(
