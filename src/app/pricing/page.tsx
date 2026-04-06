@@ -87,7 +87,7 @@ export default async function PricingPage() {
             name: "What does \"Founding Member\" mean?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: `The first ${founding.limit} subscribers get full Pro access — free, permanently. No credit card, no catch.`,
+              text: `The first ${founding.limit} subscribers get full Pro access. Free, permanently. No credit card, no catch.`,
             },
           },
           {
@@ -146,7 +146,7 @@ export default async function PricingPage() {
               {isPro
                 ? (isFoundingMember ? "You have lifetime Pro access as one of our first subscribers." : "You have full access to all features.")
                 : isFoundingActive
-                  ? "The first 100 subscribers get full Pro access — free, permanently. No credit card required."
+                  ? "The first 100 subscribers get full Pro access. Free, permanently. No credit card required."
                   : "Unlock the daily email briefing, AI chat, PDF downloads, and complete archive."}
             </p>
             {!isPro && isFoundingActive && (
@@ -188,7 +188,7 @@ export default async function PricingPage() {
                 {FREE_FEATURES.map((f) => (
                   <li key={f.label} className="flex items-start gap-2 text-sm">
                     <span className={`mt-0.5 text-xs ${f.included ? "text-emerald-600" : "text-[var(--color-text-muted)]"}`}>
-                      {f.included ? "✓" : "—"}
+                      {f.included ? "✓" : "–"}
                     </span>
                     <span className={f.included ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}>
                       {f.label}
@@ -213,7 +213,7 @@ export default async function PricingPage() {
                     $0
                   </p>
                   <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                    forever — for the first {founding.limit}
+                    forever, for the first {founding.limit}
                   </p>
                 </>
               ) : (
@@ -239,16 +239,16 @@ export default async function PricingPage() {
               {isPro ? (
                 <div className="mt-6 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-center">
                   <p className="text-sm font-medium text-emerald-700">
-                    {isFoundingMember ? "Active — Founding Member" : "Active"}
+                    {isFoundingMember ? "Active - Founding Member" : "Active"}
                   </p>
                 </div>
               ) : isFoundingActive ? (
                 <div className="mt-6 flex flex-col gap-2">
                   <Link
-                    href="/sign-in"
+                    href="/"
                     className="block rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
                   >
-                    Claim your free Pro access
+                    Sign up for free
                   </Link>
                   <p className="text-center text-xs text-[var(--color-text-muted)]">
                     No credit card required
@@ -269,7 +269,7 @@ export default async function PricingPage() {
                     href={annualCheckout}
                     className="block rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
                   >
-                    Go Pro — $59/year (save 30%)
+                    Go Pro - $59/year (save 30%)
                   </a>
                   <a
                     href={monthlyCheckout ?? "#"}
@@ -336,13 +336,13 @@ export default async function PricingPage() {
                   <div>
                     <p className="text-sm font-medium text-[var(--color-text-primary)]">What does &ldquo;Founding Member&rdquo; mean?</p>
                     <p className="mt-1 text-sm text-[var(--color-text-secondary)] leading-relaxed">
-                      The first {founding.limit} subscribers get full Pro access — free, permanently. No credit card, no catch. Once all spots are claimed, new subscribers pay $7/month or $59/year.
+                      The first {founding.limit} subscribers get full Pro access. Free, permanently. No credit card, no catch. Once all spots are claimed, new subscribers pay $7/month or $59/year.
                     </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-[var(--color-text-primary)]">Will I lose access when the offer ends?</p>
                     <p className="mt-1 text-sm text-[var(--color-text-secondary)] leading-relaxed">
-                      No. Founding member access is permanent. When we start charging, your Pro access stays the same — no action needed.
+                      No. Founding member access is permanent. When we start charging, your Pro access stays the same. No action needed.
                     </p>
                   </div>
                 </>

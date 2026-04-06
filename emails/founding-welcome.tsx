@@ -10,6 +10,7 @@ import {
   Link,
   Hr,
   Font,
+  Img,
 } from "@react-email/components";
 
 // Palette - light / platinum theme (matches site)
@@ -45,14 +46,14 @@ export default function FoundingWelcomeEmail({
         <meta name="color-scheme" content="light" />
         <meta name="supported-color-schemes" content="light" />
       </Head>
-      <Preview>You're one of our first 100 — full Pro access is yours</Preview>
+      <Preview>You're one of our first 100. Full Pro access is yours</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
 
           {/* Header */}
           <Section style={styles.header}>
+            <Img src={`${siteUrl}/logo.png`} width="120" height="144" alt="BTC Today" style={{ margin: "0 auto 8px", width: "80px", height: "auto" }} />
             <Text style={styles.logo}>
-              BTC<span style={{ fontWeight: 300, marginLeft: "2px" }}>today</span>
               <span style={styles.badge}>FOUNDING MEMBER</span>
             </Text>
           </Section>
@@ -67,7 +68,7 @@ export default function FoundingWelcomeEmail({
 
             <Text style={styles.bodyText}>
               You joined BTC Today early, and that means something. As one
-              of our first 100 subscribers, you have full Pro access — on
+              of our first 100 subscribers, you have full Pro access, on
               the house, permanently.
             </Text>
 
@@ -110,7 +111,7 @@ export default function FoundingWelcomeEmail({
 
             <Text style={styles.bodyText}>
               This is yours to keep. When we open paid subscriptions,
-              your access stays the same — no action needed.
+              your access stays the same. No action needed.
             </Text>
           </Section>
 

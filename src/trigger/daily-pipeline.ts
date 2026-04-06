@@ -137,7 +137,7 @@ export const dailyPipelineTask = schedules.task({
           await resend.emails.send({
             from: "BTC Today Alerts <hello@btctoday.co>",
             to: "hello@btctoday.co",
-            subject: `[ALERT] Daily pipeline failed — ${date}`,
+            subject: `[ALERT] Daily pipeline failed: ${date}`,
             text: `The daily pipeline for ${date} failed.\n\nError: ${(error as Error).message}\n\nStack: ${(error as Error).stack}\n\nCheck Trigger.dev dashboard for details.`,
           });
         }

@@ -8,7 +8,8 @@ import { formatBriefingDate } from "@/lib/utils";
 
 export async function Header({ date }: { date?: string }) {
   const { tier, email: signedInEmail, name } = await getSubscriberTier();
-  const displayName = name?.split(/\s+/)[0] ?? null;
+  const firstName = name?.split(/\s+/)[0] ?? null;
+  const displayName = firstName ?? (signedInEmail ? signedInEmail.split("@")[0].charAt(0).toUpperCase() + signedInEmail.split("@")[0].slice(1) : null);
 
   return (
     <header className="sticky top-0 z-50 bg-[var(--color-bg-base)]/80 backdrop-blur-md">

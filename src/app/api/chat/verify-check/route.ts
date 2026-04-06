@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { setSessionCookie } from "@/lib/session";
 import { EMAIL_REGEX as EMAIL_RE } from "@/lib/constants";
+import { getFoundingMemberStatus } from "@/lib/founding";
 
 export async function POST(request: Request) {
   let body: { email?: string; token?: string };
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
   // Verify subscriber is still active before creating a session
   const { data: subscriber } = await supabase
     .from("subscribers")
-    .select("name, status")
+    .select("name, status, tier, is_founding_member")
     .eq("email", email)
     .maybeSingle();
 
@@ -79,6 +80,21 @@ export async function POST(request: Request) {
       { error: "Your subscription is no longer active." },
       { status: 403 }
     );
+  }
+
+  // Auto-upgrade free subscribers to Pro if founding offer is still active
+  if (subscriber.tier === "free" && !subscriber.is_founding_member) {
+    const founding = await getFoundingMemberStatus();
+    if (founding.isOfferActive) {
+      await supabase
+        .from("subscribers")
+        .update({
+          tier: "pro",
+          is_founding_member: true,
+          tier_updated_at: new Date().toISOString(),
+        })
+        .eq("email", email);
+    }
   }
 
   // Enforce max 3 concurrent sessions — evict oldest if at limit

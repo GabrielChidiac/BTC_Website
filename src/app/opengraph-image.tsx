@@ -56,12 +56,7 @@ export default async function Image() {
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center" }}>
-          <span style={{ fontSize: 32, fontWeight: 700, color: "#0A0A0C" }}>
-            BTC
-          </span>
-          <span style={{ fontSize: 32, fontWeight: 300, color: "#0A0A0C", marginLeft: 2 }}>
-            today
-          </span>
+          <img src={`${process.env.NEXT_PUBLIC_SITE_URL || "https://www.btctoday.co"}/logo.png`} width={80} height={96} />
         </div>
 
         {/* Price */}

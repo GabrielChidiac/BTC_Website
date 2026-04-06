@@ -5,6 +5,7 @@ import {
   View,
   StyleSheet,
   Font,
+  Image,
 } from "@react-pdf/renderer";
 import type { BriefingJSON } from "../src/lib/types";
 
@@ -258,9 +259,7 @@ export function DailySummaryPDF({ briefing }: { briefing: BriefingJSON }) {
       <Page size="A4" style={s.page}>
         {/* Header */}
         <View style={s.header}>
-          <Text style={s.logo}>
-            BTC<Text style={{ ...s.logoAccent, fontWeight: 300 }}>today</Text>
-          </Text>
+          <Image src="https://btctoday.co/logo.png" style={{ width: 50, height: 60 }} />
           <Text style={s.date}>{formatDate(briefing.date)}</Text>
         </View>
 

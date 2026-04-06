@@ -9,6 +9,7 @@ import {
   Text,
   Hr,
   Font,
+  Img,
 } from "@react-email/components";
 
 const colors = {
@@ -42,9 +43,7 @@ export default function VerificationEmail({
       <Body style={styles.body}>
         <Container style={styles.container}>
           <Section style={styles.header}>
-            <Text style={styles.logo}>
-              BTC<span style={{ fontWeight: 300, marginLeft: "2px" }}>today</span>
-            </Text>
+            <Img src="https://btctoday.co/logo.png" width="120" height="144" alt="BTC Today" style={{ margin: "0 auto", width: "80px", height: "auto" }} />
           </Section>
 
           <Hr style={styles.hr} />

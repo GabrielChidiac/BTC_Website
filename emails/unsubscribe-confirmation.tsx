@@ -10,6 +10,7 @@ import {
   Link,
   Hr,
   Font,
+  Img,
 } from "@react-email/components";
 
 const colors = {
@@ -45,9 +46,7 @@ export default function UnsubscribeConfirmationEmail({
       <Body style={styles.body}>
         <Container style={styles.container}>
           <Section style={styles.header}>
-            <Text style={styles.logo}>
-              BTC<span style={{ fontWeight: 300, marginLeft: "2px" }}>today</span>
-            </Text>
+            <Img src={`${siteUrl}/logo.png`} width="120" height="144" alt="BTC Today" style={{ margin: "0 auto", width: "80px", height: "auto" }} />
           </Section>
 
           <Hr style={styles.hr} />

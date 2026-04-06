@@ -102,7 +102,7 @@ export const sendDigestTask = task({
 
     const sections: string[] = [];
 
-    sections.push(`BTC Today — ${date}`);
+    sections.push(`BTC Today | ${date}`);
     if (briefing.one_line) sections.push(briefing.one_line);
 
     sections.push(
@@ -152,7 +152,7 @@ export const sendDigestTask = task({
     // Expert
     if (expert_insights?.length > 0) {
       const e = expert_insights[0];
-      sections.push(`--- EXPERT ---\n"${e.quote_or_summary.slice(0, 120)}" — ${e.expert_name}, ${e.role}`);
+      sections.push(`--- EXPERT ---\n"${e.quote_or_summary.slice(0, 120)}" - ${e.expert_name}, ${e.role}`);
     }
 
     // Outlook
@@ -175,7 +175,7 @@ export const sendDigestTask = task({
     if (adoption?.length) sigLines.push(`${adoption[0].category}: ${adoption[0].summary.split(/\.\s/)[0]}.`);
     if (sigLines.length > 0) sections.push(`--- SIGNALS ---\n${sigLines.join("\n")}`);
 
-    sections.push(`Read full briefing: %%BRIEFING_URL%%\nDownload PDF: %%PDF_URL%%\nChat with AI: %%CHAT_URL%%\nUnsubscribe: %%UNSUBSCRIBE_URL%%\n\n— BTC Today`);
+    sections.push(`Read full briefing: %%BRIEFING_URL%%\nDownload PDF: %%PDF_URL%%\nChat with AI: %%CHAT_URL%%\nUnsubscribe: %%UNSUBSCRIBE_URL%%\n\n- BTC Today`);
 
     const textTemplate = sections.join("\n\n");
 

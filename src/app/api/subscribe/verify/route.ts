@@ -86,7 +86,7 @@ export async function POST(request: Request) {
 
   // Auto-upgrade to Pro if founding offer was active
   if (founding.isOfferActive) {
-    await supabase
+    const { error: tierError } = await supabase
       .from("subscribers")
       .update({
         tier: "pro",
@@ -94,7 +94,10 @@ export async function POST(request: Request) {
         tier_updated_at: new Date().toISOString(),
       })
       .eq("email", email);
-    isFoundingMember = true;
+
+    if (!tierError) {
+      isFoundingMember = true;
+    }
   }
 
   // Fetch subscriber name for welcome email and session
@@ -134,9 +137,9 @@ export async function POST(request: Request) {
         await resend.emails.send({
           from: "BTC Today <hello@btctoday.co>",
           to: email,
-          subject: "You're a Founding Member — BTC Today",
+          subject: "You're a Founding Member",
           html,
-          text: `You're a Founding Member.\n\nYou joined BTC Today early, and that means something. As one of our first 100 subscribers, you have full Pro access — on the house, permanently.\n\nEvery morning at 2 AM CET, you'll receive a comprehensive briefing in your inbox.\n\nWhat you get:\n- Daily briefing delivered to your inbox\n- Adoption signals and regulatory developments\n- ETF flows, institutional activity, and whale movements\n- Technical signals, network health, and on-chain data\n- Expert insights and forward outlook\n- AI chat for live questions\n- PDF downloads and full archive access\n\nThis is yours to keep.\n\nRead today's briefing: ${siteUrl}\n\n- BTC Today`,
+          text: `You're a Founding Member.\n\nYou joined BTC Today early, and that means something. As one of our first 100 subscribers, you have full Pro access, on the house, permanently.\n\nEvery morning at 2 AM CET, you'll receive a comprehensive briefing in your inbox.\n\nWhat you get:\n- Daily briefing delivered to your inbox\n- Adoption signals and regulatory developments\n- ETF flows, institutional activity, and whale movements\n- Technical signals, network health, and on-chain data\n- Expert insights and forward outlook\n- AI chat for live questions\n- PDF downloads and full archive access\n\nThis is yours to keep.\n\nRead today's briefing: ${siteUrl}\n\n- BTC Today`,
         });
       } else {
         const html = await render(WelcomeEmail({ email, name: subscriberName, siteUrl }));

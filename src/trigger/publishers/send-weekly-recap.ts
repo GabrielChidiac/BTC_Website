@@ -167,7 +167,7 @@ export const sendWeeklyRecapTask = schedules.task({
       .map((s, i) => `${i + 1}. ${s.headline} (${s.source})\n   ${s.summary}`)
       .join("\n\n");
 
-    const textTemplate = `BTC Today — Week in Review (${recap.week_start} to ${recap.week_end})
+    const textTemplate = `BTC Today | Week in Review (${recap.week_start} to ${recap.week_end})
 
 Price: ${formatUSD(recap.price_end, 0)} | Week: ${formatPctChange(recap.price_change_pct)} | High: ${formatUSD(recap.price_high, 0)} | Low: ${formatUSD(recap.price_low, 0)}
 
@@ -182,7 +182,7 @@ ${siteUrl}/pricing
 
 Unsubscribe: %%UNSUBSCRIBE_URL%%
 
-— BTC Today`;
+- BTC Today`;
 
     // Step 6: Generate magic link tokens
     const authTokens = new Map<string, string>();

@@ -10,6 +10,7 @@ import {
   Link,
   Hr,
   Font,
+  Img,
 } from "@react-email/components";
 
 // Palette - light / platinum theme (matches site)
@@ -52,8 +53,8 @@ export default function ProWelcomeEmail({
 
           {/* Header */}
           <Section style={styles.header}>
+            <Img src={`${siteUrl}/logo.png`} width="120" height="144" alt="BTC Today" style={{ margin: "0 auto 8px", width: "80px", height: "auto" }} />
             <Text style={styles.logo}>
-              BTC<span style={{ fontWeight: 300, marginLeft: "2px" }}>today</span>
               <span style={styles.proBadge}>PRO</span>
             </Text>
           </Section>
