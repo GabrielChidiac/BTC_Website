@@ -2,12 +2,20 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { createServiceClient } from "@/lib/supabase/server";
-import { getBaseUrl } from "@/lib/url";
 import { EMAIL_REGEX as EMAIL_RE } from "@/lib/constants";
-import WelcomeEmail from "../../../../emails/welcome";
+import VerificationEmail from "../../../../emails/verification";
 
 const NAME_MAX = 50;
 const EMAIL_MAX = 254;
+const CODE_EXPIRY_MINUTES = 10;
+const RATE_LIMIT_SECONDS = 60;
+
+function generateCode(): string {
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  const num = ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) >>> 0;
+  return String(num % 1000000).padStart(6, "0");
+}
 
 export async function POST(request: Request) {
   let body: { email?: string; name?: string; website?: string };
@@ -24,8 +32,8 @@ export async function POST(request: Request) {
   // Honeypot: silently accept bots without processing
   if (body.website) {
     return NextResponse.json(
-      { success: true, message: "You're in!" },
-      { status: 201 }
+      { success: true, step: "verify", message: "Check your email for a verification code" },
+      { status: 200 }
     );
   }
 
@@ -63,51 +71,94 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (existing?.status === "active") {
-    // Return same success response to prevent email enumeration
+    // Prevent email enumeration — same response shape
     return NextResponse.json(
-      { success: true, message: "You're in!" },
-      { status: 201 }
+      { success: true, step: "verify", message: "Check your email for a verification code" },
+      { status: 200 }
     );
   }
 
-  // Insert new or re-activate
-  const { error } = await supabase
+  // Rate limit: 1 verification code per email per 60 seconds
+  const cutoff = new Date(Date.now() - RATE_LIMIT_SECONDS * 1000).toISOString();
+  const { data: recentCode } = await supabase
+    .from("verification_codes")
+    .select("id")
+    .eq("email", email)
+    .like("code", "signup:%")
+    .eq("used", false)
+    .gte("created_at", cutoff)
+    .maybeSingle();
+
+  if (recentCode) {
+    return NextResponse.json(
+      { success: false, error: "Verification code already sent. Check your email or wait 60 seconds." },
+      { status: 429 }
+    );
+  }
+
+  // Upsert subscriber as "pending" (or keep "unsubscribed" → "pending")
+  const { error: upsertError } = await supabase
     .from("subscribers")
     .upsert(
-      { email, status: "active", ...(name ? { name } : {}) },
+      { email, status: "pending", ...(name ? { name } : {}) },
       { onConflict: "email" }
     );
 
-  if (error) {
+  if (upsertError) {
     return NextResponse.json(
       { success: false, error: "Something went wrong" },
       { status: 500 }
     );
   }
 
-  // Welcome email (non-fatal)
+  // Mark old unused signup codes for this email as used
+  await supabase
+    .from("verification_codes")
+    .update({ used: true })
+    .eq("email", email)
+    .like("code", "signup:%")
+    .eq("used", false);
+
+  // Generate and store verification code
+  const code = generateCode();
+  const expiresAt = new Date(Date.now() + CODE_EXPIRY_MINUTES * 60 * 1000);
+
+  const { error: codeError } = await supabase
+    .from("verification_codes")
+    .insert({
+      email,
+      code: `signup:${code}`,
+      expires_at: expiresAt.toISOString(),
+    });
+
+  if (codeError) {
+    return NextResponse.json(
+      { success: false, error: "Something went wrong" },
+      { status: 500 }
+    );
+  }
+
+  // Send verification email (non-fatal)
   const resendKey = process.env.RESEND_API_KEY;
   if (resendKey) {
     try {
       const resend = new Resend(resendKey);
-      const siteUrl = getBaseUrl();
-
-      const html = await render(WelcomeEmail({ email, name: name ?? undefined, siteUrl }));
+      const html = await render(VerificationEmail({ code, name: name ?? undefined }));
 
       await resend.emails.send({
         from: "BTC Today <hello@btctoday.co>",
         to: email,
-        subject: "Welcome to BTC Today",
+        subject: `${code} is your BTC Today verification code`,
         html,
-        text: `Welcome to BTC Today!\n\nA new briefing publishes every morning at 2 AM CET. Visit btctoday.co to read the latest. You'll also receive a weekly recap every Sunday.\n\nRead today's briefing: ${siteUrl}\n\nUpgrade to Pro for the daily email, AI chat, PDF downloads, and more: ${siteUrl}/pricing\n\nUnsubscribe: ${siteUrl}/sign-in\n\n— BTC Today`,
+        text: `Your BTC Today verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\n— BTC Today`,
       });
     } catch {
-      // Non-fatal — subscriber is already saved
+      // Non-fatal — code is stored, user can resend
     }
   }
 
   return NextResponse.json(
-    { success: true, message: "You're in!" },
-    { status: 201 }
+    { success: true, step: "verify", message: "Check your email for a verification code" },
+    { status: 200 }
   );
 }

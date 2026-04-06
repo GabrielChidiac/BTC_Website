@@ -86,6 +86,7 @@ interface AssetComparison {
   change_1y_pct: number | null;
   btc_relative_24h_pct: number | null;
   btc_relative_ytd_pct: number | null;
+  btc_relative_1y_pct: number | null;
 }
 
 interface NetworkHealth {
@@ -168,7 +169,7 @@ Rules:
 - For adoption: 1-3 genuine Bitcoin adoption stories (corporate BTC buys, sovereign Bitcoin adoption, Bitcoin infrastructure growth). Exclude general crypto or altcoin adoption.
 - For macro_context: synthesize how current macro conditions (monetary policy, liquidity, DXY, inflation) relate to Bitcoin's positioning. Use your knowledge of scheduled macro events.
 - For narrative_consensus: assess the overall smart money sentiment. Score reflects institutional positioning, not retail mood.
-- For btc_vs_everything: compute btc_relative_24h_pct as (BTC 24h change) minus (asset 24h change). Same for btc_relative_ytd_pct. Use null if data unavailable.
+- For btc_vs_everything: compute btc_relative_24h_pct as (BTC 24h change) minus (asset 24h change). Same for btc_relative_ytd_pct and btc_relative_1y_pct. Use null if data unavailable.
 - For every top_story, regulatory update, and adoption story: use the EXACT url from the input article data. Match each generated story to its source article and copy the url verbatim. Never fabricate or generalize URLs (e.g., never use "https://coindesk.com", use the full article URL from the input).
 - Pass through numerical market/network data exactly as provided. Do not round or alter.
 - For technical_signals: rsi_14, sma_50, sma_200, support_level, and resistance_level are PRE-CALCULATED from real market data. Copy them exactly as provided in the input. Only generate the signal_summary text.
@@ -492,6 +493,13 @@ export const aiBrainTask = task({
 
     const briefing = result.data!;
     briefing.date = date;
+
+    // Always overwrite btc_vs_everything with computed values from real market data
+    // (Claude may omit fields like btc_relative_1y_pct)
+    if (market) {
+      const btcChange = market.price.change_24h_pct;
+      briefing.btc_vs_everything = buildComparisons(market, btcChange);
+    }
 
     logger.info("AI Brain completed", {
       storyCount: briefing.top_stories.length,

@@ -28,7 +28,6 @@ import { SupplyDynamics } from "@/components/briefing/SupplyDynamics";
 import { CountdownEvents } from "@/components/briefing/CountdownEvents";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
 import { ProGateCompact } from "@/components/premium/ProGate";
-import { ShareButtons } from "@/components/briefing/ShareButtons";
 
 export const revalidate = false;
 
@@ -214,13 +213,6 @@ export default async function ArchiveDatePage({
               )}
             </div>
           </nav>
-
-          <div className="mt-4 flex justify-end">
-            <ShareButtons
-              url={`https://www.btctoday.co/archive/${date}`}
-              title={`${briefing.one_line || `Bitcoin Analysis — ${formatDisplayDate(date)}`} — BTC Today`}
-            />
-          </div>
 
           <DailyDiffBanner dailyDiff={briefing.daily_diff} />
           <MarketSnapshot market={briefing.market_snapshot} />

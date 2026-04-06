@@ -30,7 +30,6 @@ import { NetworkHealth } from "@/components/briefing/NetworkHealth";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
 import { ProTeaser } from "@/components/premium/ProTeaser";
 import { NextBriefingCountdown } from "@/components/briefing/NextBriefingCountdown";
-import { ShareButtons } from "@/components/briefing/ShareButtons";
 
 
 export const revalidate = 3600;
@@ -137,17 +136,11 @@ export default async function Home() {
               THE ONE LINE — The day's most important conclusion
              ═══════════════════════════════════════════════════════════════ */}
           {briefing.one_line && (
-            <div className="mt-6 flex items-start justify-between gap-4">
+            <div className="mt-6">
               <div className="border-l-[3px] border-[var(--color-accent)] pl-4 py-1">
                 <p className="font-[family-name:var(--font-heading)] text-base sm:text-lg font-bold text-[var(--color-text-primary)] leading-snug">
                   {briefing.one_line}
                 </p>
-              </div>
-              <div className="shrink-0 pt-1">
-                <ShareButtons
-                  url={`https://www.btctoday.co/archive/${briefing.date}`}
-                  title={`${briefing.one_line} — BTC Today`}
-                />
               </div>
             </div>
           )}
