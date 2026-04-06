@@ -93,8 +93,8 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - `getBaseUrl()` (`src/lib/url.ts`) resolves site URL — never falls back to localhost
 
 ### Subscription Tiers
-- **Free tier:** Market overview, top stories, BTC vs everything, macro context, regulatory/adoption signals, weekly recap email — **available for 7 days only**
-- **Pro tier:** All free features + daily briefing email, ETF flows, institutional activity, technical signals, network health, expert insights, supply dynamics, forward outlook, countdown events, AI chat, PDF downloads, full archive (all dates)
+- **Free tier:** Market overview, top stories, BTC vs everything, macro context, weekly recap email — **available for 7 days only**
+- **Pro tier:** All free features + regulatory/adoption signals, daily briefing email, ETF flows, institutional activity, technical signals, network health, expert insights, supply dynamics, forward outlook, countdown events, AI chat, PDF downloads, full archive (all dates)
 - Tiers stored in `subscribers.tier` column (`'free'` | `'pro'`)
 - Whop handles payments via webhook at `/api/webhooks/whop`
 - `verifyWhopWebhook()` in `src/lib/whop.ts` validates webhook signatures via HMAC-SHA256
@@ -104,7 +104,7 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - All existing active subscribers were gifted Pro tier at launch
 
 **Tier gating rules:**
-- **Homepage:** Free users see sections 01–04 (hero, market, what happened, top stories). Sections 05–06 (deep dive, looking ahead) are behind `ProTeaser` blur.
+- **Homepage:** Free users see sections 01–04 (hero, market, what happened, top stories). Sections 05–07 (adoption & regulatory, deep dive, looking ahead) are behind `ProTeaser` blur.
 - **Archive list:** Free users see only last 7 days. Pro users see all dates.
 - **Archive [date]:** Free users on recent briefings (≤7 days) see free-tier sections only; pro-only sections show `ProGateCompact`. Old briefings (>7 days) show only DailyDiff + MarketSnapshot for free users.
 - **Chat:** Pro only — free users redirected to `/pricing` at page level.

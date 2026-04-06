@@ -70,8 +70,8 @@ export default function WelcomeEmail({
 
             <Text style={styles.bodyText}>
               Your free account includes market snapshots, the top stories
-              of the day, BTC vs. traditional asset comparisons, regulatory
-              and adoption signals, and a weekly recap email every Sunday.
+              of the day, BTC vs. traditional asset comparisons, and a
+              weekly recap email every Sunday.
             </Text>
 
             <Text style={styles.bodyText}>

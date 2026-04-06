@@ -155,8 +155,8 @@ The root JSON object must have these exact keys:
   "network_health": NetworkHealth,
   "daily_diff": DailyDiff,
   "countdown_events": CountdownEvent[], // 3-5 upcoming events relevant to Bitcoin investors. ONLY include: halving, FOMC meetings, ETF deadlines, protocol upgrades, options expiry dates, macro events (CPI, jobs report, GDP). NEVER include conferences, summits, or industry events. Always calculate days_away from the briefing date. Use real scheduled dates only. If you are not 100% certain of a date, do not include the event.
-  "regulatory": RegulatoryUpdate[],    // 1-3 regulatory developments, ordered by impact (highest impact first). Only genuine regulatory news.
-  "adoption": AdoptionUpdate[],        // 1-3 adoption stories, ordered by significance (most significant first). Only genuine adoption news.
+  "regulatory": RegulatoryUpdate[],    // 1-3 regulatory developments, ordered by impact (highest impact first). ONLY from the input articles. If no input article covers a regulatory development, return an empty array.
+  "adoption": AdoptionUpdate[],        // 1-3 adoption stories, ordered by significance (most significant first). ONLY from the input articles. If no input article covers an adoption story, return an empty array.
   "narrative_consensus": NarrativeConsensus,
   "macro_context": MacroContext
 }
@@ -165,12 +165,12 @@ Rules:
 - Tone: Authoritative, data-driven, and concise. Let the data speak for itself. Write as a peer to sophisticated investors. Never condescend, never hype.
 - Target audience: HNW individuals and business executives who understand finance but may not follow crypto daily.
 - For top_stories: select 3-5 most significant BITCOIN stories through an institutional lens. Write 2-3 sentence summaries that assume financial literacy. Skip stories that only matter to retail traders. Exclude any story where Bitcoin is not the primary subject.
-- For regulatory: 1-3 genuine regulatory developments that directly affect Bitcoin. If fewer exist, include only what's real. Never force non-regulatory or altcoin-specific regulation into this section.
-- For adoption: 1-3 genuine Bitcoin adoption stories (corporate BTC buys, sovereign Bitcoin adoption, Bitcoin infrastructure growth). Exclude general crypto or altcoin adoption.
+- For regulatory: 1-3 genuine regulatory developments that directly affect Bitcoin. Each item MUST be sourced from a specific input article, with its exact URL and source. Do NOT generate regulatory items from your training data or general knowledge. If no input articles contain regulatory news, return an empty array. Never force non-regulatory or altcoin-specific regulation into this section.
+- For adoption: 1-3 genuine Bitcoin adoption stories (corporate BTC buys, sovereign Bitcoin adoption, Bitcoin payment adoption, Bitcoin infrastructure growth). Each item MUST be sourced from a specific input article, with its exact URL and source. Do NOT generate adoption items from your training data or general knowledge. If no input articles contain adoption news, return an empty array. Exclude general crypto or altcoin adoption.
 - For macro_context: synthesize how current macro conditions (monetary policy, liquidity, DXY, inflation) relate to Bitcoin's positioning. Use your knowledge of scheduled macro events.
 - For narrative_consensus: assess the overall smart money sentiment. Score reflects institutional positioning, not retail mood.
 - For btc_vs_everything: compute btc_relative_24h_pct as (BTC 24h change) minus (asset 24h change). Same for btc_relative_ytd_pct and btc_relative_1y_pct. Use null if data unavailable.
-- For every top_story, regulatory update, and adoption story: use the EXACT url from the input article data. Match each generated story to its source article and copy the url verbatim. Never fabricate or generalize URLs (e.g., never use "https://coindesk.com", use the full article URL from the input).
+- CRITICAL: Every top_story, regulatory update, and adoption story MUST correspond to a specific input article. Use the EXACT url and source from that input article. Copy the url verbatim. Never fabricate or generalize URLs (e.g., never use "https://coindesk.com", use the full article URL from the input). If you cannot match an item to a specific input article, do not include it.
 - Pass through numerical market/network data exactly as provided. Do not round or alter.
 - For technical_signals: rsi_14, sma_50, sma_200, support_level, and resistance_level are PRE-CALCULATED from real market data. Copy them exactly as provided in the input. Only generate the signal_summary text.
 - Never use em dashes or en dashes. Use commas, periods, or semicolons instead.

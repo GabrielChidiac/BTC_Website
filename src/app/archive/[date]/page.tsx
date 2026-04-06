@@ -223,8 +223,6 @@ export default async function ArchiveDatePage({
               <MacroContext macro={briefing.macro_context} />
               <BtcVsEverything comparisons={briefing.btc_vs_everything} />
               <TopStories stories={briefing.top_stories} />
-              <Adoption updates={briefing.adoption} />
-              <Regulatory updates={briefing.regulatory} />
 
               {!isLoggedIn && (
                 <div className="mt-10 flex flex-col items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-6">
@@ -238,6 +236,8 @@ export default async function ArchiveDatePage({
               {/* Pro-only sections */}
               {canViewPro ? (
                 <>
+                  <Adoption updates={briefing.adoption} />
+                  <Regulatory updates={briefing.regulatory} />
                   <InstitutionalFlows flows={briefing.institutional_flows} />
                   <TechnicalSignals signals={briefing.technical_signals} />
                   <NetworkHealth network={briefing.network_health} />
@@ -248,7 +248,7 @@ export default async function ArchiveDatePage({
                 </>
               ) : (
                 <div className="mt-10">
-                  <ProGateCompact message="Institutional flows, technical signals, expert insights, and more are available to Pro subscribers." />
+                  <ProGateCompact message="Adoption signals, regulatory updates, institutional flows, technical signals, expert insights, and more are available to Pro subscribers." />
                 </div>
               )}
             </>

@@ -26,7 +26,7 @@ export function ProTeaser() {
   return (
     <div className="mt-10 scroll-mt-16">
       {/* Section header — fully visible */}
-      <SectionLabel number="05" title="Deep Dive" className="mb-4" />
+      <SectionLabel number="05" title="Adoption &amp; Regulatory" className="mb-4" />
 
       {/* Skeleton content preview */}
       <div className="relative overflow-hidden">
@@ -70,7 +70,7 @@ export function ProTeaser() {
               Unlock the full briefing
             </p>
             <p className="max-w-xs text-sm text-[var(--color-text-secondary)] leading-relaxed">
-              Daily email briefing, institutional flows, technical signals,
+              Adoption signals, institutional flows, technical analysis,
               expert insights, and what&rsquo;s next for BTC.
             </p>
             <Link

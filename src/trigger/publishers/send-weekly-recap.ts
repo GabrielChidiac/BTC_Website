@@ -53,32 +53,6 @@ function buildRecapData(rows: DailyBriefingRow[]): WeeklyRecapData {
     if (topStories.length >= 5) break;
   }
 
-  // Regulatory & adoption highlights
-  const regHighlights: WeeklyRecapData["regulatory_highlights"] = [];
-  const adoptHighlights: WeeklyRecapData["adoption_highlights"] = [];
-  for (const row of sorted) {
-    const b = row.content;
-    for (const r of b.regulatory ?? []) {
-      if (regHighlights.length < 2) {
-        regHighlights.push({
-          headline: r.headline,
-          region: r.region,
-          summary: r.summary,
-          impact: r.impact,
-        });
-      }
-    }
-    for (const a of b.adoption ?? []) {
-      if (adoptHighlights.length < 2) {
-        adoptHighlights.push({
-          headline: a.headline,
-          category: a.category,
-          summary: a.summary,
-        });
-      }
-    }
-  }
-
   // BTC vs Everything from latest day
   const btcVs = (last.btc_vs_everything ?? []).map((c) => ({
     name: c.name,
@@ -102,8 +76,8 @@ function buildRecapData(rows: DailyBriefingRow[]): WeeklyRecapData {
     btc_7d_change_pct: ((priceEnd - priceStart) / priceStart) * 100,
     daily_summaries: dailySummaries,
     top_stories: topStories,
-    regulatory_highlights: regHighlights,
-    adoption_highlights: adoptHighlights,
+    regulatory_highlights: [],
+    adoption_highlights: [],
     btc_vs_everything: btcVs,
     market_cap_end: last.market_snapshot.market_cap_usd,
     volume_avg: volumeAvg,

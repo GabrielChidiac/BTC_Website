@@ -84,22 +84,26 @@ export default function ProWelcomeEmail({
               </Text>
               <Text style={styles.benefitItem}>
                 <span style={styles.bullet}>02</span>
-                ETF flows, institutional activity, and whale movements
+                Adoption signals and regulatory developments
               </Text>
               <Text style={styles.benefitItem}>
                 <span style={styles.bullet}>03</span>
-                Technical signals, network health, and on-chain data
+                ETF flows, institutional activity, and whale movements
               </Text>
               <Text style={styles.benefitItem}>
                 <span style={styles.bullet}>04</span>
-                Expert insights and forward outlook
+                Technical signals, network health, and on-chain data
               </Text>
               <Text style={styles.benefitItem}>
                 <span style={styles.bullet}>05</span>
-                AI chat for live questions about your briefing
+                Expert insights and forward outlook
               </Text>
               <Text style={styles.benefitItem}>
                 <span style={styles.bullet}>06</span>
+                AI chat for live questions about your briefing
+              </Text>
+              <Text style={styles.benefitItem}>
+                <span style={styles.bullet}>07</span>
                 PDF downloads and full archive access
               </Text>
             </Section>

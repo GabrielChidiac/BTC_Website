@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@/lib/supabase/server";
 import { getSubscriberTier } from "@/lib/tier";
 import { COOKIE_NAME } from "@/lib/session";
-import type { BriefingJSON, DailyBriefingRow, AdoptionUpdate, RegulatoryUpdate } from "@/lib/types";
+import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
 import { compactNumber } from "@/lib/utils";
 import { BLOCKED_EVENT_KEYWORDS } from "@/lib/constants";
 
@@ -22,8 +22,9 @@ import { BitcoinHero } from "@/components/hero/BitcoinHero";
 import { DayInBriefExpandable } from "@/components/briefing/DayInBriefExpandable";
 import { BtcVsEverythingTabs } from "@/components/briefing/BtcVsEverythingTabs";
 import { StoryExpandable } from "@/components/briefing/StoryExpandable";
-import { SignalExpandable } from "@/components/briefing/SignalExpandable";
 import { ExpertExpandable } from "@/components/briefing/ExpertExpandable";
+import { Adoption } from "@/components/briefing/Adoption";
+import { Regulatory } from "@/components/briefing/Regulatory";
 import { InstitutionalFlows } from "@/components/briefing/InstitutionalFlows";
 import { TechnicalSignals } from "@/components/briefing/TechnicalSignals";
 import { NetworkHealth } from "@/components/briefing/NetworkHealth";
@@ -41,10 +42,6 @@ function formatFlowUSD(amount: number): string {
   if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(0)}M`;
   return `${sign}$${abs.toLocaleString("en-US")}`;
 }
-
-type SignalItem =
-  | { type: "adoption"; data: AdoptionUpdate }
-  | { type: "regulatory"; data: RegulatoryUpdate };
 
 export default async function Home() {
   let isLoggedIn = false;
@@ -90,12 +87,6 @@ export default async function Home() {
   const market = briefing.market_snapshot;
   const { tier } = await getSubscriberTier();
   const isPro = tier === "pro";
-
-  // Build signals list
-  const signals: SignalItem[] = [
-    ...briefing.regulatory.map((r) => ({ type: "regulatory" as const, data: r })),
-    ...briefing.adoption.map((a) => ({ type: "adoption" as const, data: a })),
-  ];
 
   // Filter countdown events for reuse
   const filteredEvents = briefing.countdown_events
@@ -232,16 +223,6 @@ export default async function Home() {
               </div>
             </ScrollReveal>
 
-            {/* Signals (regulatory + adoption) merged into What Happened */}
-            {signals.length > 0 && (
-              <ScrollReveal>
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-start">
-                  {signals.slice(0, 4).map((item, i) => (
-                    <SignalExpandable key={i} item={item} />
-                  ))}
-                </div>
-              </ScrollReveal>
-            )}
           </div>
 
           {/* ═══════════════════════════════════════════════════════════════
@@ -264,17 +245,31 @@ export default async function Home() {
             </div>
           )}
 
+          {/* ═══════════════════════════════════════════════════════════════
+              05 — ADOPTION & REGULATORY (Pro only, shown near top)
+             ═══════════════════════════════════════════════════════════════ */}
+          {isPro && (briefing.adoption.length > 0 || briefing.regulatory.length > 0) && (
+            <div id="signals" className="mt-10 scroll-mt-16">
+              <SectionLabel number="05" title="Adoption &amp; Regulatory" className="mb-4" />
+              <ScrollReveal>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-start">
+                  {briefing.adoption.length > 0 && <Adoption updates={briefing.adoption} />}
+                  {briefing.regulatory.length > 0 && <Regulatory updates={briefing.regulatory} />}
+                </div>
+              </ScrollReveal>
+            </div>
+          )}
+
           {/* ─── Tier divider: Briefing → Deep Dive ─── */}
           <div className="section-divider" />
 
           {isPro ? (
             <>
               {/* ═══════════════════════════════════════════════════════════════
-                  TIER 3: THE DEEP DIVE (Pro only)
-                  05 — DEEP DIVE: Data sections + Expert Insights
+                  06 — DEEP DIVE: Data sections + Expert Insights
                  ═══════════════════════════════════════════════════════════════ */}
               <div id="deep-dive" className="mt-10 scroll-mt-16">
-                <SectionLabel number="05" title="Deep Dive" className="mb-4" />
+                <SectionLabel number="06" title="Deep Dive" className="mb-4" />
                 <ScrollReveal>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <MotionCard className="h-full">
@@ -316,11 +311,11 @@ export default async function Home() {
               </div>
 
               {/* ═══════════════════════════════════════════════════════════════
-                  06 — LOOKING AHEAD: Forward outlook + Countdown Events
+                  07 — LOOKING AHEAD: Forward outlook + Countdown Events
                  ═══════════════════════════════════════════════════════════════ */}
               {(hasLookingAhead || filteredEvents.length > 0) && (
                 <div id="outlook" className="mt-10 scroll-mt-16">
-                  <SectionLabel number="06" title="Looking Ahead" className="mb-4" />
+                  <SectionLabel number="07" title="Looking Ahead" className="mb-4" />
 
                   {hasLookingAhead && (
                     <ScrollReveal>

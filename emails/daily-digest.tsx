@@ -92,6 +92,12 @@ function firstSentence(text: string): string {
   return match ? match[0].trim() : text;
 }
 
+function firstTwoSentences(text: string): string {
+  const matches = text.match(/[^.!?]*[.!?]+/g);
+  if (!matches || matches.length <= 2) return text;
+  return matches.slice(0, 2).join("").trim();
+}
+
 function truncate(text: string, max: number): string {
   return text.length <= max ? text : text.slice(0, max).trimEnd() + "\u2026";
 }
@@ -135,34 +141,6 @@ function ProBadge() {
     >
       PRO
     </span>
-  );
-}
-
-function StatTile({
-  label,
-  value,
-  color,
-  width = "33.33%",
-}: {
-  label: string;
-  value: string;
-  color?: string;
-  width?: string;
-}) {
-  return (
-    <Column
-      style={{
-        backgroundColor: c.bgElevated,
-        borderRadius: "6px",
-        border: `1px solid ${c.border}`,
-        padding: "8px",
-        textAlign: "center" as const,
-        width,
-      }}
-    >
-      <Text style={s.tileLabel}>{label}</Text>
-      <Text style={{ ...s.tileValue, ...(color ? { color } : {}) }}>{value}</Text>
-    </Column>
   );
 }
 
@@ -236,8 +214,6 @@ export default function DailyDigest({
     adoption,
     technical_signals: tech,
     network_health: net,
-    btc_vs_everything,
-    institutional_flows: flows,
     supply_dynamics: supply,
     expert_insights: experts,
     macro_context: macro,
@@ -255,15 +231,11 @@ export default function DailyDigest({
 
   // Determine which sections have data
   const hasEtf = etf && (etf.daily_net_flow_usd != null || etf.mtd_net_flow_usd != null);
-  const hasInstSummary = isAvailable(flows?.summary);
-  const hasMoves = flows?.notable_moves && flows.notable_moves.length > 0;
-  const hasFlows = hasEtf || hasInstSummary || hasMoves;
   const hasExpert = expert != null;
   const hasSupply = isAvailable(supply?.supply_narrative);
   const hasLooking = isAvailable(looking_ahead);
   const hasEvents = macro?.key_macro_events && macro.key_macro_events.length > 0;
   const hasCountdown = countdown_events && countdown_events.length > 0;
-  const hasComparisons = btc_vs_everything && btc_vs_everything.length > 0;
   const hasReg = regulatory && regulatory.length > 0;
   const hasAdopt = adoption && adoption.length > 0;
   const hasSignals = hasReg || hasAdopt;
@@ -309,94 +281,6 @@ export default function DailyDigest({
             </Text>
           </Section>
 
-          {/* ── Market ──────────────────────────────────────── */}
-          <Section style={s.section}>
-            <Section style={s.priceHero}>
-              <Text style={s.priceLabel}>Bitcoin</Text>
-              <Text style={s.priceValue}>{formatUSD(mkt.price_usd)}</Text>
-              <Text style={s.priceChanges}>
-                <span style={{ color: pctColor(mkt.change_24h_pct) }}>
-                  24h {formatPct(mkt.change_24h_pct)}
-                </span>
-                {"   "}
-                <span style={{ color: pctColor(mkt.change_7d_pct) }}>
-                  7d {formatPct(mkt.change_7d_pct)}
-                </span>
-              </Text>
-            </Section>
-            <Section style={{ padding: "0" }}>
-              <Row>
-                <StatTile label="Mkt Cap" value={`$${compactNumber(mkt.market_cap_usd)}`} />
-                <StatTile label="Volume" value={`$${compactNumber(mkt.volume_24h_usd)}`} />
-                <StatTile label="Dom" value={`${mkt.dominance_pct.toFixed(1)}%`} />
-              </Row>
-            </Section>
-          </Section>
-
-          <Hr style={s.hr} />
-
-          {/* ── FLOWS + TECHNICALS (side-by-side) ───────────── */}
-          {(hasFlows || true /* technicals always render */) && (
-            <Section style={s.section}>
-              <Row>
-                {/* Left: FLOWS */}
-                <Column style={s.panelLeft}>
-                  <ColHeading>
-                    FLOWS<ProBadge />
-                  </ColHeading>
-                  {hasEtf && etf && (
-                    <>
-                      {etf.daily_net_flow_usd != null && (
-                        <DataRow
-                          label="24h Flow"
-                          value={formatFlow(etf.daily_net_flow_usd)}
-                          color={pctColor(etf.daily_net_flow_usd)}
-                        />
-                      )}
-                      {etf.mtd_net_flow_usd != null && (
-                        <DataRow
-                          label="MTD Flow"
-                          value={formatFlow(etf.mtd_net_flow_usd)}
-                          color={pctColor(etf.mtd_net_flow_usd)}
-                        />
-                      )}
-                      {etf.total_net_assets_usd != null && (
-                        <DataRow label="ETF AUM" value={`$${compactNumber(etf.total_net_assets_usd)}`} />
-                      )}
-                    </>
-                  )}
-                  {hasInstSummary && (
-                    <Text style={s.panelText}>{flows.summary}</Text>
-                  )}
-                  {hasMoves &&
-                    flows.notable_moves.map((move, i) => (
-                      <Text key={i} style={s.bullet}>
-                        <span style={{ color: c.accent }}>{"\u2022"}</span> {move}
-                      </Text>
-                    ))}
-                  {!hasFlows && (
-                    <Text style={s.panelText}>Flow data updating shortly.</Text>
-                  )}
-                </Column>
-
-                {/* Right: TECHNICALS */}
-                <Column style={s.panelRight}>
-                  <ColHeading>
-                    TECHNICALS<ProBadge />
-                  </ColHeading>
-                  <DataRow label="RSI-14" value={tech.rsi_14.toFixed(1)} color={rsiColor(tech.rsi_14)} />
-                  <DataRow label="SMA-50" value={formatUSD(tech.sma_50, 0)} />
-                  <DataRow label="SMA-200" value={formatUSD(tech.sma_200, 0)} />
-                  <DataRow label="Support" value={formatUSD(tech.support_level, 0)} />
-                  <DataRow label="Resistance" value={formatUSD(tech.resistance_level, 0)} />
-                  <Text style={s.panelItalic}>
-                    {firstSentence(tech.signal_summary)}
-                  </Text>
-                </Column>
-              </Row>
-            </Section>
-          )}
-
           <Hr style={s.hr} />
 
           {/* ── Stories ──────────────────────────────────────── */}
@@ -419,12 +303,106 @@ export default function DailyDigest({
                     {story.headline}
                   </Link>
                   <Text style={s.storySummary}>
-                    {firstSentence(story.summary)}
+                    {firstTwoSentences(story.summary)}
                   </Text>
                 </Section>
               ))}
             </Section>
           )}
+
+          {/* ── Adoption & Regulatory ──────────────────────── */}
+          {hasSignals && (
+            <>
+              <Hr style={s.hr} />
+              <Section style={s.section}>
+                <Heading as="h2" style={s.sectionHeading}>
+                  Adoption & Regulatory
+                </Heading>
+                {adoption.map((item, i) => (
+                  <Section key={`a-${i}`} style={i < adoption.length - 1 || hasReg ? s.storyCard : s.storyCardLast}>
+                    <Text style={s.storyMeta}>
+                      <span style={{ color: c.accent, fontWeight: "600" }}>{item.category}</span>
+                      {" \u00B7 "}
+                      <span style={{ color: c.textMuted }}>{item.source}</span>
+                    </Text>
+                    {item.url ? (
+                      <Link href={item.url} style={s.storyHeadline}>{item.headline}</Link>
+                    ) : (
+                      <Text style={{ ...s.storyHeadline, margin: "0 0 3px" }}>{item.headline}</Text>
+                    )}
+                    <Text style={s.storySummary}>{firstTwoSentences(item.summary)}</Text>
+                  </Section>
+                ))}
+                {regulatory.map((item, i) => (
+                  <Section key={`r-${i}`} style={i < regulatory.length - 1 ? s.storyCard : s.storyCardLast}>
+                    <Text style={s.storyMeta}>
+                      <span style={{ color: c.accent, fontWeight: "600" }}>{item.region}</span>
+                      {" \u00B7 "}
+                      <span style={{ color: c.textMuted }}>{item.source}</span>
+                    </Text>
+                    {item.url ? (
+                      <Link href={item.url} style={s.storyHeadline}>{item.headline}</Link>
+                    ) : (
+                      <Text style={{ ...s.storyHeadline, margin: "0 0 3px" }}>{item.headline}</Text>
+                    )}
+                    <Text style={s.storySummary}>{firstTwoSentences(item.summary)}</Text>
+                  </Section>
+                ))}
+              </Section>
+            </>
+          )}
+
+          <Hr style={s.hr} />
+
+          {/* ── FLOWS + TECHNICALS (side-by-side) ───────────── */}
+          <Section style={s.section}>
+            <Row>
+              {/* Left: FLOWS (numbers only) */}
+              <Column style={s.panelLeft}>
+                <ColHeading>
+                  FLOWS<ProBadge />
+                </ColHeading>
+                {hasEtf && etf ? (
+                  <>
+                    {etf.daily_net_flow_usd != null && (
+                      <DataRow
+                        label="24h Flow"
+                        value={formatFlow(etf.daily_net_flow_usd)}
+                        color={pctColor(etf.daily_net_flow_usd)}
+                      />
+                    )}
+                    {etf.mtd_net_flow_usd != null && (
+                      <DataRow
+                        label="MTD Flow"
+                        value={formatFlow(etf.mtd_net_flow_usd)}
+                        color={pctColor(etf.mtd_net_flow_usd)}
+                      />
+                    )}
+                    {etf.total_net_assets_usd != null && (
+                      <DataRow label="ETF AUM" value={`$${compactNumber(etf.total_net_assets_usd)}`} />
+                    )}
+                  </>
+                ) : (
+                  <Text style={s.panelText}>ETF data updating shortly.</Text>
+                )}
+              </Column>
+
+              {/* Right: TECHNICALS */}
+              <Column style={s.panelRight}>
+                <ColHeading>
+                  TECHNICALS<ProBadge />
+                </ColHeading>
+                <DataRow label="RSI-14" value={tech.rsi_14.toFixed(1)} color={rsiColor(tech.rsi_14)} />
+                <DataRow label="SMA-50" value={formatUSD(tech.sma_50, 0)} />
+                <DataRow label="SMA-200" value={formatUSD(tech.sma_200, 0)} />
+                <DataRow label="Support" value={formatUSD(tech.support_level, 0)} />
+                <DataRow label="Resistance" value={formatUSD(tech.resistance_level, 0)} />
+                <Text style={s.panelItalic}>
+                  {firstSentence(tech.signal_summary)}
+                </Text>
+              </Column>
+            </Row>
+          </Section>
 
           <Hr style={s.hr} />
 
@@ -509,59 +487,6 @@ export default function DailyDigest({
 
           <Hr style={s.hr} />
 
-          {/* ── VS Everything ───────────────────────────────── */}
-          {hasComparisons && (
-            <>
-              <Section style={s.section}>
-                <Heading as="h2" style={s.sectionHeading}>vs Everything</Heading>
-                <Section style={{ padding: "0" }}>
-                  <Row>
-                    <StatTile
-                      label="BTC 24h"
-                      value={formatPct(mkt.change_24h_pct)}
-                      color={pctColor(mkt.change_24h_pct)}
-                      width="25%"
-                    />
-                    {btc_vs_everything.slice(0, 3).map((asset) => (
-                      <StatTile
-                        key={asset.ticker}
-                        label={`${asset.ticker} YTD`}
-                        value={asset.change_ytd_pct != null ? formatPct(asset.change_ytd_pct) : "N/A"}
-                        color={asset.change_ytd_pct != null ? pctColor(asset.change_ytd_pct) : c.textMuted}
-                        width="25%"
-                      />
-                    ))}
-                  </Row>
-                </Section>
-              </Section>
-              <Hr style={s.hr} />
-            </>
-          )}
-
-          {/* ── Signals ─────────────────────────────────────── */}
-          {hasSignals && (
-            <>
-              <Section style={s.section}>
-                <Heading as="h2" style={s.sectionHeading}>Signals</Heading>
-                {hasReg && (
-                  <Text style={s.signalLine}>
-                    <span style={{ color: c.accent, fontWeight: "600" }}>{regulatory[0].region}</span>
-                    {" \u00B7 "}
-                    {firstSentence(regulatory[0].summary)}
-                  </Text>
-                )}
-                {hasAdopt && (
-                  <Text style={s.signalLine}>
-                    <span style={{ color: c.accent, fontWeight: "600" }}>{adoption[0].category}</span>
-                    {" \u00B7 "}
-                    {firstSentence(adoption[0].summary)}
-                  </Text>
-                )}
-              </Section>
-              <Hr style={s.hr} />
-            </>
-          )}
-
           {/* ── CTAs ────────────────────────────────────────── */}
           <Section style={s.ctaSection}>
             <Link href={briefingUrl} style={s.ctaButton}>
@@ -614,13 +539,13 @@ const s = {
   } as React.CSSProperties,
 
   container: {
-    maxWidth: "600px",
+    maxWidth: "640px",
     margin: "0 auto",
     padding: "0 16px",
   } as React.CSSProperties,
 
   header: {
-    paddingTop: "24px",
+    paddingTop: "18px",
     paddingBottom: "12px",
     textAlign: "center" as const,
   } as React.CSSProperties,
@@ -694,7 +619,7 @@ const s = {
 
   // ── Section ──────────────────────────────────
   section: {
-    padding: "12px 0",
+    padding: "10px 0",
   } as React.CSSProperties,
 
   sectionHeading: {
@@ -706,63 +631,6 @@ const s = {
     letterSpacing: "0.08em",
     margin: "0 0 8px",
     lineHeight: "1.2",
-  } as React.CSSProperties,
-
-  // ── Price hero ───────────────────────────────
-  priceHero: {
-    backgroundColor: c.bgSurface,
-    borderRadius: "8px",
-    border: `1px solid ${c.border}`,
-    padding: "12px",
-    marginBottom: "8px",
-  } as React.CSSProperties,
-
-  priceLabel: {
-    fontSize: "10px",
-    fontFamily: sans,
-    fontWeight: "600",
-    color: c.textMuted,
-    textTransform: "uppercase" as const,
-    letterSpacing: "0.08em",
-    margin: "0 0 2px",
-  } as React.CSSProperties,
-
-  priceValue: {
-    fontFamily: sans,
-    fontSize: "28px",
-    fontWeight: "700",
-    letterSpacing: "-0.02em",
-    color: c.textPrimary,
-    margin: "0 0 2px",
-    lineHeight: "1.2",
-  } as React.CSSProperties,
-
-  priceChanges: {
-    fontSize: "13px",
-    fontFamily: sans,
-    fontWeight: "500",
-    margin: "0",
-    lineHeight: "1.4",
-  } as React.CSSProperties,
-
-  // ── Stat tiles ───────────────────────────────
-  tileLabel: {
-    fontSize: "9px",
-    fontFamily: sans,
-    fontWeight: "600",
-    color: c.textMuted,
-    textTransform: "uppercase" as const,
-    letterSpacing: "0.08em",
-    margin: "0 0 2px",
-  } as React.CSSProperties,
-
-  tileValue: {
-    fontFamily: sans,
-    fontSize: "14px",
-    fontWeight: "700",
-    color: c.textPrimary,
-    margin: "0",
-    lineHeight: "1.3",
   } as React.CSSProperties,
 
   // ── Two-column panels ────────────────────────
@@ -904,14 +772,6 @@ const s = {
     fontSize: "12px",
     fontStyle: "italic" as const,
     color: c.textMuted,
-    margin: "0 0 4px",
-    lineHeight: "1.5",
-  } as React.CSSProperties,
-
-  // ── Signals ──────────────────────────────────
-  signalLine: {
-    fontSize: "12px",
-    color: c.textSecondary,
     margin: "0 0 4px",
     lineHeight: "1.5",
   } as React.CSSProperties,

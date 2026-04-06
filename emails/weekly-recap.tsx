@@ -153,8 +153,6 @@ export default function WeeklyRecap({
   const {
     daily_summaries,
     top_stories,
-    regulatory_highlights,
-    adoption_highlights,
     btc_vs_everything,
   } = recap;
 
@@ -318,52 +316,6 @@ export default function WeeklyRecap({
                     ))}
                   </Row>
                 </Section>
-              </Section>
-              <Hr style={styles.hr} />
-            </>
-          )}
-
-          {/* ── Regulatory Highlights ──────────────────────────────── */}
-          {regulatory_highlights.length > 0 && (
-            <>
-              <Section style={styles.section}>
-                <Heading as="h2" style={styles.sectionHeading}>
-                  Regulatory Spotlight
-                </Heading>
-                {regulatory_highlights.map((item, i) => (
-                  <Section key={i} style={i < regulatory_highlights.length - 1 ? styles.storyCard : styles.storyCardLast}>
-                    <Text style={styles.storyMeta}>
-                      <span style={{ color: colors.accent }}>{item.region}</span>
-                      {"  "}
-                      <span style={{ color: item.impact === "positive" ? colors.green : item.impact === "negative" ? colors.red : colors.textMuted }}>
-                        {item.impact === "positive" ? "\u25B2" : item.impact === "negative" ? "\u25BC" : "\u25CF"}
-                      </span>
-                    </Text>
-                    <Text style={styles.storyHeadline}>{item.headline}</Text>
-                    <Text style={styles.storySummary}>{item.summary}</Text>
-                  </Section>
-                ))}
-              </Section>
-              <Hr style={styles.hr} />
-            </>
-          )}
-
-          {/* ── Adoption Highlights ────────────────────────────────── */}
-          {adoption_highlights.length > 0 && (
-            <>
-              <Section style={styles.section}>
-                <Heading as="h2" style={styles.sectionHeading}>
-                  Adoption Highlight
-                </Heading>
-                {adoption_highlights.map((item, i) => (
-                  <Section key={i} style={i < adoption_highlights.length - 1 ? styles.storyCard : styles.storyCardLast}>
-                    <Text style={styles.storyMeta}>
-                      <span style={{ color: colors.accent }}>{item.category}</span>
-                    </Text>
-                    <Text style={styles.storyHeadline}>{item.headline}</Text>
-                    <Text style={styles.storySummary}>{item.summary}</Text>
-                  </Section>
-                ))}
               </Section>
               <Hr style={styles.hr} />
             </>
