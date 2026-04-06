@@ -109,6 +109,25 @@ export async function POST(request: Request) {
 
   const subscriberName = subscriber?.name ?? undefined;
 
+  // Enforce max 3 concurrent sessions — evict oldest if at limit
+  const MAX_SESSIONS = 3;
+  const { data: activeSessions } = await supabase
+    .from("verification_codes")
+    .select("id")
+    .eq("email", email)
+    .like("code", "session:%")
+    .eq("used", false)
+    .gte("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: true });
+
+  if (activeSessions && activeSessions.length >= MAX_SESSIONS) {
+    const toEvict = activeSessions.slice(0, activeSessions.length - MAX_SESSIONS + 1);
+    await supabase
+      .from("verification_codes")
+      .update({ used: true })
+      .in("id", toEvict.map((s) => s.id));
+  }
+
   // Create session so the user is logged in immediately
   const sessionBytes = new Uint8Array(32);
   crypto.getRandomValues(sessionBytes);
@@ -157,8 +176,12 @@ export async function POST(request: Request) {
     }
   }
 
+  const message = isFoundingMember
+    ? "You're a founding member. Pro access is yours, forever."
+    : "You're in!";
+
   const response = NextResponse.json(
-    { success: true, message: "You're in!", loggedIn: true },
+    { success: true, message, loggedIn: true },
     { status: 200 }
   );
   setSessionCookie(response, sessionToken, email, subscriberName);

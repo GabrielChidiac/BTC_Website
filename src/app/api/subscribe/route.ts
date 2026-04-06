@@ -38,7 +38,8 @@ export async function POST(request: Request) {
   }
 
   const email = body.email?.trim().toLowerCase();
-  const name = body.name?.trim() || null;
+  const rawName = body.name?.trim() || null;
+  const name = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : null;
 
   if (!name || name.length < 1) {
     return NextResponse.json(
