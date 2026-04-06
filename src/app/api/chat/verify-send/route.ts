@@ -54,9 +54,10 @@ export async function POST(request: Request) {
   }
 
   if (!subscriber || subscriber.status !== "active") {
+    // Return same success response to prevent email enumeration
     return NextResponse.json(
-      { error: "This email is not subscribed" },
-      { status: 403 }
+      { success: true, message: "Magic link sent" },
+      { status: 200 }
     );
   }
 

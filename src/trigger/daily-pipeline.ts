@@ -15,6 +15,8 @@ export const dailyPipelineTask = schedules.task({
     const date = new Date().toISOString().split("T")[0];
     logger.info("Daily pipeline started", { date });
 
+    try {
+
     // ── Step 1: Parallel collectors (news + market) ───────────────────────
     const collectorResults = await batch.triggerAndWait<
       typeof newsCollector | typeof marketCollector
@@ -122,5 +124,26 @@ export const dailyPipelineTask = schedules.task({
 
     logger.info("Daily pipeline complete", { date });
     return { status: "success", date };
+
+    } catch (error) {
+      logger.error("PIPELINE FAILED", { date, error: (error as Error).message });
+
+      // Send alert email so the owner knows immediately
+      try {
+        const resendKey = process.env.RESEND_API_KEY;
+        if (resendKey) {
+          const { Resend } = await import("resend");
+          const resend = new Resend(resendKey);
+          await resend.emails.send({
+            from: "BTC Today Alerts <hello@btctoday.co>",
+            to: "hello@btctoday.co",
+            subject: `[ALERT] Daily pipeline failed — ${date}`,
+            text: `The daily pipeline for ${date} failed.\n\nError: ${(error as Error).message}\n\nStack: ${(error as Error).stack}\n\nCheck Trigger.dev dashboard for details.`,
+          });
+        }
+      } catch { /* alert send failed — nothing we can do */ }
+
+      throw error; // Re-throw so Trigger.dev marks the run as failed
+    }
   },
 });

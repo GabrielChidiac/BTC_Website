@@ -6,6 +6,34 @@ import { COOKIE_NAME, setSessionCookie, clearSessionCookie } from "@/lib/session
 import type { ChatMessage, BriefingJSON, DailyBriefingRow } from "@/lib/types";
 import { EMAIL_REGEX as EMAIL_RE } from "@/lib/constants";
 const MAX_HISTORY = 20;
+const MAX_SAVED_MESSAGES = 50; // Max messages to persist per conversation
+
+// Save or update a conversation after streaming completes
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function saveConversation(supabase: any, email: string, history: ChatMessage[], userMessage: string, assistantResponse: string, conversationId?: string) {
+  const updatedMessages = [
+    ...(Array.isArray(history) ? history.slice(-MAX_SAVED_MESSAGES + 2) : []),
+    { role: "user", content: userMessage },
+    { role: "assistant", content: assistantResponse },
+  ];
+
+  if (conversationId) {
+    await supabase
+      .from("chat_conversations")
+      .update({ messages: updatedMessages })
+      .eq("id", conversationId)
+      .eq("email", email);
+  } else {
+    const { data: newConvo } = await supabase
+      .from("chat_conversations")
+      .insert({ email, messages: updatedMessages })
+      .select("id")
+      .maybeSingle();
+
+    // Return new conversation ID in case caller needs it
+    return newConvo?.id;
+  }
+}
 
 // Rate limit: 20 messages per 10 minutes per email (Supabase-backed for serverless)
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
@@ -44,31 +72,42 @@ interface ChatRequest {
   email: string;
   token?: string;
   history: ChatMessage[];
+  conversationId?: string;
 }
 
 const SYSTEM_PROMPT = `You are BTC Today's AI assistant, a knowledgeable Bitcoin and macro analyst.
 
-CRITICAL DATA RULES:
-- For ALL current Bitcoin data (price, ATH, market cap, network stats, ETF flows, technical indicators, etc.), use ONLY the briefing data provided below. Never rely on your training data for current numbers, prices, or market statistics.
-- If the user asks about data not in the briefing, say "I don't have that data in my briefing history" rather than guessing or using training knowledge.
-- Never guess, approximate, or fabricate any number, price, date, or statistic. If it's not in the data below, you don't know it.
-- The briefing data is refreshed daily at 2 AM CET. Treat it as the single source of truth for Bitcoin's current state.
-- You may use your general knowledge for conceptual explanations (e.g. "what is RSI", "how does the halving work"), but never for current values.
+CRITICAL DATA RULES — FOLLOW THESE EXACTLY:
+1. For ALL current Bitcoin data (price, ATH, market cap, network stats, ETF flows, technical indicators, etc.), use ONLY the briefing data provided below. Never rely on your training data for current numbers.
+2. If the user asks about data not in the briefing, say "I don't have that data in my briefing history" rather than guessing. This is non-negotiable.
+3. Never guess, approximate, or fabricate any number, price, date, or statistic. If it's not in the data below, you don't know it.
+4. The briefing data is refreshed daily at 2 AM CET. Treat it as the single source of truth for Bitcoin's current state.
+5. You may use your general knowledge for conceptual explanations (e.g. "what is RSI", "how does the halving work"), but never for current values.
+6. When citing expert quotes, you MUST include the expert's name, role, and source exactly as they appear in the briefing. Never paraphrase a quote as if it were your own analysis. If a quote has a date, mention it.
+7. Technical levels (support, resistance, SMAs) change daily. Always preface them with "as of today's briefing" or the specific date. Never state a technical level without dating it.
+8. If the conversation history references data from a previous day (e.g. an older price or consensus label), acknowledge the change explicitly. Say "that was from [date]; today's data shows..." rather than silently using the old number.
 
-HISTORICAL DATA:
-- You have access to the last 7 days of briefing data. Use this to identify trends, compare day-over-day changes, and provide richer analysis.
+CONVERSATION HISTORY WARNING:
+- The conversation may span multiple days. Earlier messages in the chat history may reference OLDER briefing data that has since changed.
+- ALWAYS prioritize the briefing data below over any numbers, prices, or analysis mentioned in earlier messages.
+- If a user references something from an earlier message that contradicts the current briefing, correct it gently: "The data has updated since then. As of today's briefing..."
+- Never invent an explanation for why data changed between days unless the briefing explicitly provides one.
+
+HISTORICAL BRIEFING DATA:
+- You have access to up to 7 days of briefing data. Use this to identify trends and compare day-over-day changes.
 - When analyzing trends, reference specific data points from multiple days (e.g. "price moved from $X on Monday to $Y today, a Z% shift").
-- You can compare prices across days, track sentiment shifts, identify narrative changes, and spot emerging patterns in institutional flows and technical signals.
 - If the user asks "what happened this week" or "how has sentiment changed", draw on all available days.
+- Date each data point. Never present a multi-day trend without specifying the dates involved.
 
-Guidelines:
+RESPONSE GUIDELINES:
 - Write for sophisticated investors and business executives
 - Be concise, accurate, and data-driven. No filler
 - Assume the reader understands finance and markets
 - Never give specific financial advice. Provide context and analysis instead
 - Keep responses concise (2-3 paragraphs unless detail is requested)
 - Never use em dashes or en dashes. Use commas, periods, or semicolons instead
-- When citing news or expert quotes, reference the source from the briefing data`;
+- When citing news or expert quotes, reference the source from the briefing data
+- If you are uncertain about any claim, say so. "The briefing suggests..." is better than stating something as fact when you're inferring`;
 
 function buildBriefingContext(briefing: BriefingJSON): string {
   const { market_snapshot: mkt, top_stories, regulatory, adoption } = briefing;
@@ -254,7 +293,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { message, email: bodyEmail, token: bodyToken, history } = body;
+  const { message, email: bodyEmail, token: bodyToken, history, conversationId } = body;
 
   // Resolve auth: cookie first, body fallback (for localStorage migration)
   const cookieStore = await cookies();
@@ -404,7 +443,10 @@ export async function POST(request: Request) {
     briefingContext = contextParts.join("\n");
   }
 
-  const systemPrompt = `${SYSTEM_PROMPT}\n\n${briefingContext}`;
+  // Include current date so the AI knows exactly which day's data it has
+  const todayDate = new Date().toISOString().split("T")[0];
+  const latestBriefingDate = briefingRows?.[0] ? (briefingRows[0] as DailyBriefingRow).content.date : todayDate;
+  const systemPrompt = `${SYSTEM_PROMPT}\n\nCURRENT DATE: ${todayDate}\nLATEST BRIEFING DATE: ${latestBriefingDate}\n\n${briefingContext}`;
 
   const messages: { role: "user" | "assistant"; content: string }[] = [];
 
@@ -419,22 +461,79 @@ export async function POST(request: Request) {
 
   messages.push({ role: "user", content: message.trim() });
 
+  // Helper: build SSE headers (with optional cookie migration)
+  function sseHeaders(): HeadersInit {
+    const headers: Record<string, string> = {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+    };
+    if (needsCookieMigration) {
+      // Build Set-Cookie header manually for streaming response
+      const cookieValue = JSON.stringify({ email, token, ...(subscriber?.name ? { name: subscriber.name } : {}) });
+      const isProduction = process.env.NODE_ENV === "production";
+      const parts = [
+        `${COOKIE_NAME}=${encodeURIComponent(cookieValue)}`,
+        "Path=/",
+        "HttpOnly",
+        "SameSite=Lax",
+        `Max-Age=${30 * 24 * 60 * 60}`,
+      ];
+      if (isProduction) parts.push("Secure");
+      headers["Set-Cookie"] = parts.join("; ");
+    }
+    return headers;
+  }
+
   try {
     const client = new Anthropic({ apiKey });
 
-    const response = await client.messages.create({
+    const stream = client.messages.stream({
       model: "claude-sonnet-4-20250514",
       max_tokens: 2048,
       system: systemPrompt,
       messages,
     });
 
-    const text =
-      response.content[0].type === "text" ? response.content[0].text : "";
+    const encoder = new TextEncoder();
+    const normalizedEmail = email!.trim().toLowerCase();
+    const readable = new ReadableStream({
+      async start(controller) {
+        let fullText = "";
+        try {
+          for await (const event of stream) {
+            if (
+              event.type === "content_block_delta" &&
+              event.delta.type === "text_delta"
+            ) {
+              fullText += event.delta.text;
+              const data = JSON.stringify({ text: event.delta.text });
+              controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+            }
+          }
+          // Save conversation and send new conversationId if needed
+          let savedConvoId = conversationId;
+          try {
+            const newId = await saveConversation(supabase, normalizedEmail, history, message.trim(), fullText, conversationId);
+            if (newId) savedConvoId = newId;
+          } catch { /* non-fatal */ }
 
-    const jsonResponse = NextResponse.json({ message: text });
-    if (needsCookieMigration) setSessionCookie(jsonResponse, token, email, subscriber?.name);
-    return jsonResponse;
+          if (savedConvoId && !conversationId) {
+            // Send the new conversation ID to the client
+            const meta = JSON.stringify({ conversationId: savedConvoId });
+            controller.enqueue(encoder.encode(`data: ${meta}\n\n`));
+          }
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+        } catch (err) {
+          const data = JSON.stringify({ error: (err as Error).message });
+          controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(readable, { headers: sseHeaders() });
   } catch (primaryError) {
     const err = primaryError as Error & { status?: number };
     const status = err.status ?? 0;
@@ -447,7 +546,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Fallback to Kie.ai on retryable errors
+    // Fallback to Kie.ai on retryable errors (streaming)
     const kieKey = process.env.KIE_API_KEY;
     if (!kieKey) {
       return NextResponse.json(
@@ -470,21 +569,61 @@ export async function POST(request: Request) {
             ...messages,
           ],
           max_tokens: 2048,
+          stream: true,
         }),
       });
 
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
         return NextResponse.json(
           { error: "AI service temporarily unavailable" },
           { status: 502 }
         );
       }
 
-      const json = await res.json();
-      const text = json.choices?.[0]?.message?.content ?? "";
-      const fallbackResponse = NextResponse.json({ message: text });
-      if (needsCookieMigration) setSessionCookie(fallbackResponse, token, email, subscriber?.name);
-      return fallbackResponse;
+      // Pipe OpenAI-compatible SSE through to our format
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+      const reader = res.body.getReader();
+
+      const readable = new ReadableStream({
+        async start(controller) {
+          let buffer = "";
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split("\n");
+              buffer = lines.pop() ?? "";
+
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || !trimmed.startsWith("data: ")) continue;
+                const payload = trimmed.slice(6);
+                if (payload === "[DONE]") {
+                  controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                  continue;
+                }
+                try {
+                  const parsed = JSON.parse(payload);
+                  const text = parsed.choices?.[0]?.delta?.content;
+                  if (text) {
+                    const data = JSON.stringify({ text });
+                    controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+                  }
+                } catch { /* skip malformed line */ }
+              }
+            }
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+          } catch {
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(readable, { headers: sseHeaders() });
     } catch {
       return NextResponse.json(
         { error: "AI service temporarily unavailable" },

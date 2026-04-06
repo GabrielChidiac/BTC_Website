@@ -7,8 +7,10 @@ import { ChatInterface } from "@/components/chat/ChatInterface";
 
 function ChatInner({
   initialSession,
+  starters,
 }: {
   initialSession: { email: string } | null;
+  starters: string[];
 }) {
   const [session, setSession] = useState<{ email: string; legacyToken?: string } | null>(initialSession);
   const [loaded, setLoaded] = useState(!!initialSession);
@@ -94,7 +96,7 @@ function ChatInner({
   return (
     <main>
       {session ? (
-        <ChatInterface email={session.email} legacyToken={session.legacyToken} onSessionExpired={handleSessionExpired} />
+        <ChatInterface email={session.email} legacyToken={session.legacyToken} onSessionExpired={handleSessionExpired} starters={starters} />
       ) : (
         <SubscriberGate onVerified={handleVerified} verifyError={verifyError} />
       )}
@@ -104,8 +106,10 @@ function ChatInner({
 
 export function ChatContent({
   initialSession,
+  starters,
 }: {
   initialSession: { email: string } | null;
+  starters: string[];
 }) {
   return (
     <Suspense
@@ -113,7 +117,7 @@ export function ChatContent({
         <main className="flex min-h-[60vh] items-center justify-center" />
       }
     >
-      <ChatInner initialSession={initialSession} />
+      <ChatInner initialSession={initialSession} starters={starters} />
     </Suspense>
   );
 }

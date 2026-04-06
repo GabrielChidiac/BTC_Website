@@ -13,6 +13,7 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - run: npx tsc --noEmit
       - run: npx trigger.dev@latest deploy
         env:
           TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}

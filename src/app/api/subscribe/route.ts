@@ -10,7 +10,7 @@ const NAME_MAX = 50;
 const EMAIL_MAX = 254;
 
 export async function POST(request: Request) {
-  let body: { email?: string; name?: string };
+  let body: { email?: string; name?: string; website?: string };
 
   try {
     body = await request.json();
@@ -18,6 +18,14 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { success: false, error: "Invalid JSON body" },
       { status: 400 }
+    );
+  }
+
+  // Honeypot: silently accept bots without processing
+  if (body.website) {
+    return NextResponse.json(
+      { success: true, message: "You're in!" },
+      { status: 201 }
     );
   }
 
@@ -55,9 +63,10 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (existing?.status === "active") {
+    // Return same success response to prevent email enumeration
     return NextResponse.json(
-      { success: false, error: "This email is already subscribed." },
-      { status: 409 }
+      { success: true, message: "You're in!" },
+      { status: 201 }
     );
   }
 

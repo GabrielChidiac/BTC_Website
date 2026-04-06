@@ -9,11 +9,15 @@ type Status = "idle" | "loading" | "success" | "error";
 export function SubscribeForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+
+    // Honeypot: silently reject bots
+    if (website) return;
 
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
@@ -85,6 +89,17 @@ export function SubscribeForm() {
         onSubmit={handleSubmit}
         className="flex flex-col gap-2"
       >
+        {/* Honeypot field — invisible to real users, catches bots */}
+        <input
+          type="text"
+          name="website"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="absolute left-[-9999px] h-0 w-0 overflow-hidden"
+        />
         <input
           type="text"
           required

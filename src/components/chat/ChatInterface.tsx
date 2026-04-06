@@ -3,18 +3,37 @@
 import { useState, useRef, useEffect } from "react";
 import type { ChatMessage } from "@/lib/types";
 
-const STARTERS = [
-  "What's driving Bitcoin's price action today?",
-  "Summarize today's institutional flows and ETF data",
-  "What are the key macro catalysts to watch this week?",
-  "What are experts saying about Bitcoin right now?",
-];
-
-export function ChatInterface({ email, legacyToken, onSessionExpired }: { email: string; legacyToken?: string; onSessionExpired: () => void }) {
+export function ChatInterface({ email, legacyToken, onSessionExpired, starters }: { email: string; legacyToken?: string; onSessionExpired: () => void; starters: string[] }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [isStale, setIsStale] = useState(false);
+  const conversationIdRef = useRef<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Load conversation history on mount
+  useEffect(() => {
+    fetch("/api/chat/history", { credentials: "same-origin" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.conversationId && Array.isArray(data.messages) && data.messages.length > 0) {
+          conversationIdRef.current = data.conversationId;
+          setMessages(data.messages);
+
+          // Check if conversation is stale (last updated >12 hours ago)
+          if (data.updatedAt) {
+            const lastUpdated = new Date(data.updatedAt).getTime();
+            const twelveHoursAgo = Date.now() - 12 * 60 * 60 * 1000;
+            if (lastUpdated < twelveHoursAgo) {
+              setIsStale(true);
+            }
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => setHistoryLoaded(true));
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -39,12 +58,13 @@ export function ChatInterface({ email, legacyToken, onSessionExpired }: { email:
           email,
           ...(legacyToken && { token: legacyToken }),
           history: messages,
+          ...(conversationIdRef.current && { conversationId: conversationIdRef.current }),
         }),
       });
 
-      const data = await res.json();
-
+      // Non-streaming error responses (JSON)
       if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: "Something went wrong" }));
         if (res.status === 401) {
           onSessionExpired();
           return;
@@ -61,15 +81,84 @@ export function ChatInterface({ email, legacyToken, onSessionExpired }: { email:
           ...updated,
           { role: "assistant", content: data.error || "Something went wrong. Please try again." },
         ]);
-      } else {
-        setMessages([
-          ...updated,
-          { role: "assistant", content: data.message },
-        ]);
+        setLoading(false);
+        return;
+      }
+
+      // Streaming SSE response
+      if (!res.body) {
+        setMessages([...updated, { role: "assistant", content: "No response received." }]);
+        setLoading(false);
+        return;
+      }
+
+      // Add empty assistant message that we'll fill incrementally
+      const assistantIdx = updated.length;
+      setMessages([...updated, { role: "assistant", content: "" }]);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() ?? "";
+
+        for (const chunk of lines) {
+          const trimmed = chunk.trim();
+          if (!trimmed || !trimmed.startsWith("data: ")) continue;
+          const payload = trimmed.slice(6);
+          if (payload === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(payload);
+            if (parsed.error) {
+              fullText += "\n\n[Response interrupted. Please try again.]";
+            } else if (parsed.conversationId) {
+              conversationIdRef.current = parsed.conversationId;
+            } else if (parsed.text) {
+              fullText += parsed.text;
+            }
+          } catch { /* skip malformed */ }
+        }
+
+        // Update the assistant message in place
+        setMessages((prev) => {
+          const next = [...prev];
+          if (next[assistantIdx]) {
+            next[assistantIdx] = { role: "assistant", content: fullText };
+          }
+          return next;
+        });
+      }
+
+      // Final update in case buffer has remaining data
+      if (buffer.trim()) {
+        const trimmed = buffer.trim();
+        if (trimmed.startsWith("data: ")) {
+          const payload = trimmed.slice(6);
+          if (payload !== "[DONE]") {
+            try {
+              const parsed = JSON.parse(payload);
+              if (parsed.text) fullText += parsed.text;
+            } catch { /* skip */ }
+          }
+        }
+        setMessages((prev) => {
+          const next = [...prev];
+          if (next[assistantIdx]) {
+            next[assistantIdx] = { role: "assistant", content: fullText };
+          }
+          return next;
+        });
       }
     } catch {
-      setMessages([
-        ...updated,
+      setMessages((prev) => [
+        ...prev.filter((m) => m.content !== ""),
         { role: "assistant", content: "Network error. Please try again." },
       ]);
     } finally {
@@ -82,12 +171,22 @@ export function ChatInterface({ email, legacyToken, onSessionExpired }: { email:
     sendMessage(input);
   }
 
+  function startNewConversation() {
+    conversationIdRef.current = null;
+    setMessages([]);
+    setInput("");
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-57px-1px)]">
       {/* Messages area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
         <div className="mx-auto max-w-2xl">
-          {messages.length === 0 ? (
+          {!historyLoaded ? (
+            <div className="flex items-center justify-center min-h-[50vh]">
+              <span className="text-sm text-[var(--color-text-muted)]">Loading...</span>
+            </div>
+          ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
               <div className="relative mb-5">
                 <div className="absolute inset-0 rounded-full bg-[var(--color-accent)]/20 blur-xl scale-150" />
@@ -100,7 +199,7 @@ export function ChatInterface({ email, legacyToken, onSessionExpired }: { email:
                 I know today&apos;s market data, news, and expert insights. Try one of these:
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-2">
-                {STARTERS.map((q) => (
+                {starters.map((q) => (
                   <button
                     key={q}
                     onClick={() => sendMessage(q)}
@@ -113,28 +212,57 @@ export function ChatInterface({ email, legacyToken, onSessionExpired }: { email:
             </div>
           ) : (
             <div className="space-y-5">
-              {messages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`flex items-end gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  {msg.role === "assistant" && (
-                    <div className="shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-[var(--color-accent)]/10 to-[var(--color-accent)]/25 border border-[var(--color-accent)]/20 flex items-center justify-center mb-0.5">
-                      <span className="text-xs font-bold text-[var(--color-accent)]">₿</span>
-                    </div>
-                  )}
-                  <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                      msg.role === "user"
-                        ? "bg-gradient-to-br from-[#F7931A] to-[#E67E0D] text-white rounded-br-sm shadow-[0_2px_12px_rgba(247,147,26,0.35)]"
-                        : "bg-white/80 backdrop-blur-sm border border-[var(--color-border)]/60 text-[var(--color-text-primary)] rounded-bl-sm shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
-                    }`}
+              {/* Stale conversation warning */}
+              {isStale && (
+                <div className="flex items-center gap-3 rounded-lg border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/5 px-4 py-3">
+                  <p className="flex-1 text-xs text-[var(--color-text-secondary)]">
+                    This conversation is from a previous session. The market data has been refreshed since then.
+                  </p>
+                  <button
+                    onClick={() => { startNewConversation(); setIsStale(false); }}
+                    className="shrink-0 rounded-md bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--color-accent-hover)] transition-colors"
                   >
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                  </div>
+                    Start fresh
+                  </button>
                 </div>
-              ))}
-              {loading && (
+              )}
+              {/* New conversation button */}
+              <div className="flex justify-end">
+                <button
+                  onClick={() => { startNewConversation(); setIsStale(false); }}
+                  disabled={loading}
+                  className="text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors disabled:opacity-40"
+                >
+                  New conversation
+                </button>
+              </div>
+              {messages.map((msg, i) => {
+                // Skip rendering empty assistant messages (streaming placeholder before first chunk)
+                if (msg.role === "assistant" && !msg.content) return null;
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-end gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    {msg.role === "assistant" && (
+                      <div className="shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-[var(--color-accent)]/10 to-[var(--color-accent)]/25 border border-[var(--color-accent)]/20 flex items-center justify-center mb-0.5">
+                        <span className="text-xs font-bold text-[var(--color-accent)]">₿</span>
+                      </div>
+                    )}
+                    <div
+                      className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                        msg.role === "user"
+                          ? "bg-gradient-to-br from-[#F7931A] to-[#E67E0D] text-white rounded-br-sm shadow-[0_2px_12px_rgba(247,147,26,0.35)]"
+                          : "bg-white/80 backdrop-blur-sm border border-[var(--color-border)]/60 text-[var(--color-text-primary)] rounded-bl-sm shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
+                      }`}
+                    >
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+                  </div>
+                );
+              })}
+              {/* Show bouncing dots only while waiting for first stream chunk */}
+              {loading && messages[messages.length - 1]?.role === "user" && (
                 <div className="flex items-end gap-2.5 justify-start">
                   <div className="shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-[var(--color-accent)]/10 to-[var(--color-accent)]/25 border border-[var(--color-accent)]/20 flex items-center justify-center mb-0.5">
                     <span className="text-xs font-bold text-[var(--color-accent)]">₿</span>

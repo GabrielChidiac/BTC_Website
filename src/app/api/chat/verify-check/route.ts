@@ -60,8 +60,12 @@ export async function POST(request: Request) {
     );
   }
 
-  // Magic token stays valid until its 7-day expiry so all email links
-  // (briefing, PDF, chat) keep working across devices.
+  // Consume the magic token so it can only be used once.
+  // The session cookie (30 days) handles all subsequent access.
+  await supabase
+    .from("verification_codes")
+    .update({ used: true })
+    .eq("id", magicToken.id);
 
   // Verify subscriber is still active before creating a session
   const { data: subscriber } = await supabase

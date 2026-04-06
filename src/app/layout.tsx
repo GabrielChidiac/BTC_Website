@@ -67,6 +67,19 @@ export default async function RootLayout({
       className={cn(spaceGrotesk.variable, inter.variable, "font-sans", geist.variable)}
     >
       <body className="min-h-screen">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "BTC Today",
+              url: "https://www.btctoday.co",
+              description:
+                "AI-curated daily Bitcoin intelligence for investors: market data, institutional flows, macro analysis, and expert insights.",
+            }),
+          }}
+        />
         <ScrollProgress />
         {!isLoggedIn && <SubscribeBanner />}
         {children}

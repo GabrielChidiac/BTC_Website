@@ -73,13 +73,22 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === "membership.went_invalid" || action === "membership_deactivated") {
-    await supabase
+    // Only downgrade if this membership is the one that granted pro
+    const { data: sub } = await supabase
       .from("subscribers")
-      .update({
-        tier: "free",
-        tier_updated_at: new Date().toISOString(),
-      })
-      .eq("email", email);
+      .select("whop_membership_id, tier")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (sub && sub.tier === "pro" && sub.whop_membership_id === data.id) {
+      await supabase
+        .from("subscribers")
+        .update({
+          tier: "free",
+          tier_updated_at: new Date().toISOString(),
+        })
+        .eq("email", email);
+    }
 
     return NextResponse.json({ ok: true, action: "downgraded_to_free" });
   }

@@ -28,6 +28,7 @@ import { SupplyDynamics } from "@/components/briefing/SupplyDynamics";
 import { CountdownEvents } from "@/components/briefing/CountdownEvents";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
 import { ProGateCompact } from "@/components/premium/ProGate";
+import { ShareButtons } from "@/components/briefing/ShareButtons";
 
 export const revalidate = false;
 
@@ -141,8 +142,22 @@ export default async function ArchiveDatePage({
   const prevDate = prevRows?.[0]?.date as string | undefined;
   const nextDate = nextRows?.[0]?.date as string | undefined;
 
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: briefing.one_line || `Bitcoin Market Analysis — ${formatDisplayDate(date)}`,
+    datePublished: `${date}T01:00:00Z`,
+    author: { "@type": "Organization", name: "BTC Today" },
+    publisher: { "@type": "Organization", name: "BTC Today" },
+    description: `BTC $${briefing.market_snapshot.price_usd.toLocaleString()} | ${briefing.market_snapshot.change_24h_pct >= 0 ? "+" : ""}${briefing.market_snapshot.change_24h_pct.toFixed(2)}% 24h | AI-curated Bitcoin intelligence for ${formatDisplayDate(date)}`,
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       <Header date={briefing.date} />
       <main className="pb-10">
         <Container>
@@ -199,6 +214,13 @@ export default async function ArchiveDatePage({
               )}
             </div>
           </nav>
+
+          <div className="mt-4 flex justify-end">
+            <ShareButtons
+              url={`https://www.btctoday.co/archive/${date}`}
+              title={`${briefing.one_line || `Bitcoin Analysis — ${formatDisplayDate(date)}`} — BTC Today`}
+            />
+          </div>
 
           <DailyDiffBanner dailyDiff={briefing.daily_diff} />
           <MarketSnapshot market={briefing.market_snapshot} />

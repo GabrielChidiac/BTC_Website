@@ -30,6 +30,7 @@ import { NetworkHealth } from "@/components/briefing/NetworkHealth";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
 import { ProTeaser } from "@/components/premium/ProTeaser";
 import { NextBriefingCountdown } from "@/components/briefing/NextBriefingCountdown";
+import { ShareButtons } from "@/components/briefing/ShareButtons";
 
 
 export const revalidate = 3600;
@@ -112,8 +113,22 @@ export default async function Home() {
 
   const hasLookingAhead = briefing.looking_ahead && briefing.looking_ahead !== "Forward-looking analysis unavailable today.";
 
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: briefing.one_line || `Bitcoin Market Analysis — ${briefing.date}`,
+    datePublished: `${briefing.date}T01:00:00Z`,
+    author: { "@type": "Organization", name: "BTC Today" },
+    publisher: { "@type": "Organization", name: "BTC Today" },
+    description: `BTC $${market.price_usd.toLocaleString()} | ${market.change_24h_pct >= 0 ? "+" : ""}${market.change_24h_pct.toFixed(2)}% 24h | AI-curated Bitcoin intelligence`,
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       <Header date={briefing.date} />
       <main className="relative pb-10">
         <Container wide>
@@ -122,10 +137,18 @@ export default async function Home() {
               THE ONE LINE — The day's most important conclusion
              ═══════════════════════════════════════════════════════════════ */}
           {briefing.one_line && (
-            <div className="mt-6 border-l-[3px] border-[var(--color-accent)] pl-4 py-1">
-              <p className="font-[family-name:var(--font-heading)] text-base sm:text-lg font-bold text-[var(--color-text-primary)] leading-snug">
-                {briefing.one_line}
-              </p>
+            <div className="mt-6 flex items-start justify-between gap-4">
+              <div className="border-l-[3px] border-[var(--color-accent)] pl-4 py-1">
+                <p className="font-[family-name:var(--font-heading)] text-base sm:text-lg font-bold text-[var(--color-text-primary)] leading-snug">
+                  {briefing.one_line}
+                </p>
+              </div>
+              <div className="shrink-0 pt-1">
+                <ShareButtons
+                  url={`https://www.btctoday.co/archive/${briefing.date}`}
+                  title={`${briefing.one_line} — BTC Today`}
+                />
+              </div>
             </div>
           )}
 
