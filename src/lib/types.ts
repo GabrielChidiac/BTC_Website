@@ -50,6 +50,7 @@ export interface AssetComparison {
   change_1y_pct: number | null;
   btc_relative_24h_pct: number | null;
   btc_relative_ytd_pct: number | null;
+  btc_relative_1y_pct: number | null;
 }
 
 export interface NetworkHealth {
@@ -243,6 +244,7 @@ export interface MarketCollectorOutput {
 // ─── Subscriber tier ────────────────────────────────────────────────────────
 
 export type SubscriberTier = "free" | "pro";
+export type SubscriberStatus = "active" | "unsubscribed";
 
 // ─── Database row types ─────────────────────────────────────────────────────
 
@@ -257,7 +259,7 @@ export interface SubscriberRow {
   id: string;
   email: string;
   name: string | null;
-  status: "active" | "unsubscribed";
+  status: SubscriberStatus;
   tier: SubscriberTier;
   whop_user_id: string | null;
   whop_membership_id: string | null;

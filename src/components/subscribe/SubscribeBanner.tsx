@@ -1,11 +1,18 @@
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { isValidEmail } from "@/lib/constants";
 
 type Status = "idle" | "loading" | "success" | "error";
 
+const HIDDEN_PATHS = ["/pricing", "/sign-in"];
+
 export function SubscribeBanner() {
+  const pathname = usePathname();
+
+  if (HIDDEN_PATHS.includes(pathname)) return null;
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -51,7 +58,7 @@ export function SubscribeBanner() {
       return;
     }
 
-    if (!trimmedEmail || trimmedEmail.length > 254 || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmedEmail)) {
+    if (!trimmedEmail || trimmedEmail.length > 254 || !isValidEmail(trimmedEmail)) {
       setStatus("error");
       setMessage("Please enter a valid email address");
       return;
@@ -136,24 +143,29 @@ export function SubscribeBanner() {
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700 border border-emerald-200"
+                      className="flex flex-col items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700 border border-emerald-200"
                     >
-                      <svg
-                        className="h-4 w-4 shrink-0"
-                        viewBox="0 0 16 16"
-                        fill="none"
-                        aria-hidden="true"
-                      >
-                        <circle cx="8" cy="8" r="8" fill="currentColor" opacity="0.2" />
-                        <path
-                          d="M5 8.5l2 2 4-4"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      {message}
+                      <div className="flex items-center gap-2">
+                        <svg
+                          className="h-4 w-4 shrink-0"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                          aria-hidden="true"
+                        >
+                          <circle cx="8" cy="8" r="8" fill="currentColor" opacity="0.2" />
+                          <path
+                            d="M5 8.5l2 2 4-4"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        {message}
+                      </div>
+                      <p className="text-xs text-emerald-600">
+                        Check your inbox for a welcome email with your login link.
+                      </p>
                     </motion.div>
                   ) : (
                     <form onSubmit={handleSubmit} className="flex flex-col gap-2">

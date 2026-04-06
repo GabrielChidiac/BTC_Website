@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import type { SubscriberTier } from "@/lib/types";
 
-export function UserMenu({ displayName }: { displayName: string | null }) {
+export function UserMenu({ displayName, tier = "free" }: { displayName: string | null; tier?: SubscriberTier }) {
   const [open, setOpen] = useState(false);
   const [confirmUnsubscribe, setConfirmUnsubscribe] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -68,6 +69,11 @@ export function UserMenu({ displayName }: { displayName: string | null }) {
         className="flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors whitespace-nowrap"
       >
         {displayName ?? "Account"}
+        {tier === "pro" && (
+          <span className="rounded bg-[var(--color-accent)]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
+            Pro
+          </span>
+        )}
         <svg
           width="10"
           height="10"

@@ -3,11 +3,11 @@ import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getBaseUrl } from "@/lib/url";
+import { EMAIL_REGEX as EMAIL_RE } from "@/lib/constants";
 import WelcomeEmail from "../../../../emails/welcome";
 
 const NAME_MAX = 50;
 const EMAIL_MAX = 254;
-const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export async function POST(request: Request) {
   let body: { email?: string; name?: string };

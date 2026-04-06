@@ -3,6 +3,7 @@ import { render } from "@react-email/render";
 import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase/server";
 import type { BriefingJSON } from "@/lib/types";
+import { EMAIL_BATCH_SIZE, FROM_ADDRESS } from "@/lib/constants";
 import DailyDigest from "../../../emails/daily-digest";
 import { DailySummaryPDF } from "../../../emails/daily-summary-pdf";
 import { renderToBuffer } from "@react-pdf/renderer";
@@ -12,9 +13,6 @@ interface SendDigestPayload {
   date: string; // "YYYY-MM-DD"
   briefing: BriefingJSON;
 }
-
-const BATCH_SIZE = 100; // Resend batch limit per call
-const FROM_ADDRESS = "BTC Today <hello@btctoday.co>";
 
 export const sendDigestTask = task({
   id: "send-digest",
@@ -213,8 +211,8 @@ export const sendDigestTask = task({
     let totalSent = 0;
     let totalFailed = 0;
 
-    for (let i = 0; i < activeEmails.length; i += BATCH_SIZE) {
-      const batch = activeEmails.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < activeEmails.length; i += EMAIL_BATCH_SIZE) {
+      const batch = activeEmails.slice(i, i + EMAIL_BATCH_SIZE);
 
       const batchPayload = batch.map((email) => {
         const token = authTokens.get(email);

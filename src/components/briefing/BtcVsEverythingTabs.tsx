@@ -13,7 +13,7 @@ function getValues(asset: AssetComparison, period: string) {
     case "ytd":
       return { change: asset.change_ytd_pct, edge: asset.btc_relative_ytd_pct };
     case "1y":
-      return { change: asset.change_1y_pct, edge: null };
+      return { change: asset.change_1y_pct, edge: asset.btc_relative_1y_pct };
     default:
       return { change: null, edge: null };
   }

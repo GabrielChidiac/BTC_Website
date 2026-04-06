@@ -93,7 +93,7 @@ export default async function ArchivePage() {
                     href="/pricing"
                     className="shrink-0 rounded-md bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--color-accent-hover)] transition-colors"
                   >
-                    Go Pro
+                    Go Pro — $59/yr
                   </Link>
                 </div>
               )}

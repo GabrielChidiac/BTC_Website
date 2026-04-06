@@ -3,25 +3,10 @@ import { render } from "@react-email/render";
 import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase/server";
 import type { BriefingJSON, DailyBriefingRow, WeeklyRecapData, DaySummary } from "@/lib/types";
+import { formatUSD, formatPctChange } from "@/lib/utils";
+import { EMAIL_BATCH_SIZE, FROM_ADDRESS } from "@/lib/constants";
 import WeeklyRecap from "../../../emails/weekly-recap";
 import { getBaseUrl } from "@/lib/url";
-
-const BATCH_SIZE = 100; // Resend batch limit per call
-const FROM_ADDRESS = "BTC Today <hello@btctoday.co>";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatUSD(amount: number): string {
-  return "$" + amount.toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
-}
-
-function formatPct(pct: number): string {
-  const sign = pct >= 0 ? "+" : "";
-  return `${sign}${pct.toFixed(2)}%`;
-}
 
 // ─── Data aggregation ─────────────────────────────────────────────────────────
 
@@ -201,7 +186,7 @@ export const sendWeeklyRecapTask = schedules.task({
     const siteUrl = getBaseUrl();
     const htmlTemplate = await render(WeeklyRecap({ recap, siteUrl, name: "%%NAME%%" }));
 
-    const subject = `Your Week in Bitcoin: ${formatUSD(recap.price_end)} (${formatPct(recap.price_change_pct)})`;
+    const subject = `Your Week in Bitcoin: ${formatUSD(recap.price_end, 0)} (${formatPctChange(recap.price_change_pct)})`;
 
     // Plain text fallback
     const storySummaries = recap.top_stories
@@ -210,7 +195,7 @@ export const sendWeeklyRecapTask = schedules.task({
 
     const textTemplate = `BTC Today — Week in Review (${recap.week_start} to ${recap.week_end})
 
-Price: ${formatUSD(recap.price_end)} | Week: ${formatPct(recap.price_change_pct)} | High: ${formatUSD(recap.price_high)} | Low: ${formatUSD(recap.price_low)}
+Price: ${formatUSD(recap.price_end, 0)} | Week: ${formatPctChange(recap.price_change_pct)} | High: ${formatUSD(recap.price_high, 0)} | Low: ${formatUSD(recap.price_low, 0)}
 
 Top Stories:
 
@@ -257,8 +242,8 @@ Unsubscribe: %%UNSUBSCRIBE_URL%%
     let totalSent = 0;
     let totalFailed = 0;
 
-    for (let i = 0; i < activeEmails.length; i += BATCH_SIZE) {
-      const batch = activeEmails.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < activeEmails.length; i += EMAIL_BATCH_SIZE) {
+      const batch = activeEmails.slice(i, i + EMAIL_BATCH_SIZE);
 
       const batchPayload = batch.map((email) => {
         const token = authTokens.get(email);

@@ -7,13 +7,17 @@ import type { SubscriberTier } from "@/lib/types";
  * Read the btc-session cookie, verify the session token, and return the
  * subscriber's tier.  Falls back to "free" on any error so pages never break.
  */
-export async function getSubscriberTier(): Promise<{
+interface SubscriberInfo {
   tier: SubscriberTier;
   email: string | null;
-}> {
-  const FREE: { tier: SubscriberTier; email: string | null } = {
+  name: string | null;
+}
+
+export async function getSubscriberTier(): Promise<SubscriberInfo> {
+  const FREE: SubscriberInfo = {
     tier: "free",
     email: null,
+    name: null,
   };
 
   try {
@@ -41,20 +45,21 @@ export async function getSubscriberTier(): Promise<{
 
     if (!session) return FREE;
 
-    // Get subscriber tier
+    // Get subscriber tier and name
     const { data: subscriber } = await supabase
       .from("subscribers")
-      .select("tier, status")
+      .select("tier, status, name")
       .eq("email", email)
       .maybeSingle();
 
     if (!subscriber || subscriber.status !== "active") {
-      return { tier: "free", email };
+      return { tier: "free", email, name: null };
     }
 
     return {
       tier: (subscriber.tier as SubscriberTier) ?? "free",
       email,
+      name: subscriber.name ?? null,
     };
   } catch {
     return FREE;

@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getBaseUrl } from "@/lib/url";
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { EMAIL_REGEX as EMAIL_RE } from "@/lib/constants";
 const TOKEN_EXPIRY_MINUTES = 10;
 const RATE_LIMIT_MINUTES = 1;
 

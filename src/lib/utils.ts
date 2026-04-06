@@ -14,6 +14,20 @@ export function toISODate(date: Date = new Date()): string {
 }
 
 /**
+ * Format a date for the header: "24 MAR 2026"
+ */
+export function formatBriefingDate(isoDate: string): string {
+  return new Date(isoDate + "T12:00:00Z")
+    .toLocaleDateString("en-US", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    })
+    .toUpperCase();
+}
+
+/**
  * Format a date string for display: "March 24, 2026"
  */
 export function formatDisplayDate(isoDate: string): string {

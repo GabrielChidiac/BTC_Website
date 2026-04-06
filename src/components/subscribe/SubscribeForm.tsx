@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { MotionButton } from "@/components/ui/MotionButton";
+import { isValidEmail } from "@/lib/constants";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -23,7 +24,7 @@ export function SubscribeForm() {
       return;
     }
 
-    if (!trimmedEmail || trimmedEmail.length > 254 || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmedEmail)) {
+    if (!trimmedEmail || trimmedEmail.length > 254 || !isValidEmail(trimmedEmail)) {
       setStatus("error");
       setMessage("Please enter a valid email address");
       return;

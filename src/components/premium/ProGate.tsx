@@ -2,18 +2,9 @@
 
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import { FEATURES } from "@/lib/constants";
 
-const PRO_FEATURES = [
-  { label: "Daily Email Briefing", desc: "Full briefing delivered to your inbox" },
-  { label: "Institutional Flows", desc: "ETF data, notable moves" },
-  { label: "Technical Signals", desc: "RSI, SMAs, support & resistance" },
-  { label: "Network Health", desc: "Hashrate, fees, halving countdown" },
-  { label: "Expert Insights", desc: "Lyn Alden, Dylan LeClair, and more" },
-  { label: "Forward Outlook", desc: "Macro, regulatory, technical analysis" },
-  { label: "AI Chat", desc: "Ask questions about today's data" },
-  { label: "PDF Downloads", desc: "1-page daily summary" },
-  { label: "Full Archive", desc: "Access all historical briefings" },
-];
+const PRO_FEATURES = FEATURES.filter((f) => !f.freeIncluded);
 
 export function ProGate() {
   return (

@@ -183,12 +183,16 @@ function buildComparisons(
 ): import("@/lib/types").AssetComparison[] {
   const c = market?.comparisons;
   const btcYtd = market?.btc_change_ytd_pct ?? null;
+  const btc1y = market?.btc_change_1y_pct ?? null;
 
   function relativeDay(assetPct: number | null | undefined): number | null {
     return assetPct != null ? btcChange - assetPct : null;
   }
   function relativeYtd(assetPct: number | null | undefined): number | null {
     return btcYtd != null && assetPct != null ? btcYtd - assetPct : null;
+  }
+  function relative1y(assetPct: number | null | undefined): number | null {
+    return btc1y != null && assetPct != null ? btc1y - assetPct : null;
   }
 
   return [
@@ -200,6 +204,7 @@ function buildComparisons(
       change_1y_pct: c?.sp500_change_1y_pct ?? null,
       btc_relative_24h_pct: relativeDay(c?.sp500_change_24h_pct),
       btc_relative_ytd_pct: relativeYtd(c?.sp500_change_ytd_pct),
+      btc_relative_1y_pct: relative1y(c?.sp500_change_1y_pct),
     },
     {
       name: "NASDAQ-100",
@@ -209,6 +214,7 @@ function buildComparisons(
       change_1y_pct: c?.nasdaq_change_1y_pct ?? null,
       btc_relative_24h_pct: relativeDay(c?.nasdaq_change_24h_pct),
       btc_relative_ytd_pct: relativeYtd(c?.nasdaq_change_ytd_pct),
+      btc_relative_1y_pct: relative1y(c?.nasdaq_change_1y_pct),
     },
     {
       name: "Gold",
@@ -218,6 +224,7 @@ function buildComparisons(
       change_1y_pct: c?.gold_change_1y_pct ?? null,
       btc_relative_24h_pct: relativeDay(c?.gold_change_24h_pct),
       btc_relative_ytd_pct: relativeYtd(c?.gold_change_ytd_pct),
+      btc_relative_1y_pct: relative1y(c?.gold_change_1y_pct),
     },
     {
       name: "DXY",
@@ -227,6 +234,7 @@ function buildComparisons(
       change_1y_pct: c?.dxy_change_1y_pct ?? null,
       btc_relative_24h_pct: relativeDay(c?.dxy_change_24h_pct),
       btc_relative_ytd_pct: relativeYtd(c?.dxy_change_ytd_pct),
+      btc_relative_1y_pct: relative1y(c?.dxy_change_1y_pct),
     },
     {
       name: "Ethereum",
@@ -236,6 +244,7 @@ function buildComparisons(
       change_1y_pct: c?.eth_change_1y_pct ?? null,
       btc_relative_24h_pct: relativeDay(c?.eth_change_24h_pct),
       btc_relative_ytd_pct: relativeYtd(c?.eth_change_ytd_pct),
+      btc_relative_1y_pct: relative1y(c?.eth_change_1y_pct),
     },
     {
       name: "Solana",
@@ -245,6 +254,7 @@ function buildComparisons(
       change_1y_pct: c?.sol_change_1y_pct ?? null,
       btc_relative_24h_pct: relativeDay(c?.sol_change_24h_pct),
       btc_relative_ytd_pct: relativeYtd(c?.sol_change_ytd_pct),
+      btc_relative_1y_pct: relative1y(c?.sol_change_1y_pct),
     },
   ];
 }

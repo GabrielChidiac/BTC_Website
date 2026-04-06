@@ -1,6 +1,15 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. You are my ruthless mentor and my reflexion partner. Your role is finding the truth and give it to me as honestly as possible even if it is to the detriment of my feelings.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Interaction Rules
+You are my ruthless mentor and my reflection partner. Your role is finding the truth and giving it to me as honestly as possible even if it is to the detriment of my feelings.
+- Never agree with me just to be pleasant.
+- Find the weaknesses and blind spots in my thinking. Point them out even if I haven't asked.
+- No flattery, no unnecessary softening.
+- If you're unsure about something, verify it through research and provide sources.
+- Remain steadfast. Force me to defend my ideas or abandon the bad ones.
+- If I'm searching for validation instead of the truth, point it out.
 
 ## Project
 AI-curated daily Bitcoin intelligence for high-net-worth individuals and business executives. Runs a Trigger.dev pipeline at 2 AM CET that collects news and market data, processes through Claude Sonnet into a structured briefing, enriches via Perplexity (institutional flows, expert insights, supply dynamics), and publishes to a Next.js site + email subscribers.
@@ -110,49 +119,15 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - All HTTP calls use native `fetch` — no axios
 
 ## Environment Variables
-All listed in `.env.example`. Required keys:
-| Key | Service |
-|---|---|
-| `ANTHROPIC_API_KEY` | Claude Sonnet (briefing generation) |
-| `PERPLEXITY_API_KEY` | sonar-pro (enrichment: forward outlook, institutional activity, expert insights, supply dynamics) |
-| `KIE_API_KEY` | Kie.ai (Claude fallback, OpenAI-compatible) |
-| `COINGECKO_API_KEY` | CoinGecko Demo (free, `x-cg-demo-api-key` header) |
-| `SEARCHAPI_KEY` | SearchAPI.io (Google News scraping for news collector) |
-| `JINA_API_KEY` | Jina Reader (full article content extraction, 200 RPM free) |
-| `TRIGGER_SECRET_KEY` | Trigger.dev |
-| `RESEND_API_KEY` | Resend (email) |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role (server-side writes) |
-| `REVALIDATION_SECRET` | Protects `/api/revalidate` endpoint |
-| `NEXT_PUBLIC_SITE_URL` | Site URL (fallback: `https://www.btctoday.co` via `getBaseUrl()` in `src/lib/url.ts`) |
-| `WHOP_WEBHOOK_KEY` | Whop webhook signature verification (HMAC-SHA256) |
-| `NEXT_PUBLIC_WHOP_MONTHLY_URL` | Whop checkout link ($7/month) |
-| `NEXT_PUBLIC_WHOP_ANNUAL_URL` | Whop checkout link ($59/year) |
+All keys are listed in `.env.example` with descriptions. Key services: Anthropic, Perplexity, Kie.ai (Claude fallback), CoinGecko, SearchAPI, Jina Reader, Trigger.dev, Resend, Supabase, Whop.
 
 ## Database (Supabase)
-4 tables, migrations in `supabase/migrations/`:
-| Table | Purpose |
-|---|---|
-| `daily_briefings` | `date` PK + `content` JSONB (the full `BriefingJSON`) |
-| `subscribers` | Email list (`email`, `name`, `status`: active/unsubscribed, `tier`: free/pro, `whop_user_id`, `whop_membership_id`) |
-| `verification_codes` | Magic link tokens, session tokens (`email`, `code`, `expires_at`, `used`) |
-| `chat_rate_limits` | Serverless rate limiting for `/api/chat` (20 msgs / 10 min per email) |
+4 tables — migrations in `supabase/migrations/`: `daily_briefings` (date PK + JSONB content), `subscribers`, `verification_codes`, `chat_rate_limits`.
 
 RLS: briefings are publicly readable; all other tables are service-role only.
 
 ## API Routes
-| Endpoint | Method | Purpose |
-|---|---|---|
-| `/api/subscribe` | POST | Add email subscriber |
-| `/api/unsubscribe` | POST | Unsubscribe logged-in user |
-| `/api/revalidate` | POST | ISR revalidation (requires `REVALIDATION_SECRET`) |
-| `/api/chat` | POST | Claude chat — requires session token, rate-limited (20/10min), sends last 7 days of briefings as context |
-| `/api/chat/verify-send` | POST | Send magic link to subscriber email |
-| `/api/chat/verify-check` | POST | Verify magic link token, create 30-day session (max 3 concurrent devices) |
-| `/api/logout` | POST | Clear session cookie |
-| `/api/webhooks/whop` | POST | Whop webhook — membership lifecycle (valid → pro, invalid → free) |
-| `/pdf/[date]` | GET | PDF download — auth via session cookie or magic link token, Pro only |
+Routes live in `src/app/api/`. Key endpoints: subscribe, unsubscribe, revalidate (ISR), chat (Claude, rate-limited 20/10min), chat/verify-send + verify-check (magic link auth), logout, webhooks/whop, and `/pdf/[date]` (GET, Pro only).
 
 ## Pipeline Architecture
 ```
@@ -212,7 +187,7 @@ RLS: briefings are publicly readable; all other tables are service-role only.
 - Font variables: `--font-space-grotesk`, `--font-inter`, `--font-sans` (Geist) (set in `layout.tsx`)
 
 ### Brand Assets
-- Check `brand_assets/` before designing. Use real assets over placeholders.
+- Check `public/` for any static assets before designing. Use real assets over placeholders.
 
 ### Anti-Generic Guardrails
 - **Colors:** Never default Tailwind palette. Derive from brand `#F7931A` (orange) + `#3B82F6` (blue atmosphere).
@@ -233,12 +208,6 @@ RLS: briefings are publicly readable; all other tables are service-role only.
 - Do not add sections/features not in the reference
 - Do not use `transition-all`
 - Do not use default Tailwind blue/indigo as primary color
-- Never agree with me just to be pleasant.
-- Find the weaknesses and blind spots in my thinking. Point them out to me even if I haven't asked for them.
-- No flattery, no unnecessary softening.
-- If you're unsure about something, verify it through research and provide me with the sources.
-- Remain steadfast. Force me to defend my ideas or abandon the bad ones.
-- If it seems that I am searching for validation instead of the truth point it out
 
 ## Content Philosophy
 - **Quality over quantity** — fewer sections, each must be top-notch
@@ -259,20 +228,9 @@ RLS: briefings are publicly readable; all other tables are service-role only.
 | `/pricing` | Free vs Pro comparison, Whop checkout links |
 | `/pdf/[date]` | PDF download (auth required, Pro only) |
 
-## Pre-Deployment Checklist
-- [x] Set `NEXT_PUBLIC_SITE_URL` to production domain (`getBaseUrl()` falls back to `https://www.btctoday.co`)
-- [ ] Set all env vars in Vercel/hosting provider (never commit `.env`)
-- [x] Verify Supabase RLS policies are applied (`001_initial_schema.sql`)
-- [x] Verify `btctoday.co` domain is verified in Resend (all emails sent from `hello@btctoday.co`)
-- [x] Add `error.tsx` and `not-found.tsx` for branded error pages
-- [x] Add rate limiting to `/api/chat` (database-backed, 20 msgs / 10 min)
-- [ ] Consider adding `middleware.ts` for security headers (CSP, X-Frame-Options)
-- [x] Remove unused dependency `youtube-transcript` from `package.json`
-- [x] Implement Whop webhook endpoint (`/api/webhooks/whop`)
-- [ ] Set Whop env vars in production (`WHOP_WEBHOOK_KEY`, `NEXT_PUBLIC_WHOP_MONTHLY_URL`, `NEXT_PUBLIC_WHOP_ANNUAL_URL`)
-- [ ] Configure webhook URL in Whop dashboard (point to `https://btctoday.co/api/webhooks/whop`)
-- [x] Add unsubscribe links to all email templates (CAN-SPAM/GDPR compliance)
-- [x] Add contact email to website footer and pricing FAQ (`hello@btctoday.co`)
-- [x] Fix all `.single()` → `.maybeSingle()` across codebase
-- [x] Fix weekly recap date range (uses yesterday, not today)
-- [x] SubscribeBanner hides for logged-in users (server + client-side check)
+## Deployment Notes
+See `docs/deployment.md` for the full deployment guide. Remaining production TODOs:
+- Set all env vars in Vercel (see `.env.example`)
+- Set Whop env vars (`WHOP_WEBHOOK_KEY`, `NEXT_PUBLIC_WHOP_MONTHLY_URL`, `NEXT_PUBLIC_WHOP_ANNUAL_URL`)
+- Configure webhook URL in Whop dashboard → `https://btctoday.co/api/webhooks/whop`
+- Consider adding `middleware.ts` for security headers (CSP, X-Frame-Options)

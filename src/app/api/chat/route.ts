@@ -4,8 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createServiceClient } from "@/lib/supabase/server";
 import { COOKIE_NAME, setSessionCookie, clearSessionCookie } from "@/lib/session";
 import type { ChatMessage, BriefingJSON, DailyBriefingRow } from "@/lib/types";
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { EMAIL_REGEX as EMAIL_RE } from "@/lib/constants";
 const MAX_HISTORY = 20;
 
 // Rate limit: 20 messages per 10 minutes per email (Supabase-backed for serverless)

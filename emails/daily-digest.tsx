@@ -202,9 +202,9 @@ const previewBriefing: BriefingJSON = {
   market_snapshot: { price_usd: 91247.53, change_24h_pct: 3.42, change_7d_pct: 8.91, market_cap_usd: 1_812_000_000_000, volume_24h_usd: 48_300_000_000, dominance_pct: 61.2, ath_usd: 125_000, ath_date: "2025-12-17T00:00:00Z" },
   technical_signals: { rsi_14: 62.4, sma_50: 84320, sma_200: 71580, support_level: 87500, resistance_level: 95000, signal_summary: "Price holds above the 200-day MA with RSI suggesting room to run before overheated territory." },
   btc_vs_everything: [
-    { name: "S&P 500", ticker: "SPX", change_24h_pct: 0.45, change_ytd_pct: 8.2, change_1y_pct: 12.1, btc_relative_24h_pct: 2.97, btc_relative_ytd_pct: 41.8 },
-    { name: "Gold", ticker: "XAU", change_24h_pct: -0.12, change_ytd_pct: 5.3, change_1y_pct: 18.4, btc_relative_24h_pct: 3.54, btc_relative_ytd_pct: 44.7 },
-    { name: "DXY", ticker: "DXY", change_24h_pct: -0.31, change_ytd_pct: -2.1, change_1y_pct: -4.5, btc_relative_24h_pct: 3.73, btc_relative_ytd_pct: 52.1 },
+    { name: "S&P 500", ticker: "SPX", change_24h_pct: 0.45, change_ytd_pct: 8.2, change_1y_pct: 12.1, btc_relative_24h_pct: 2.97, btc_relative_ytd_pct: 41.8, btc_relative_1y_pct: 37.9 },
+    { name: "Gold", ticker: "XAU", change_24h_pct: -0.12, change_ytd_pct: 5.3, change_1y_pct: 18.4, btc_relative_24h_pct: 3.54, btc_relative_ytd_pct: 44.7, btc_relative_1y_pct: 31.6 },
+    { name: "DXY", ticker: "DXY", change_24h_pct: -0.31, change_ytd_pct: -2.1, change_1y_pct: -4.5, btc_relative_24h_pct: 3.73, btc_relative_ytd_pct: 52.1, btc_relative_1y_pct: 54.5 },
   ],
   network_health: { hashrate_eh_s: 745.2, difficulty: 95_670_000_000_000, block_height: 892_140, mempool_tx_count: 32_451, mempool_size_mb: 18.7, fee_fast_sat_vb: 42, fee_medium_sat_vb: 18, fee_slow_sat_vb: 8, halving_progress_pct: 72.4, blocks_until_halving: 57_860 },
   daily_diff: { price_change: "+$3,012 (+3.42%)", sentiment_shift: "Institutional inflows drove sentiment higher", key_changes: ["ETF inflows surged", "SEC eased custody rules"] },

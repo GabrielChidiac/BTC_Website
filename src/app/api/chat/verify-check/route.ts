@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { setSessionCookie } from "@/lib/session";
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { EMAIL_REGEX as EMAIL_RE } from "@/lib/constants";
 
 export async function POST(request: Request) {
   let body: { email?: string; token?: string };

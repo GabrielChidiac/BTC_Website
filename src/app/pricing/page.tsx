@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Container } from "@/components/layout/Container";
 import { COOKIE_NAME } from "@/lib/session";
 import { getSubscriberTier } from "@/lib/tier";
+import { FEATURES } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Pricing | BTC Today",
@@ -26,24 +27,8 @@ export const metadata: Metadata = {
   },
 };
 
-const FREE_FEATURES = [
-  { label: "Daily market overview", included: true },
-  { label: "Top stories with sentiment", included: true },
-  { label: "BTC vs Everything comparisons", included: true },
-  { label: "Regulatory & adoption signals", included: true },
-  { label: "Weekly recap email", included: true },
-  { label: "Daily email briefing", included: false },
-  { label: "Institutional flows & ETF data", included: false },
-  { label: "Technical signals (RSI, SMAs)", included: false },
-  { label: "Network health & halving", included: false },
-  { label: "Expert insights", included: false },
-  { label: "Forward outlook", included: false },
-  { label: "AI Chat assistant", included: false },
-  { label: "PDF downloads", included: false },
-  { label: "Full archive access", included: false },
-];
-
-const PRO_FEATURES = FREE_FEATURES.map((f) => ({ ...f, included: true }));
+const FREE_FEATURES = FEATURES.map((f) => ({ label: f.label, included: f.freeIncluded }));
+const PRO_FEATURES = FEATURES.map((f) => ({ label: f.label, included: true }));
 
 export default async function PricingPage() {
   const { tier, email } = await getSubscriberTier();
@@ -147,7 +132,7 @@ export default async function PricingPage() {
               ) : !sessionEmail ? (
                 <div className="mt-6 flex flex-col gap-2">
                   <Link
-                    href="/"
+                    href="/sign-in"
                     className="block rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
                   >
                     Sign in to subscribe

@@ -2,24 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { NAV_LINKS, SECTION_LINKS, isActiveLink } from "@/lib/constants";
+import type { SubscriberTier } from "@/lib/types";
 
-const navLinks = [
-  { href: "/", label: "Briefing" },
-  { href: "/chat", label: "Ask AI" },
-  { href: "/archive", label: "Archive" },
-] as const;
-
-const sectionLinks = [
-  { href: "#insight", label: "Insight" },
-  { href: "#market", label: "Market" },
-  { href: "#news", label: "News" },
-  { href: "#stories", label: "Stories" },
-  { href: "#deep-dive", label: "Deep Dive" },
-  { href: "#outlook", label: "What's Next" },
-] as const;
-
-export function MobileNav({ signedInEmail, displayName }: { signedInEmail?: string | null; displayName?: string | null }) {
+export function MobileNav({ signedInEmail, displayName, tier = "free" }: { signedInEmail?: string | null; displayName?: string | null; tier?: SubscriberTier }) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const isHome = pathname === "/";
 
   return (
     <div className="md:hidden">
@@ -45,54 +35,70 @@ export function MobileNav({ signedInEmail, displayName }: { signedInEmail?: stri
       {/* Overlay */}
       {open && (
         <div
-          className="fixed inset-0 top-[57px] z-40 bg-black/20 backdrop-blur-sm"
+          className="fixed inset-0 top-[57px] z-[70] bg-black/20 backdrop-blur-sm"
           onClick={() => setOpen(false)}
         />
       )}
 
       {/* Drawer */}
       <nav
-        className={`fixed top-[57px] right-0 z-50 h-[calc(100vh-57px)] w-64 bg-[var(--color-bg-surface)] border-l border-[var(--color-border)] p-6 transition-transform duration-300 ease-out ${
+        className={`fixed top-[57px] right-0 z-[80] h-[calc(100vh-57px)] w-64 max-w-[80vw] bg-[var(--color-bg-surface)] border-l border-[var(--color-border)] p-6 transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
         <div className="flex flex-col gap-1">
-          {navLinks.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setOpen(false)}
-              className="rounded-lg px-4 py-3 text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-elevated)] transition-colors"
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
-        <div className="mt-4 border-t border-[var(--color-border)] pt-4">
-          <p className="px-4 pb-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
-            Jump to
-          </p>
-          <div className="flex flex-col gap-1">
-            {sectionLinks.map(({ href, label }) => (
-              <a
+          {NAV_LINKS.map(({ href, label }) => {
+            const active = isActiveLink(href, pathname);
+            return (
+              <Link
                 key={href}
                 href={href}
                 onClick={() => setOpen(false)}
-                className="rounded-lg px-4 py-2 text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-elevated)] transition-colors"
+                className={`rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
+                  active
+                    ? "text-[var(--color-accent)] bg-[var(--color-accent)]/5"
+                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-elevated)]"
+                }`}
               >
                 {label}
-              </a>
-            ))}
-          </div>
+              </Link>
+            );
+          })}
         </div>
+        {isHome && (
+          <div className="mt-4 border-t border-[var(--color-border)] pt-4">
+            <p className="px-4 pb-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
+              Jump to
+            </p>
+            <div className="flex flex-col gap-1">
+              {SECTION_LINKS.map(({ href, label }) => (
+                <a
+                  key={href}
+                  href={href}
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg px-4 py-2 text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-elevated)] transition-colors"
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Auth */}
         <div className="mt-4 border-t border-[var(--color-border)] pt-4 px-4">
           {signedInEmail ? (
             <div className="flex flex-col gap-2">
-              <p className="text-[11px] text-[var(--color-text-muted)] truncate">
-                {displayName ?? signedInEmail}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-[11px] text-[var(--color-text-muted)] truncate">
+                  {displayName ?? signedInEmail}
+                </p>
+                {tier === "pro" && (
+                  <span className="shrink-0 rounded bg-[var(--color-accent)]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
+                    Pro
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-3">
                 <button
                   onClick={async () => {
