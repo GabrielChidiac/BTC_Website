@@ -28,6 +28,7 @@ import { SupplyDynamics } from "@/components/briefing/SupplyDynamics";
 import { CountdownEvents } from "@/components/briefing/CountdownEvents";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
 import { ProGateCompact } from "@/components/premium/ProGate";
+import { getFoundingMemberStatus } from "@/lib/founding";
 
 export const revalidate = false;
 
@@ -103,6 +104,8 @@ export default async function ArchiveDatePage({
 
   const { tier } = await getSubscriberTier();
   const isPro = tier === "pro";
+  const founding = isPro ? null : await getFoundingMemberStatus();
+  const foundingOffer = founding ? { spotsLeft: founding.spotsLeft, limit: founding.limit } : null;
   const now = new Date();
   const sevenDaysAgo = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 7));
   const briefingDate = new Date(date + "T00:00:00Z");
@@ -248,13 +251,13 @@ export default async function ArchiveDatePage({
                 </>
               ) : (
                 <div className="mt-10">
-                  <ProGateCompact message="Adoption signals, regulatory updates, institutional flows, technical signals, expert insights, and more are available to Pro subscribers." />
+                  <ProGateCompact message="Adoption signals, regulatory updates, institutional flows, technical signals, expert insights, and more are available to Pro subscribers." foundingOffer={foundingOffer} />
                 </div>
               )}
             </>
           ) : (
             <div className="mt-10">
-              <ProGateCompact message="Full briefing content for older dates is available to Pro subscribers. Upgrade for the daily email, AI chat, PDF downloads, and full archive." />
+              <ProGateCompact message="Full briefing content for older dates is available to Pro subscribers. Upgrade for the daily email, AI chat, PDF downloads, and full archive." foundingOffer={foundingOffer} />
             </div>
           )}
 

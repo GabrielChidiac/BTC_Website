@@ -134,9 +134,23 @@ export async function POST(req: NextRequest) {
     // Only downgrade if this membership is the one that granted pro
     const { data: sub } = await supabase
       .from("subscribers")
-      .select("whop_membership_id, tier")
+      .select("whop_membership_id, tier, is_founding_member")
       .eq("email", email)
       .maybeSingle();
+
+    // Never downgrade founding members — their Pro access is permanent
+    if (sub && sub.is_founding_member) {
+      // Clear Whop IDs but preserve Pro tier
+      await supabase
+        .from("subscribers")
+        .update({
+          whop_user_id: null,
+          whop_membership_id: null,
+        })
+        .eq("email", email);
+
+      return NextResponse.json({ ok: true, action: "founding_member_protected" });
+    }
 
     if (sub && sub.tier === "pro" && sub.whop_membership_id === data.id) {
       await supabase

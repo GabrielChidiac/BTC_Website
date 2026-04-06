@@ -31,6 +31,7 @@ import { NetworkHealth } from "@/components/briefing/NetworkHealth";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
 import { ProTeaser } from "@/components/premium/ProTeaser";
 import { NextBriefingCountdown } from "@/components/briefing/NextBriefingCountdown";
+import { getFoundingMemberStatus } from "@/lib/founding";
 
 
 export const revalidate = 3600;
@@ -87,6 +88,7 @@ export default async function Home() {
   const market = briefing.market_snapshot;
   const { tier } = await getSubscriberTier();
   const isPro = tier === "pro";
+  const founding = isPro ? null : await getFoundingMemberStatus();
 
   // Filter countdown events for reuse
   const filteredEvents = briefing.countdown_events
@@ -361,7 +363,7 @@ export default async function Home() {
             /* ═══════════════════════════════════════════════════════════════
                FREE TIER: Blurred teaser of sections 05-06 with upgrade CTA
                ═══════════════════════════════════════════════════════════════ */
-            <ProTeaser />
+            <ProTeaser foundingOffer={founding ? { spotsLeft: founding.spotsLeft, limit: founding.limit } : null} />
           )}
 
           {/* ═══════════════════════════════════════════════════════════════

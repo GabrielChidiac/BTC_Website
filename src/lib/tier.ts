@@ -11,6 +11,7 @@ interface SubscriberInfo {
   tier: SubscriberTier;
   email: string | null;
   name: string | null;
+  isFoundingMember: boolean;
 }
 
 export async function getSubscriberTier(): Promise<SubscriberInfo> {
@@ -18,6 +19,7 @@ export async function getSubscriberTier(): Promise<SubscriberInfo> {
     tier: "free",
     email: null,
     name: null,
+    isFoundingMember: false,
   };
 
   try {
@@ -48,18 +50,19 @@ export async function getSubscriberTier(): Promise<SubscriberInfo> {
     // Get subscriber tier and name
     const { data: subscriber } = await supabase
       .from("subscribers")
-      .select("tier, status, name")
+      .select("tier, status, name, is_founding_member")
       .eq("email", email)
       .maybeSingle();
 
     if (!subscriber || subscriber.status !== "active") {
-      return { tier: "free", email, name: null };
+      return { tier: "free", email, name: null, isFoundingMember: false };
     }
 
     return {
       tier: (subscriber.tier as SubscriberTier) ?? "free",
       email,
       name: subscriber.name ?? null,
+      isFoundingMember: subscriber.is_founding_member === true,
     };
   } catch {
     return FREE;

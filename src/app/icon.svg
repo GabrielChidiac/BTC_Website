@@ -1,18 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
   <rect width="32" height="32" rx="7" fill="#0A0A0C"/>
-  <g fill="#F7931A">
-    <!-- Bars — overlap into B body so no gap is visible -->
-    <rect x="5.5" y="3" width="1.2" height="5" rx="0.6"/>
-    <rect x="8.5" y="3" width="1.2" height="5" rx="0.6"/>
-    <rect x="5.5" y="21" width="1.2" height="6" rx="0.6"/>
-    <rect x="8.5" y="21" width="1.2" height="6" rx="0.6"/>
-    <!-- B body with counter cutouts -->
-    <path fill-rule="evenodd" d="
-      M2 6.5 H8.5 C14.5 6.5 14.5 14 8.5 14 C15.5 14 15.5 23 8.5 23 H2 Z
-      M4.8 9 H7.5 C11 9 11 12 7.5 12 H4.8 Z
-      M4.8 16.5 H8 C12 16.5 12 19.5 8 19.5 H4.8 Z
-    "/>
-    <!-- tdy — subscript, snug to B's lower-right -->
-    <text x="15.5" y="25" font-family="system-ui,-apple-system,'Helvetica Neue',sans-serif" font-size="7" font-weight="800" letter-spacing="-0.2">tdy</text>
+  <g transform="translate(16,16)">
+    <!-- ₿ symbol — classic Bitcoin B with two vertical bars -->
+    <g fill="#F7931A">
+      <!-- Vertical bars through the top and bottom -->
+      <rect x="-3.5" y="-13" width="2" height="4.5" rx="1"/>
+      <rect x="1.5" y="-13" width="2" height="4.5" rx="1"/>
+      <rect x="-3.5" y="8.5" width="2" height="4.5" rx="1"/>
+      <rect x="1.5" y="8.5" width="2" height="4.5" rx="1"/>
+      <!-- B body -->
+      <path d="
+        M-6.5,-9 L2,-9
+        C7,-9 7,-1 2,-1
+        L-6.5,-1 Z
+      "/>
+      <path d="
+        M-6.5,0 L3,0
+        C8.5,0 8.5,9 3,9
+        L-6.5,9 Z
+      "/>
+      <!-- Counter cutouts (holes in the B) -->
+      <rect x="-4" y="-7" width="5" height="4" rx="1.5" fill="#0A0A0C"/>
+      <rect x="-4" y="2" width="6" height="5" rx="1.5" fill="#0A0A0C"/>
+    </g>
   </g>
 </svg>

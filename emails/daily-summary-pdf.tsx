@@ -259,7 +259,7 @@ export function DailySummaryPDF({ briefing }: { briefing: BriefingJSON }) {
         {/* Header */}
         <View style={s.header}>
           <Text style={s.logo}>
-            BTC <Text style={s.logoAccent}>Today</Text>
+            BTC<Text style={{ ...s.logoAccent, fontWeight: 300 }}>today</Text>
           </Text>
           <Text style={s.date}>{formatDate(briefing.date)}</Text>
         </View>

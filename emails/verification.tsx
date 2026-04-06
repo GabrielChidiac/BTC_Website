@@ -43,7 +43,7 @@ export default function VerificationEmail({
         <Container style={styles.container}>
           <Section style={styles.header}>
             <Text style={styles.logo}>
-              BTC <span style={{ color: colors.accent }}>Today</span>
+              BTC<span style={{ fontWeight: 300, marginLeft: "2px" }}>today</span>
             </Text>
           </Section>
 

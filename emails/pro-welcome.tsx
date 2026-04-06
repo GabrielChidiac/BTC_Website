@@ -53,7 +53,7 @@ export default function ProWelcomeEmail({
           {/* Header */}
           <Section style={styles.header}>
             <Text style={styles.logo}>
-              BTC <span style={{ color: colors.accent }}>Today</span>
+              BTC<span style={{ fontWeight: 300, marginLeft: "2px" }}>today</span>
               <span style={styles.proBadge}>PRO</span>
             </Text>
           </Section>

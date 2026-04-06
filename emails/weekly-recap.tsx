@@ -181,7 +181,7 @@ export default function WeeklyRecap({
           {/* ── Header ─────────────────────────────────────────────── */}
           <Section style={styles.header}>
             <Text style={styles.logo}>
-              BTC <span style={{ color: colors.accent }}>Today</span>
+              BTC<span style={{ fontWeight: 300, marginLeft: "2px" }}>today</span>
             </Text>
             <Text style={styles.subtitle}>Week in Review</Text>
             <Text style={styles.date}>{dateRange}</Text>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createServerClient } from "@/lib/supabase/server";
 import { getSubscriberTier } from "@/lib/tier";
+import { getFoundingMemberStatus } from "@/lib/founding";
 import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
 
 import { Header } from "@/components/layout/Header";
@@ -33,6 +34,8 @@ export const metadata: Metadata = {
 export default async function ArchivePage() {
   const { tier } = await getSubscriberTier();
   const isPro = tier === "pro";
+  const founding = isPro ? null : await getFoundingMemberStatus();
+  const isFoundingActive = founding?.isOfferActive ?? false;
 
   const supabase = await createServerClient();
 
@@ -95,13 +98,15 @@ export default async function ArchivePage() {
               {!isPro && (
                 <div className="mb-6 flex items-center gap-3 rounded-lg border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/5 px-4 py-3">
                   <p className="flex-1 text-sm text-[var(--color-text-secondary)]">
-                    Unlock the full archive with Pro
+                    {isFoundingActive
+                      ? "Founding members get full archive access — free"
+                      : "Unlock the full archive with Pro"}
                   </p>
                   <Link
-                    href="/pricing"
+                    href={isFoundingActive ? "/sign-in" : "/pricing"}
                     className="shrink-0 rounded-md bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--color-accent-hover)] transition-colors"
                   >
-                    Go Pro — $59/yr
+                    {isFoundingActive ? "Claim your spot" : "Go Pro — $59/yr"}
                   </Link>
                 </div>
               )}

@@ -58,12 +58,12 @@ export default async function Image({ params }: { params: { date: string } }) {
 
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center" }}>
             <span style={{ fontSize: 32, fontWeight: 700, color: "#0A0A0C" }}>
               BTC
             </span>
-            <span style={{ fontSize: 32, fontWeight: 400, color: "#3A3A42" }}>
-              Today
+            <span style={{ fontSize: 32, fontWeight: 300, color: "#0A0A0C", marginLeft: 2 }}>
+              today
             </span>
           </div>
           <span style={{ fontSize: 22, color: "#6B7280" }}>

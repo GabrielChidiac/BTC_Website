@@ -256,7 +256,7 @@ export default function DailyDigest({
           {/* ── Header ──────────────────────────────────────── */}
           <Section style={s.header}>
             <Text style={s.logo}>
-              BTC <span style={{ color: c.accent }}>Today</span>
+              BTC<span style={{ fontWeight: 300, marginLeft: "2px" }}>today</span>
             </Text>
             <Text style={s.date}>{formatDisplayDate(briefing.date)}</Text>
           </Section>

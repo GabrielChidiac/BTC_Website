@@ -22,7 +22,14 @@ function SkeletonCard({ lines = 4 }: { lines?: number }) {
   );
 }
 
-export function ProTeaser() {
+interface FoundingOffer {
+  spotsLeft: number;
+  limit: number;
+}
+
+export function ProTeaser({ foundingOffer }: { foundingOffer?: FoundingOffer | null }) {
+  const isFoundingActive = foundingOffer && foundingOffer.spotsLeft > 0;
+
   return (
     <div className="mt-10 scroll-mt-16">
       {/* Section header — fully visible */}
@@ -64,27 +71,42 @@ export function ProTeaser() {
         <div className="absolute inset-x-0 bottom-0 flex justify-center pb-4 pt-16">
           <div className="flex flex-col items-center gap-3 rounded-xl border border-[var(--color-accent)]/20 bg-[var(--color-bg-surface)]/95 px-8 py-6 text-center shadow-lg shadow-black/5 backdrop-blur-sm">
             <p className="font-[family-name:var(--font-heading)] text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-accent)]">
-              Pro
+              {isFoundingActive ? "Founding Member" : "Pro"}
             </p>
             <p className="font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-text-primary)]">
-              Unlock the full briefing
+              {isFoundingActive ? "Get full Pro access — free" : "Unlock the full briefing"}
             </p>
             <p className="max-w-xs text-sm text-[var(--color-text-secondary)] leading-relaxed">
               Adoption signals, institutional flows, technical analysis,
               expert insights, and what&rsquo;s next for BTC.
             </p>
+            {isFoundingActive && (
+              <div className="w-full max-w-[200px]">
+                <div className="h-1.5 w-full rounded-full bg-[var(--color-border)]">
+                  <div
+                    className="h-1.5 rounded-full bg-[var(--color-accent)]"
+                    style={{ width: `${((foundingOffer.limit - foundingOffer.spotsLeft) / foundingOffer.limit) * 100}%` }}
+                  />
+                </div>
+                <p className="mt-1.5 text-xs text-[var(--color-text-muted)]">
+                  {foundingOffer.limit - foundingOffer.spotsLeft} of {foundingOffer.limit} founding spots claimed
+                </p>
+              </div>
+            )}
             <Link
-              href="/pricing"
+              href={isFoundingActive ? "/sign-in" : "/pricing"}
               className="inline-flex items-center rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"
             >
-              Go Pro — $59/year (save 30%)
+              {isFoundingActive ? "Claim your free Pro access" : "Go Pro — $59/year (save 30%)"}
             </Link>
-            <Link
-              href="/pricing"
-              className="text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
-            >
-              or $7/month
-            </Link>
+            {!isFoundingActive && (
+              <Link
+                href="/pricing"
+                className="text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
+              >
+                or $7/month
+              </Link>
+            )}
           </div>
         </div>
       </div>

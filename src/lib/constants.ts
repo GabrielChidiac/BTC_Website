@@ -103,6 +103,10 @@ export const BLOCKED_EVENT_KEYWORDS = /conference|summit|expo|convention|meetup|
 
 export const HALVING_INTERVAL = 210_000;
 
+// ─── Founding Members ──────────────────────────────────────────────────────
+
+export const FOUNDING_MEMBER_LIMIT = 100;
+
 // ─── Pipeline ───────────────────────────────────────────────────────────────
 
 export const ARTICLE_MAX_AGE_HOURS = 24;

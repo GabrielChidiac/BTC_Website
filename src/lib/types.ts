@@ -244,7 +244,7 @@ export interface MarketCollectorOutput {
 // ─── Subscriber tier ────────────────────────────────────────────────────────
 
 export type SubscriberTier = "free" | "pro";
-export type SubscriberStatus = "active" | "unsubscribed";
+export type SubscriberStatus = "active" | "unsubscribed" | "pending";
 
 // ─── Database row types ─────────────────────────────────────────────────────
 
@@ -261,6 +261,7 @@ export interface SubscriberRow {
   name: string | null;
   status: SubscriberStatus;
   tier: SubscriberTier;
+  is_founding_member: boolean;
   whop_user_id: string | null;
   whop_membership_id: string | null;
   created_at: string;
