@@ -6,6 +6,9 @@ import { Container } from "@/components/layout/Container";
 export const metadata: Metadata = {
   title: "Terms of Service | BTC Today",
   description: "Terms and conditions for using BTC Today.",
+  alternates: {
+    canonical: "/terms",
+  },
 };
 
 export default function TermsPage() {

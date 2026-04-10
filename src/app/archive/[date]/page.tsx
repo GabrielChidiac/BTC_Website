@@ -45,8 +45,30 @@ export async function generateMetadata({
   if (!isValidDate(date)) return { title: "Not Found | BTC Today" };
 
   const displayDate = formatDisplayDate(date);
-  const title = `Bitcoin Market Analysis | ${displayDate} | BTC Today`;
-  const description = `AI-curated Bitcoin market analysis for ${displayDate} with institutional flows, technical signals, and expert insights.`;
+
+  // Fetch briefing for dynamic metadata
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from("daily_briefings")
+    .select("content")
+    .eq("date", date)
+    .maybeSingle();
+
+  let title = `Bitcoin Market Analysis | ${displayDate} | BTC Today`;
+  let description = `AI-curated Bitcoin market analysis for ${displayDate} with institutional flows, technical signals, and expert insights.`;
+
+  if (data) {
+    const briefing: BriefingJSON = (data as DailyBriefingRow).content;
+    const market = briefing.market_snapshot;
+    const pctSign = market.change_24h_pct >= 0 ? "+" : "";
+    const price = `$${market.price_usd.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+    const change = `${pctSign}${market.change_24h_pct.toFixed(2)}%`;
+
+    title = `BTC ${price} (${change}) | ${displayDate} | BTC Today`;
+    description = briefing.one_line
+      ? `${briefing.one_line} BTC ${price} ${change}. AI-curated Bitcoin intelligence for ${displayDate}.`
+      : `Bitcoin at ${price} (${change}) on ${displayDate}. Market analysis, institutional flows, technical signals, and expert insights.`;
+  }
 
   return {
     title,
@@ -56,12 +78,16 @@ export async function generateMetadata({
       description,
       type: "article",
       siteName: "BTC Today",
+      url: `https://www.btctoday.co/archive/${date}`,
       publishedTime: `${date}T01:00:00Z`,
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title,
       description,
+    },
+    alternates: {
+      canonical: `/archive/${date}`,
     },
   };
 }
@@ -144,13 +170,22 @@ export default async function ArchiveDatePage({
   const prevDate = prevRows?.[0]?.date as string | undefined;
   const nextDate = nextRows?.[0]?.date as string | undefined;
 
+  const baseUrl = "https://www.btctoday.co";
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: briefing.one_line || `Bitcoin Market Analysis | ${formatDisplayDate(date)}`,
     datePublished: `${date}T01:00:00Z`,
-    author: { "@type": "Organization", name: "BTC Today" },
-    publisher: { "@type": "Organization", name: "BTC Today" },
+    dateModified: (data as DailyBriefingRow).updated_at || `${date}T01:00:00Z`,
+    author: { "@type": "Organization", name: "BTC Today", url: baseUrl },
+    publisher: {
+      "@type": "Organization",
+      name: "BTC Today",
+      url: baseUrl,
+      logo: { "@type": "ImageObject", url: `${baseUrl}/logo.png` },
+    },
+    image: `${baseUrl}/archive/${date}/opengraph-image`,
+    mainEntityOfPage: { "@type": "WebPage", "@id": `${baseUrl}/archive/${date}` },
     description: `BTC $${briefing.market_snapshot.price_usd.toLocaleString()} | ${briefing.market_snapshot.change_24h_pct >= 0 ? "+" : ""}${briefing.market_snapshot.change_24h_pct.toFixed(2)}% 24h | AI-curated Bitcoin intelligence for ${formatDisplayDate(date)}`,
   };
 
@@ -159,6 +194,20 @@ export default async function ArchiveDatePage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "BTC Today", item: baseUrl },
+              { "@type": "ListItem", position: 2, name: "Archive", item: `${baseUrl}/archive` },
+              { "@type": "ListItem", position: 3, name: formatDisplayDate(date), item: `${baseUrl}/archive/${date}` },
+            ],
+          }),
+        }}
       />
       <Header date={briefing.date} />
       <main className="pb-10">

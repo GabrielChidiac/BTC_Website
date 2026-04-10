@@ -22,12 +22,16 @@ export const metadata: Metadata = {
       "Browse AI-curated daily Bitcoin briefings with market analysis, institutional flows, technical signals, and expert insights.",
     type: "website",
     siteName: "BTC Today",
+    url: "https://www.btctoday.co/archive",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Bitcoin Daily Intelligence Archive | BTC Today",
     description:
       "Browse AI-curated daily Bitcoin briefings with market analysis, institutional flows, technical signals, and expert insights.",
+  },
+  alternates: {
+    canonical: "/archive",
   },
 };
 
@@ -66,8 +70,23 @@ export default async function ArchivePage() {
     };
   });
 
+  const baseUrl = "https://www.btctoday.co";
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "BTC Today", item: baseUrl },
+              { "@type": "ListItem", position: 2, name: "Archive", item: `${baseUrl}/archive` },
+            ],
+          }),
+        }}
+      />
       <Header />
       <main className="pb-10">
         <Container>

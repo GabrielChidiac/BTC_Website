@@ -6,6 +6,9 @@ import { Container } from "@/components/layout/Container";
 export const metadata: Metadata = {
   title: "Privacy Policy | BTC Today",
   description: "How BTC Today collects, uses, and protects your data.",
+  alternates: {
+    canonical: "/privacy",
+  },
 };
 
 export default function PrivacyPage() {

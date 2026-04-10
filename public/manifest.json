@@ -1,0 +1,16 @@
+{
+  "name": "BTC Today",
+  "short_name": "BTC Today",
+  "description": "AI-curated daily Bitcoin intelligence for investors",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#E2E5EE",
+  "theme_color": "#F7931A",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { createServerClient, createServiceClient } from "@/lib/supabase/server";
 import { getSubscriberTier } from "@/lib/tier";
 import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
@@ -33,6 +34,55 @@ import { getFoundingMemberStatus } from "@/lib/founding";
 
 
 export const revalidate = 3600;
+
+export async function generateMetadata(): Promise<Metadata> {
+  const supabase = await createServerClient();
+  const { data } = await supabase
+    .from("daily_briefings")
+    .select("content")
+    .order("date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data) {
+    return {
+      title: "BTC Today | AI-Curated Bitcoin Intelligence",
+      description:
+        "Daily AI-curated Bitcoin intelligence for investors: market data, institutional flows, macro analysis, and expert insights.",
+      alternates: { canonical: "/" },
+    };
+  }
+
+  const briefing: BriefingJSON = (data as DailyBriefingRow).content;
+  const market = briefing.market_snapshot;
+  const pctSign = market.change_24h_pct >= 0 ? "+" : "";
+  const price = `$${market.price_usd.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+  const change = `${pctSign}${market.change_24h_pct.toFixed(2)}%`;
+
+  const title = `BTC ${price} (${change}) | BTC Today`;
+  const description = briefing.one_line
+    ? `${briefing.one_line} BTC ${price} ${change} 24h. AI-curated Bitcoin intelligence for investors.`
+    : `Bitcoin at ${price} (${change} 24h). Daily AI-curated market analysis, institutional flows, and expert insights.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      siteName: "BTC Today",
+      url: "https://www.btctoday.co",
+      publishedTime: `${briefing.date}T01:00:00Z`,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+    alternates: { canonical: "/" },
+  };
+}
 
 function formatFlowUSD(amount: number): string {
   const abs = Math.abs(amount);
@@ -112,13 +162,22 @@ export default async function Home() {
 
   const hasLookingAhead = briefing.looking_ahead && briefing.looking_ahead !== "Forward-looking analysis unavailable today.";
 
+  const baseUrl = "https://www.btctoday.co";
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: briefing.one_line || `Bitcoin Market Analysis | ${briefing.date}`,
     datePublished: `${briefing.date}T01:00:00Z`,
-    author: { "@type": "Organization", name: "BTC Today" },
-    publisher: { "@type": "Organization", name: "BTC Today" },
+    dateModified: (data as DailyBriefingRow).updated_at || `${briefing.date}T01:00:00Z`,
+    author: { "@type": "Organization", name: "BTC Today", url: baseUrl },
+    publisher: {
+      "@type": "Organization",
+      name: "BTC Today",
+      url: baseUrl,
+      logo: { "@type": "ImageObject", url: `${baseUrl}/logo.png` },
+    },
+    image: `${baseUrl}/opengraph-image`,
+    mainEntityOfPage: { "@type": "WebPage", "@id": baseUrl },
     description: `BTC $${market.price_usd.toLocaleString()} | ${market.change_24h_pct >= 0 ? "+" : ""}${market.change_24h_pct.toFixed(2)}% 24h | AI-curated Bitcoin intelligence`,
   };
 

@@ -21,12 +21,16 @@ export const metadata: Metadata = {
       "Upgrade to BTC Today Pro for institutional-grade Bitcoin intelligence.",
     type: "website",
     siteName: "BTC Today",
+    url: "https://www.btctoday.co/pricing",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Pricing | BTC Today",
     description:
       "Upgrade to BTC Today Pro for institutional-grade Bitcoin intelligence.",
+  },
+  alternates: {
+    canonical: "/pricing",
   },
 };
 

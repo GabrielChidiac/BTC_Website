@@ -36,13 +36,18 @@ export const metadata: Metadata = {
       "Daily AI-curated Bitcoin intelligence for investors: market data, institutional flows, macro analysis, and expert insights.",
     type: "website",
     siteName: "BTC Today",
+    url: "https://www.btctoday.co",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "BTC Today | AI-Curated Bitcoin Intelligence",
     description:
       "Daily AI-curated Bitcoin intelligence for investors: market data, institutional flows, macro analysis, and expert insights.",
   },
+  alternates: {
+    canonical: "/",
+  },
+  manifest: "/manifest.json",
 };
 
 export default async function RootLayout({
@@ -72,11 +77,29 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "Organization",
-              name: "BTC Today",
-              url: "https://www.btctoday.co",
-              description:
-                "AI-curated daily Bitcoin intelligence for investors: market data, institutional flows, macro analysis, and expert insights.",
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  "@id": "https://www.btctoday.co/#organization",
+                  name: "BTC Today",
+                  url: "https://www.btctoday.co",
+                  logo: {
+                    "@type": "ImageObject",
+                    url: "https://www.btctoday.co/logo.png",
+                  },
+                  description:
+                    "AI-curated daily Bitcoin intelligence for investors: market data, institutional flows, macro analysis, and expert insights.",
+                },
+                {
+                  "@type": "WebSite",
+                  "@id": "https://www.btctoday.co/#website",
+                  name: "BTC Today",
+                  url: "https://www.btctoday.co",
+                  publisher: { "@id": "https://www.btctoday.co/#organization" },
+                  description:
+                    "Daily AI-curated Bitcoin intelligence for institutional investors.",
+                },
+              ],
             }),
           }}
         />
