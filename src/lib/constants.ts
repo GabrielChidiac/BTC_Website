@@ -15,6 +15,18 @@ export const SECTION_LINKS = [
   { href: "/#outlook", label: "Looking Ahead" },
 ] as const;
 
+export const TAB_BRIEFING = "briefing";
+export const TAB_DEEP_DIVE = "deep-dive-tab";
+
+export const SECTION_TAB_MAP: Record<string, string> = {
+  market: TAB_BRIEFING,
+  news: TAB_BRIEFING,
+  stories: TAB_BRIEFING,
+  signals: TAB_DEEP_DIVE,
+  "deep-dive": TAB_DEEP_DIVE,
+  outlook: TAB_DEEP_DIVE,
+};
+
 /**
  * Check if a nav link is active based on the current pathname.
  * Exact match for "/" to avoid false positives.

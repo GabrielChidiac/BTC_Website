@@ -102,6 +102,13 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - If a paying user isn't already a subscriber, the webhook auto-creates them as active/pro
 - `getSubscriberTier()` in `src/lib/tier.ts` reads session cookie → checks tier
 - All existing active subscribers were gifted Pro tier at launch
+- Subscriber status: `'active'` | `'inactive'` | `'pending'` (stored in `subscribers.status`)
+
+**Founding members:**
+- `is_founding_member` boolean on `subscribers` table
+- `FOUNDING_MEMBER_LIMIT` constant in `src/lib/constants.ts`
+- `getFoundingMemberStatus()` in `src/lib/founding.ts` checks spots remaining
+- Founding members get `founding-welcome.tsx` email; other Pro subscribers get `pro-welcome.tsx`
 
 **Tier gating rules:**
 - **Homepage:** Free users see sections 01–04 (hero, market, what happened, top stories). Sections 05–07 (adoption & regulatory, deep dive, looking ahead) are behind `ProTeaser` blur.
@@ -122,12 +129,12 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 All keys are listed in `.env.example` with descriptions. Key services: Anthropic, Perplexity, Kie.ai (Claude fallback), CoinGecko, SearchAPI, Jina Reader, Trigger.dev, Resend, Supabase, Whop.
 
 ## Database (Supabase)
-4 tables — migrations in `supabase/migrations/`: `daily_briefings` (date PK + JSONB content), `subscribers`, `verification_codes`, `chat_rate_limits`.
+5 tables -- migrations in `supabase/migrations/`: `daily_briefings` (date PK + JSONB content), `subscribers`, `verification_codes`, `chat_rate_limits`, `chat_conversations`.
 
 RLS: briefings are publicly readable; all other tables are service-role only.
 
 ## API Routes
-Routes live in `src/app/api/`. Key endpoints: subscribe, unsubscribe, revalidate (ISR), chat (Claude, rate-limited 20/10min), chat/verify-send + verify-check (magic link auth), logout, webhooks/whop, and `/pdf/[date]` (GET, Pro only).
+Routes live in `src/app/api/`. Key endpoints: subscribe, unsubscribe, revalidate (ISR), chat (Claude, rate-limited 20/10min), chat/history (conversation retrieval), chat/verify-send + verify-check (magic link auth), logout, webhooks/whop, and `/pdf/[date]` (GET, Pro only). Chat supports conversation threading via `chat_conversations` table.
 
 ## Pipeline Architecture
 ```
@@ -173,6 +180,7 @@ Routes live in `src/app/api/`. Key endpoints: subscribe, unsubscribe, revalidate
 - Daily-digest and weekly-recap use `%%UNSUBSCRIBE_URL%%` placeholder, replaced per-subscriber with a magic-token sign-in URL
 - Welcome email links directly to `/sign-in` (no magic token available at subscribe time)
 - Contact/support email: `hello@btctoday.co` (used in email FROM, website footer, pricing FAQ)
+- Email templates live in `emails/` directory: `welcome.tsx`, `pro-welcome.tsx`, `founding-welcome.tsx`, `verification.tsx`, `daily-digest.tsx`, `weekly-recap.tsx`, `daily-summary-pdf.tsx`, `unsubscribe-confirmation.tsx`
 
 ## Frontend Rules
 
@@ -233,4 +241,3 @@ See `docs/deployment.md` for the full deployment guide. Remaining production TOD
 - Set all env vars in Vercel (see `.env.example`)
 - Set Whop env vars (`WHOP_WEBHOOK_KEY`, `NEXT_PUBLIC_WHOP_MONTHLY_URL`, `NEXT_PUBLIC_WHOP_ANNUAL_URL`)
 - Configure webhook URL in Whop dashboard → `https://btctoday.co/api/webhooks/whop`
-- Consider adding `middleware.ts` for security headers (CSP, X-Frame-Options)

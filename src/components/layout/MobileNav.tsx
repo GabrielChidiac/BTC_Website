@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { NAV_LINKS, SECTION_LINKS, isActiveLink } from "@/lib/constants";
+import { NAV_LINKS, SECTION_LINKS, SECTION_TAB_MAP, isActiveLink } from "@/lib/constants";
 import type { SubscriberTier } from "@/lib/types";
 
 export function MobileNav({ signedInEmail, displayName, tier = "free" }: { signedInEmail?: string | null; displayName?: string | null; tier?: SubscriberTier }) {
@@ -42,7 +42,7 @@ export function MobileNav({ signedInEmail, displayName, tier = "free" }: { signe
 
       {/* Drawer */}
       <nav
-        className={`fixed top-[57px] right-0 z-[80] h-[calc(100vh-57px)] w-64 max-w-[80vw] bg-[var(--color-bg-surface)] border-l border-[var(--color-border)] p-6 transition-transform duration-300 ease-out ${
+        className={`fixed top-[57px] right-0 z-[80] h-[calc(100vh-57px)] w-64 max-w-[80vw] bg-[rgb(240,240,246)] border-l border-[var(--color-border)] p-6 transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -57,7 +57,7 @@ export function MobileNav({ signedInEmail, displayName, tier = "free" }: { signe
                 className={`rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
                   active
                     ? "text-[var(--color-accent)] bg-[var(--color-accent)]/5"
-                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-elevated)]"
+                    : "text-[var(--color-text-primary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-elevated)]"
                 }`}
               >
                 {label}
@@ -75,8 +75,19 @@ export function MobileNav({ signedInEmail, displayName, tier = "free" }: { signe
                 <a
                   key={href}
                   href={href}
-                  onClick={() => setOpen(false)}
-                  className="rounded-lg px-4 py-2 text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-elevated)] transition-colors"
+                  onClick={(e) => {
+                    const sectionId = href.replace("/#", "");
+                    const targetTab = SECTION_TAB_MAP[sectionId];
+                    setOpen(false);
+                    if (targetTab) {
+                      e.preventDefault();
+                      window.dispatchEvent(
+                        new CustomEvent("briefing-tab-switch", { detail: { tab: targetTab, hash: sectionId } })
+                      );
+                    }
+                    // Sections not in SECTION_TAB_MAP (e.g. #insight) use default anchor scroll
+                  }}
+                  className="rounded-lg px-4 py-2 text-xs font-medium text-[var(--color-text-primary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-elevated)] transition-colors"
                 >
                   {label}
                 </a>

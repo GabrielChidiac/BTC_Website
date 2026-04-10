@@ -2,7 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { NAV_LINKS, SECTION_LINKS, isActiveLink } from "@/lib/constants";
+import { NAV_LINKS, SECTION_LINKS, SECTION_TAB_MAP, isActiveLink } from "@/lib/constants";
+
+/** Dispatch tab switch event, return true if handled */
+function dispatchTabSwitch(href: string): boolean {
+  const sectionId = href.replace("/#", "");
+  const targetTab = SECTION_TAB_MAP[sectionId];
+  if (targetTab) {
+    window.dispatchEvent(
+      new CustomEvent("briefing-tab-switch", { detail: { tab: targetTab, hash: sectionId } })
+    );
+    return true;
+  }
+  return false;
+}
 
 export function DesktopNav() {
   const pathname = usePathname();
@@ -19,7 +32,7 @@ export function DesktopNav() {
             className={`whitespace-nowrap text-sm font-medium transition-colors ${
               active
                 ? "text-[var(--color-accent)]"
-                : "text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
+                : "text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]"
             }`}
           >
             {label}
@@ -33,7 +46,13 @@ export function DesktopNav() {
             <a
               key={href}
               href={href}
-              className="whitespace-nowrap text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+              onClick={(e) => {
+                if (dispatchTabSwitch(href)) {
+                  e.preventDefault();
+                }
+                // Sections not in SECTION_TAB_MAP (e.g. #insight) use default anchor scroll
+              }}
+              className="whitespace-nowrap text-[11px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors"
             >
               {label}
             </a>

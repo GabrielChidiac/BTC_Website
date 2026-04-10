@@ -13,6 +13,11 @@ export function LookingAhead({ content }: { content: string }) {
     .filter(Boolean)
     .slice(0, 4);
 
+  if (paragraphs.length === 0) return null;
+
+  const lead = paragraphs[0];
+  const body = paragraphs.slice(1);
+
   return (
     <MotionCard>
       <Card className="gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0 overflow-hidden">
@@ -33,34 +38,29 @@ export function LookingAhead({ content }: { content: string }) {
                   Forward Outlook
                 </h3>
                 <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] font-medium">
-                  Next 24–72 hours
+                  Next 24-72 hours
                 </p>
               </div>
             </div>
 
-            {/* Paragraphs */}
-            <div className="space-y-4">
-              {paragraphs.map((para, i) => {
-                const firstDot = para.indexOf(". ");
-                const lead = firstDot !== -1 ? para.slice(0, firstDot + 1) : para;
-                const rest = firstDot !== -1 ? para.slice(firstDot + 2) : "";
+            {/* Lead paragraph */}
+            <p className="text-[15px] sm:text-base leading-[1.75] text-[var(--color-text-primary)] font-[family-name:var(--font-inter)] font-light">
+              {lead}
+            </p>
 
-                return (
-                  <div
+            {/* Body paragraphs */}
+            {body.length > 0 && (
+              <div className="mt-5 pt-5 border-t border-[var(--color-border)]/60 space-y-4">
+                {body.map((para, i) => (
+                  <p
                     key={i}
-                    className="border-l-[3px] border-l-[var(--color-accent)]/30 pl-4 py-0.5"
+                    className="text-sm leading-[1.8] text-[var(--color-text-secondary)] font-[family-name:var(--font-inter)] font-light"
                   >
-                    <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                      <span className="font-[family-name:var(--font-heading)] font-bold text-[var(--color-text-primary)]">
-                        {lead}
-                      </span>
-                      {rest && ` ${rest}`}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-
+                    {para}
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

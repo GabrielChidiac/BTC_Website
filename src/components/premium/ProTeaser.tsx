@@ -28,13 +28,15 @@ interface FoundingOffer {
   limit: number;
 }
 
-export function ProTeaser({ foundingOffer }: { foundingOffer?: FoundingOffer | null }) {
+export function ProTeaser({ foundingOffer, variant = "standalone" }: { foundingOffer?: FoundingOffer | null; variant?: "standalone" | "tab" }) {
   const isFoundingActive = foundingOffer && foundingOffer.spotsLeft > 0;
 
   return (
-    <div className="mt-10 scroll-mt-16">
-      {/* Section header — fully visible */}
-      <SectionLabel number="05" title="Adoption &amp; Regulatory" className="mb-4" />
+    <div className={variant === "tab" ? "mt-6" : "mt-10 scroll-mt-16"}>
+      {/* Section header — only in standalone mode */}
+      {variant === "standalone" && (
+        <SectionLabel number="05" title="Adoption &amp; Regulatory" className="mb-4" />
+      )}
 
       {/* Skeleton content preview */}
       <div className="relative overflow-hidden">
@@ -78,8 +80,8 @@ export function ProTeaser({ foundingOffer }: { foundingOffer?: FoundingOffer | n
               {isFoundingActive ? "Get full Pro access, free" : "Unlock the full briefing"}
             </p>
             <p className="max-w-xs text-sm text-[var(--color-text-secondary)] leading-relaxed">
-              Adoption signals, institutional flows, technical analysis,
-              expert insights, and what&rsquo;s next for BTC.
+              Daily email briefings, adoption signals, institutional flows,
+              technical analysis, expert insights, and what&rsquo;s next for BTC.
             </p>
             {isFoundingActive && (
               <div className="w-full max-w-[200px]">

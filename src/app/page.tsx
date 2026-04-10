@@ -27,8 +27,8 @@ import { InstitutionalFlows } from "@/components/briefing/InstitutionalFlows";
 import { TechnicalSignals } from "@/components/briefing/TechnicalSignals";
 import { NetworkHealth } from "@/components/briefing/NetworkHealth";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
-import { ProTeaser } from "@/components/premium/ProTeaser";
 import { NextBriefingCountdown } from "@/components/briefing/NextBriefingCountdown";
+import { BriefingTabs } from "@/components/briefing/BriefingTabs";
 import { getFoundingMemberStatus } from "@/lib/founding";
 
 
@@ -158,220 +158,204 @@ export default async function Home() {
             />
           </div>
 
-          {/* ─── Tier divider: Snapshot → Briefing ─── */}
-          <div className="section-divider" />
-
           {/* ═══════════════════════════════════════════════════════════════
-              TIER 2: THE BRIEFING
-              02 — MARKET EVIDENCE: Stat tiles
+              BRIEFING TABS — Two-page book layout
              ═══════════════════════════════════════════════════════════════ */}
-          <div id="market" className="mt-10 scroll-mt-16">
-            <SectionLabel number="02" title="Market Evidence" className="mb-4" />
-            <ScrollReveal>
-              <BentoGrid>
-                <StatTile
-                  label="Market Cap"
-                  value={`$${compactNumber(market.market_cap_usd)}`}
-                  size="sm"
-                />
-                <StatTile
-                  label="24h Volume"
-                  value={`$${compactNumber(market.volume_24h_usd)}`}
-                  size="sm"
-                />
-                <StatTile
-                  label="Dominance"
-                  value={`${market.dominance_pct.toFixed(1)}%`}
-                  size="sm"
-                />
-                {isPro && (() => {
-                  const flow = briefing.etf_flows?.daily_net_flow_usd ?? null;
-                  if (flow == null) return null;
-                  return (
-                    <StatTile
-                      label="Daily ETF Flow"
-                      value={formatFlowUSD(flow)}
-                      delta={briefing.etf_flows?.mtd_net_flow_usd != null
-                        ? { value: `MTD: ${formatFlowUSD(briefing.etf_flows.mtd_net_flow_usd)}`, positive: briefing.etf_flows.mtd_net_flow_usd >= 0 }
-                        : undefined}
-                      size="sm"
-                    />
-                  );
-                })()}
-                {isPro && (() => {
-                  const aum = briefing.etf_flows?.total_net_assets_usd ?? null;
-                  if (aum == null) return null;
-                  return (
-                    <StatTile
-                      label="Total ETF AUM"
-                      value={`$${compactNumber(aum)}`}
-                      size="sm"
-                    />
-                  );
-                })()}
-              </BentoGrid>
-            </ScrollReveal>
-          </div>
-
-          {/* ═══════════════════════════════════════════════════════════════
-              03 — WHAT HAPPENED: Day in Brief + BTC vs Everything + Signals
-             ═══════════════════════════════════════════════════════════════ */}
-          <div id="news" className="mt-10 scroll-mt-16">
-            <SectionLabel number="03" title="What Happened" className="mb-4" />
-            <ScrollReveal>
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
-                <div className="lg:col-span-3">
-                  <DayInBriefExpandable
-                    macro={briefing.macro_context}
-                    events={isPro ? briefing.countdown_events : undefined}
-                  />
-                </div>
-                <div className="lg:col-span-2">
-                  <BtcVsEverythingTabs comparisons={briefing.btc_vs_everything} />
-                </div>
-              </div>
-            </ScrollReveal>
-
-          </div>
-
-          {/* ═══════════════════════════════════════════════════════════════
-              04 — TOP STORIES: Expandable cards
-             ═══════════════════════════════════════════════════════════════ */}
-          {briefing.top_stories.length > 0 && (
-            <div id="stories" className="mt-10 scroll-mt-16">
-              <SectionLabel number="04" title="Top Stories" className="mb-4" />
-              <ScrollReveal variant="left">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-start">
-                  {briefing.top_stories.slice(0, 4).map((story, i) => (
-                    <StoryExpandable
-                      key={story.url || i}
-                      story={story}
-                      defaultOpen={i === 0}
-                    />
-                  ))}
-                </div>
-              </ScrollReveal>
-            </div>
-          )}
-
-          {/* ═══════════════════════════════════════════════════════════════
-              05 — ADOPTION & REGULATORY (Pro only, shown near top)
-             ═══════════════════════════════════════════════════════════════ */}
-          {isPro && (briefing.adoption.length > 0 || briefing.regulatory.length > 0) && (
-            <div id="signals" className="mt-10 scroll-mt-16">
-              <SectionLabel number="05" title="Adoption &amp; Regulatory" className="mb-4" />
-              <ScrollReveal>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-start">
-                  {briefing.adoption.length > 0 && <Adoption updates={briefing.adoption} />}
-                  {briefing.regulatory.length > 0 && <Regulatory updates={briefing.regulatory} />}
-                </div>
-              </ScrollReveal>
-            </div>
-          )}
-
-          {/* ─── Tier divider: Briefing → Deep Dive ─── */}
-          <div className="section-divider" />
-
-          {isPro ? (
-            <>
-              {/* ═══════════════════════════════════════════════════════════════
-                  06 — DEEP DIVE: Data sections + Expert Insights
-                 ═══════════════════════════════════════════════════════════════ */}
-              <div id="deep-dive" className="mt-10 scroll-mt-16">
-                <SectionLabel number="06" title="Deep Dive" className="mb-4" />
-                <ScrollReveal>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    <MotionCard className="h-full">
-                      <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
-                        <CardContent className="p-4 sm:p-5">
-                          <InstitutionalFlows flows={briefing.institutional_flows} />
-                        </CardContent>
-                      </Card>
-                    </MotionCard>
-
-                    <MotionCard className="h-full">
-                      <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
-                        <CardContent className="p-4 sm:p-5">
-                          <TechnicalSignals signals={briefing.technical_signals} />
-                        </CardContent>
-                      </Card>
-                    </MotionCard>
-
-                    <MotionCard className="h-full">
-                      <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
-                        <CardContent className="p-4 sm:p-5">
-                          <NetworkHealth network={briefing.network_health} />
-                        </CardContent>
-                      </Card>
-                    </MotionCard>
-                  </div>
-                </ScrollReveal>
-
-                {/* Expert Insights — max 3 quotes */}
-                {briefing.expert_insights && briefing.expert_insights.length > 0 && (
+          <BriefingTabs
+            isPro={isPro}
+            foundingOffer={founding ? { spotsLeft: founding.spotsLeft, limit: founding.limit } : null}
+            tab1Content={
+              <>
+                {/* 02 — MARKET EVIDENCE */}
+                <div id="market" className="mt-8 scroll-mt-28">
+                  <SectionLabel number="02" title="Market Evidence" className="mb-4" />
                   <ScrollReveal>
-                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      {briefing.expert_insights.slice(0, 3).map((insight, i) => (
-                        <ExpertExpandable key={i} insight={insight} />
-                      ))}
+                    <BentoGrid>
+                      <StatTile
+                        label="Market Cap"
+                        value={`$${compactNumber(market.market_cap_usd)}`}
+                        size="sm"
+                      />
+                      <StatTile
+                        label="24h Volume"
+                        value={`$${compactNumber(market.volume_24h_usd)}`}
+                        size="sm"
+                      />
+                      <StatTile
+                        label="Dominance"
+                        value={`${market.dominance_pct.toFixed(1)}%`}
+                        size="sm"
+                      />
+                      {isPro && (() => {
+                        const flow = briefing.etf_flows?.daily_net_flow_usd ?? null;
+                        if (flow == null) return null;
+                        return (
+                          <StatTile
+                            label="Daily ETF Flow"
+                            value={formatFlowUSD(flow)}
+                            delta={briefing.etf_flows?.mtd_net_flow_usd != null
+                              ? { value: `MTD: ${formatFlowUSD(briefing.etf_flows.mtd_net_flow_usd)}`, positive: briefing.etf_flows.mtd_net_flow_usd >= 0 }
+                              : undefined}
+                            size="sm"
+                          />
+                        );
+                      })()}
+                      {isPro && (() => {
+                        const aum = briefing.etf_flows?.total_net_assets_usd ?? null;
+                        if (aum == null) return null;
+                        return (
+                          <StatTile
+                            label="Total ETF AUM"
+                            value={`$${compactNumber(aum)}`}
+                            size="sm"
+                          />
+                        );
+                      })()}
+                    </BentoGrid>
+                  </ScrollReveal>
+                </div>
+
+                {/* 03 — WHAT HAPPENED */}
+                <div id="news" className="mt-10 scroll-mt-28">
+                  <SectionLabel number="03" title="What Happened" className="mb-4" />
+                  <ScrollReveal>
+                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
+                      <div className="lg:col-span-3">
+                        <DayInBriefExpandable
+                          macro={briefing.macro_context}
+                          events={isPro ? briefing.countdown_events : undefined}
+                        />
+                      </div>
+                      <div className="lg:col-span-2">
+                        <BtcVsEverythingTabs comparisons={briefing.btc_vs_everything} />
+                      </div>
                     </div>
                   </ScrollReveal>
-                )}
-              </div>
+                </div>
 
-              {/* ═══════════════════════════════════════════════════════════════
-                  07 — LOOKING AHEAD: Forward outlook + Countdown Events
-                 ═══════════════════════════════════════════════════════════════ */}
-              {(hasLookingAhead || filteredEvents.length > 0) && (
-                <div id="outlook" className="mt-10 scroll-mt-16">
-                  <SectionLabel number="07" title="Looking Ahead" className="mb-4" />
-
-                  {hasLookingAhead && (
-                    <ScrollReveal>
-                      <LookingAhead content={briefing.looking_ahead} />
+                {/* 04 — TOP STORIES */}
+                {briefing.top_stories.length > 0 && (
+                  <div id="stories" className="mt-10 scroll-mt-28">
+                    <SectionLabel number="04" title="Top Stories" className="mb-4" />
+                    <ScrollReveal variant="left">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-start">
+                        {briefing.top_stories.slice(0, 4).map((story, i) => (
+                          <StoryExpandable
+                            key={story.url || i}
+                            story={story}
+                            defaultOpen={i === 0}
+                          />
+                        ))}
+                      </div>
                     </ScrollReveal>
-                  )}
+                  </div>
+                )}
+              </>
+            }
+            tab2Content={
+              <>
+                {/* 05 — ADOPTION & REGULATORY */}
+                {(briefing.adoption.length > 0 || briefing.regulatory.length > 0) && (
+                  <div id="signals" className="mt-8 scroll-mt-28">
+                    <SectionLabel number="05" title="Adoption &amp; Regulatory" className="mb-4" />
+                    <ScrollReveal>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-start">
+                        {briefing.adoption.length > 0 && <Adoption updates={briefing.adoption} />}
+                        {briefing.regulatory.length > 0 && <Regulatory updates={briefing.regulatory} />}
+                      </div>
+                    </ScrollReveal>
+                  </div>
+                )}
 
-                  {filteredEvents.length > 0 && (
-                    <ScrollReveal variant="scale">
-                      <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 ${hasLookingAhead ? "mt-4" : ""}`}>
-                        {filteredEvents.map((event) => (
-                          <MotionCard key={event.name} lift={4} className="h-full">
-                            <Card
-                              className={`card-interactive h-full gap-0 py-0 ring-1 ${
-                                event.days_away !== null && event.days_away <= 3
-                                  ? "ring-[var(--color-accent)]/30 glow-card"
-                                  : "ring-[var(--color-border)]"
-                              }`}
-                            >
-                              <CardContent className="p-4">
-                                <p className="font-[family-name:var(--font-heading)] text-2xl font-bold tabular-nums text-[var(--color-text-primary)]">
-                                  {event.days_away !== null ? `${event.days_away}d` : "TBD"}
-                                </p>
-                                <p className="mt-1 text-sm font-[family-name:var(--font-heading)] font-semibold text-[var(--color-text-primary)] leading-snug">
-                                  {event.name}
-                                </p>
-                                {event.description && (
-                                  <p className="mt-1 text-xs text-[var(--color-text-muted)] leading-relaxed">
-                                    {event.description}
-                                  </p>
-                                )}
-                              </CardContent>
-                            </Card>
-                          </MotionCard>
+                {/* 06 — DEEP DIVE */}
+                <div id="deep-dive" className="mt-10 scroll-mt-28">
+                  <SectionLabel number="06" title="Deep Dive" className="mb-4" />
+                  <ScrollReveal>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <MotionCard className="h-full">
+                        <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                          <CardContent className="p-4 sm:p-5">
+                            <InstitutionalFlows flows={briefing.institutional_flows} />
+                          </CardContent>
+                        </Card>
+                      </MotionCard>
+
+                      <MotionCard className="h-full">
+                        <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                          <CardContent className="p-4 sm:p-5">
+                            <TechnicalSignals signals={briefing.technical_signals} />
+                          </CardContent>
+                        </Card>
+                      </MotionCard>
+
+                      <MotionCard className="h-full">
+                        <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                          <CardContent className="p-4 sm:p-5">
+                            <NetworkHealth network={briefing.network_health} />
+                          </CardContent>
+                        </Card>
+                      </MotionCard>
+                    </div>
+                  </ScrollReveal>
+
+                  {briefing.expert_insights && briefing.expert_insights.length > 0 && (
+                    <ScrollReveal>
+                      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        {briefing.expert_insights.slice(0, 3).map((insight, i) => (
+                          <ExpertExpandable key={i} insight={insight} />
                         ))}
                       </div>
                     </ScrollReveal>
                   )}
                 </div>
-              )}
-            </>
-          ) : (
-            /* ═══════════════════════════════════════════════════════════════
-               FREE TIER: Blurred teaser of sections 05-06 with upgrade CTA
-               ═══════════════════════════════════════════════════════════════ */
-            <ProTeaser foundingOffer={founding ? { spotsLeft: founding.spotsLeft, limit: founding.limit } : null} />
-          )}
+
+                {/* 07 — LOOKING AHEAD */}
+                {(hasLookingAhead || filteredEvents.length > 0) && (
+                  <div id="outlook" className="mt-10 scroll-mt-28">
+                    <SectionLabel number="07" title="Looking Ahead" className="mb-4" />
+
+                    {hasLookingAhead && (
+                      <ScrollReveal>
+                        <LookingAhead content={briefing.looking_ahead} />
+                      </ScrollReveal>
+                    )}
+
+                    {filteredEvents.length > 0 && (
+                      <ScrollReveal variant="scale">
+                        <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 ${hasLookingAhead ? "mt-4" : ""}`}>
+                          {filteredEvents.map((event) => (
+                            <MotionCard key={event.name} lift={4} className="h-full">
+                              <Card
+                                className={`card-interactive h-full gap-0 py-0 ring-1 ${
+                                  event.days_away !== null && event.days_away <= 3
+                                    ? "ring-[var(--color-accent)]/30 glow-card"
+                                    : "ring-[var(--color-border)]"
+                                }`}
+                              >
+                                <CardContent className="p-4">
+                                  <p className="font-[family-name:var(--font-heading)] text-2xl font-bold tabular-nums text-[var(--color-text-primary)]">
+                                    {event.days_away !== null ? `${event.days_away}d` : "TBD"}
+                                  </p>
+                                  <p className="mt-1 text-sm font-[family-name:var(--font-heading)] font-semibold text-[var(--color-text-primary)] leading-snug">
+                                    {event.name}
+                                  </p>
+                                  {event.description && (
+                                    <p className="mt-1 text-xs text-[var(--color-text-muted)] leading-relaxed">
+                                      {event.description}
+                                    </p>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            </MotionCard>
+                          ))}
+                        </div>
+                      </ScrollReveal>
+                    )}
+                  </div>
+                )}
+              </>
+            }
+          />
 
           {/* ═══════════════════════════════════════════════════════════════
               YOU'RE CAUGHT UP — Completion marker
