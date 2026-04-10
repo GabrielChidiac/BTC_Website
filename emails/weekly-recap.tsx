@@ -358,11 +358,6 @@ export default function WeeklyRecap({
                 Archive
               </Link>
             </Text>
-            <Text style={styles.footerText}>
-              <Link href="%%UNSUBSCRIBE_URL%%" style={styles.footerLink}>
-                Unsubscribe
-              </Link>
-            </Text>
           </Section>
 
         </Container>

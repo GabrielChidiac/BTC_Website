@@ -9,7 +9,7 @@ export function Footer() {
         <div className="flex items-center gap-4">
           <BitcoinCoin className="relative z-10 size-10 drop-shadow-[0_2px_8px_rgba(247,147,26,0.35)]" />
           <p className="text-sm text-[var(--color-text-secondary)]">
-            Data refreshed every day at 2 AM CET.
+            Data refreshed every day at 3 AM CET.
           </p>
           <BitcoinCoin className="relative z-10 size-10 drop-shadow-[0_2px_8px_rgba(247,147,26,0.35)]" />
         </div>

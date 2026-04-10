@@ -73,7 +73,7 @@ export default function ProWelcomeEmail({
             </Text>
 
             <Text style={styles.bodyText}>
-              Every morning at 2 AM CET, you will receive a comprehensive
+              Every morning at 3 AM CET, you will receive a comprehensive
               briefing directly in your inbox. No need to visit the site
               unless you want to.
             </Text>
@@ -140,11 +140,6 @@ export default function ProWelcomeEmail({
               {" / "}
               <Link href={`${siteUrl}/archive`} style={styles.footerLink}>
                 Archive
-              </Link>
-            </Text>
-            <Text style={styles.footerText}>
-              <Link href={`${siteUrl}/sign-in`} style={styles.footerLink}>
-                Unsubscribe
               </Link>
             </Text>
           </Section>

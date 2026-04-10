@@ -2,9 +2,13 @@
 
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import { Lock } from "lucide-react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ProTeaser } from "@/components/premium/ProTeaser";
 import { TAB_BRIEFING, TAB_DEEP_DIVE, SECTION_TAB_MAP } from "@/lib/constants";
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface FoundingOffer {
   spotsLeft: number;
@@ -18,12 +22,16 @@ interface BriefingTabsProps {
   foundingOffer?: FoundingOffer | null;
 }
 
-function scrollToSection(hash: string) {
-  // Double rAF ensures React has committed the DOM update before scrolling
+function refreshAndScroll(hash?: string) {
+  // Double rAF ensures React has committed the DOM update
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      const el = document.getElementById(hash);
-      el?.scrollIntoView({ behavior: "smooth" });
+      // Recalculate all GSAP ScrollTrigger positions after tab content becomes visible
+      ScrollTrigger.refresh();
+      if (hash) {
+        const el = document.getElementById(hash);
+        el?.scrollIntoView({ behavior: "smooth" });
+      }
     });
   });
 }
@@ -44,7 +52,7 @@ export function BriefingTabs({ tab1Content, tab2Content, isPro, foundingOffer }:
       const tab = getTabForHash(window.location.hash);
       if (tab) {
         setActiveTab(tab);
-        scrollToSection(window.location.hash.replace("#", ""));
+        refreshAndScroll(window.location.hash.replace("#", ""));
       }
     }
 
@@ -53,7 +61,7 @@ export function BriefingTabs({ tab1Content, tab2Content, isPro, foundingOffer }:
         const tab = getTabForHash(window.location.hash);
         if (tab) {
           setActiveTab(tab);
-          scrollToSection(window.location.hash.replace("#", ""));
+          refreshAndScroll(window.location.hash.replace("#", ""));
         }
       }
     };
@@ -63,7 +71,7 @@ export function BriefingTabs({ tab1Content, tab2Content, isPro, foundingOffer }:
       if (detail?.tab) {
         setActiveTab(detail.tab);
         if (detail.hash) {
-          scrollToSection(detail.hash);
+          refreshAndScroll(detail.hash);
         }
       }
     };
@@ -81,6 +89,8 @@ export function BriefingTabs({ tab1Content, tab2Content, isPro, foundingOffer }:
       setActiveTab(value);
       // Scroll to top of tabs area on manual tab click
       tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Refresh ScrollTrigger so animations fire in newly-visible tab
+      refreshAndScroll();
     }
   };
 

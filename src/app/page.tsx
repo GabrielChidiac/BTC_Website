@@ -158,6 +158,9 @@ export default async function Home() {
             />
           </div>
 
+          {/* Breathing room between hero and tabs */}
+          <div className="mt-10" />
+
           {/* ═══════════════════════════════════════════════════════════════
               BRIEFING TABS — Two-page book layout
              ═══════════════════════════════════════════════════════════════ */}

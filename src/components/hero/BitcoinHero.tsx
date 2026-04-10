@@ -59,8 +59,6 @@ export function BitcoinHero({
   const heroRef = useRef<HTMLElement>(null);
   const priceRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const badgesRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (mq.matches) return;
@@ -87,15 +85,6 @@ export function BitcoinHero({
         { opacity: 1, y: 0, duration: 0.5 },
         "-=0.25"
       );
-
-      if (badgesRef.current && badgesRef.current.children.length > 0) {
-        tl.fromTo(
-          badgesRef.current.children,
-          { opacity: 0, y: 8 },
-          { opacity: 1, y: 0, duration: 0.3, stagger: 0.05 },
-          "-=0.15"
-        );
-      }
     });
 
     return () => ctx.revert();
@@ -186,20 +175,6 @@ export function BitcoinHero({
           )}
         </div>
 
-        {/* Key changes as badges */}
-        {dailyDiff.key_changes.length > 0 && (
-          <div ref={badgesRef} className="mt-4 flex flex-wrap gap-2">
-            {dailyDiff.key_changes.map((change) => (
-              <span
-                key={change}
-                className="rounded-full bg-[var(--color-bg-elevated)] border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-text-secondary)]"
-                style={{ opacity: 0 }}
-              >
-                {change}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
     </section>
   );

@@ -25,7 +25,7 @@ export default function PrivacyPage() {
             <Section title="What we collect">
               <p>
                 When you subscribe to BTC Today, we collect your <strong>email address</strong> and
-                optionally your <strong>first name</strong>. If you upgrade to Pro, payment is handled
+                your <strong>first name</strong>. If you upgrade to Pro, payment is handled
                 entirely by <strong>Whop</strong> -- we never see or store your card details.
               </p>
             </Section>
@@ -48,13 +48,11 @@ export default function PrivacyPage() {
             </Section>
 
             <Section title="Third-party services">
-              <ul className="list-disc pl-5 space-y-2">
-                <li><strong>Supabase</strong> -- database hosting (your email, subscription status, chat history)</li>
-                <li><strong>Resend</strong> -- email delivery</li>
-                <li><strong>Whop</strong> -- payment processing for Pro subscriptions</li>
-                <li><strong>Anthropic (Claude)</strong> -- powers the AI chat feature; your chat messages are sent to their API</li>
-                <li><strong>Vercel</strong> -- website hosting</li>
-              </ul>
+              <p>
+                We use trusted third-party providers to operate the service, including database hosting,
+                email delivery, payment processing, AI chat, and website hosting. We only share the
+                minimum data necessary for each service to function.
+              </p>
             </Section>
 
             <Section title="Data retention">

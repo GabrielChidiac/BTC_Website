@@ -1,7 +1,12 @@
+"use client";
+
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MotionCard } from "@/components/ui/MotionCard";
 
 export function LookingAhead({ content }: { content: string }) {
+  const [expanded, setExpanded] = useState(false);
+
   if (!content) return null;
 
   const metaPattern = /\b(my instructions|critical constraint|let me deliver|briefing you['']ve provided|I appreciate the.*briefing|I need to flag|plain text format|three.paragraph editorial)\b/i;
@@ -48,18 +53,37 @@ export function LookingAhead({ content }: { content: string }) {
               {lead}
             </p>
 
-            {/* Body paragraphs */}
+            {/* Collapsible body */}
             {body.length > 0 && (
-              <div className="mt-5 pt-5 border-t border-[var(--color-border)]/60 space-y-4">
-                {body.map((para, i) => (
-                  <p
-                    key={i}
-                    className="text-sm leading-[1.8] text-[var(--color-text-secondary)] font-[family-name:var(--font-inter)] font-light"
+              <>
+                {expanded && (
+                  <div className="mt-5 pt-5 border-t border-[var(--color-border)]/60 space-y-4">
+                    {body.map((para, i) => (
+                      <p
+                        key={i}
+                        className="text-sm leading-[1.8] text-[var(--color-text-secondary)] font-[family-name:var(--font-inter)] font-light"
+                      >
+                        {para}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                <button
+                  onClick={() => setExpanded(!expanded)}
+                  className="mt-4 flex items-center gap-1.5 text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors cursor-pointer"
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    className={`transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
                   >
-                    {para}
-                  </p>
-                ))}
-              </div>
+                    <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  {expanded ? "Show less" : `${body.length} more insight${body.length > 1 ? "s" : ""}`}
+                </button>
+              </>
             )}
           </div>
         </CardContent>

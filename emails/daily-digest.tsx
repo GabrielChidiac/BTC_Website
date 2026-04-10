@@ -507,14 +507,12 @@ export default function DailyDigest({
           {/* ── Footer ──────────────────────────────────────── */}
           <Section style={s.footer}>
             <Text style={s.footerText}>
-              AI-curated daily Bitcoin intelligence. 2 AM CET.
+              AI-curated daily Bitcoin intelligence. 3 AM CET.
             </Text>
             <Text style={s.footerLinks}>
               <Link href={siteUrl} style={s.footerLink}>btctoday.co</Link>
               {" \u00B7 "}
               <Link href={`${siteUrl}/archive`} style={s.footerLink}>Archive</Link>
-              {" \u00B7 "}
-              <Link href="%%UNSUBSCRIBE_URL%%" style={s.footerLink}>Unsubscribe</Link>
             </Text>
           </Section>
 

@@ -63,7 +63,7 @@ export default function WelcomeEmail({
 
             <Text style={styles.bodyText}>
               You now have access to daily Bitcoin intelligence built for
-              investors who value signal over noise. Every morning at 2 AM CET,
+              investors who value signal over noise. Every morning at 3 AM CET,
               a fresh briefing goes live on the site.
             </Text>
 
@@ -118,11 +118,6 @@ export default function WelcomeEmail({
               {" / "}
               <Link href={`${siteUrl}/archive`} style={styles.footerLink}>
                 Archive
-              </Link>
-            </Text>
-            <Text style={styles.footerText}>
-              <Link href={`${siteUrl}/sign-in`} style={styles.footerLink}>
-                Unsubscribe
               </Link>
             </Text>
           </Section>
