@@ -333,25 +333,25 @@ export default async function Home() {
                 <div id="deep-dive" className="mt-10 scroll-mt-28">
                   <SectionLabel number="06" title="Deep Dive" className="mb-4" />
                   <ScrollReveal>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      <MotionCard className="h-full">
-                        <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 items-start">
+                      <MotionCard>
+                        <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
                           <CardContent className="p-4 sm:p-5">
                             <InstitutionalFlows flows={briefing.institutional_flows} />
                           </CardContent>
                         </Card>
                       </MotionCard>
 
-                      <MotionCard className="h-full">
-                        <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                      <MotionCard>
+                        <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
                           <CardContent className="p-4 sm:p-5">
                             <TechnicalSignals signals={briefing.technical_signals} />
                           </CardContent>
                         </Card>
                       </MotionCard>
 
-                      <MotionCard className="h-full">
-                        <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                      <MotionCard>
+                        <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
                           <CardContent className="p-4 sm:p-5">
                             <NetworkHealth network={briefing.network_health} />
                           </CardContent>

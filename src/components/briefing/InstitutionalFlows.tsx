@@ -11,12 +11,12 @@ export function InstitutionalFlows({
 
   return (
     <div>
-      <h3 className="font-[family-name:var(--font-heading)] text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-accent)] mb-3">
+      <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-text-primary)] mb-4">
         Institutional Activity
-      </h3>
+      </h2>
 
       {flows.summary && flows.summary !== "Data unavailable" && (
-        <p className="text-[11px] text-[var(--color-text-muted)] mb-2">
+        <p className="text-xs text-[var(--color-text-muted)] mb-4">
           {flows.summary.split(/[.!?]/)[0]?.trim()}.
         </p>
       )}
