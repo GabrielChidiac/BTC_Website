@@ -172,6 +172,30 @@ export interface BriefingJSON {
   etf_flows: ETFFlows | null;
 }
 
+// ─── Triage types (two-pass news verification) ─────────────────────────────
+
+export interface TriageItem {
+  index: number;        // 0-based index in the original article array
+  url: string;
+  importance: number;   // 1-10 score
+  reasoning: string;    // One-line explanation
+}
+
+export interface TriageOutput {
+  ranked: TriageItem[];
+}
+
+export interface PerplexityCrossRefItem {
+  headline: string;
+  source: string;
+  url: string;
+  why_important: string;
+}
+
+export interface PerplexityCrossRefOutput {
+  stories: PerplexityCrossRefItem[];
+}
+
 // ─── Collector output types ─────────────────────────────────────────────────
 
 export interface RawArticle {

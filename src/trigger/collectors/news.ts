@@ -3,7 +3,6 @@ import type { NewsCollectorOutput, RawArticle } from "@/lib/types";
 import { isWithinHours } from "@/lib/utils";
 import { fetchRssArticles } from "@/trigger/lib/rss";
 import { fetchSearchApiNews } from "@/trigger/lib/searchapi";
-import { scrapeArticles } from "@/trigger/lib/jina";
 
 function normalizeUrl(url: string): string {
   return url.toLowerCase().replace(/\/+$/, "");
@@ -75,20 +74,7 @@ export const newsCollector = task({
       `[news-collector] rss=${rssArticles.length} searchapi=${searchArticles.length} → deduplicated=${deduplicated.length} → recent=${recent.length} → btcRelevant=${btcRelevant.length}`
     );
 
-    // Scrape full article text for top 10 articles via Jina Reader (non-fatal)
-    try {
-      const scraped = await scrapeArticles(btcRelevant, 10);
-      for (const article of btcRelevant) {
-        const fullText = scraped.get(article.url);
-        if (fullText) {
-          article.content = fullText;
-        }
-      }
-      console.log(`[news-collector] Enriched ${scraped.size} articles with full text`);
-    } catch (e) {
-      console.warn(`[news-collector] Jina scraping failed — continuing with headlines only: ${(e as Error).message}`);
-    }
-
+    // Full-text scraping moved to pipeline (after triage selects important articles)
     return { articles: btcRelevant };
   },
 });

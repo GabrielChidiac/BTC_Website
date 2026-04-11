@@ -5,6 +5,7 @@ import { halvingProgress } from "@/lib/utils";
 import type {
   BriefingJSON,
   TopStory,
+  TriageItem,
   NewsCollectorOutput,
   MarketCollectorOutput,
   DailyBriefingRow,
@@ -21,6 +22,7 @@ interface AiBrainPayload {
   date: string;
   news: NewsCollectorOutput;
   market: MarketCollectorOutput | null;
+  triageContext?: TriageItem[];
 }
 
 // ─── System prompt ─────────────────────────────────────────────────────────
@@ -389,6 +391,21 @@ function buildUserPrompt(
 - Solana: 24h ${fmt(market.comparisons.sol_change_24h_pct)}, YTD ${fmt(market.comparisons.sol_change_ytd_pct)}, 1Y ${fmt(market.comparisons.sol_change_1y_pct)}`);
   } else {
     sections.push("## Market Data\nMarket data unavailable.");
+  }
+
+  // Triage pre-analysis (if available)
+  if (payload.triageContext && payload.triageContext.length > 0) {
+    const triageText = payload.triageContext
+      .slice(0, 15)
+      .map(
+        (t) =>
+          `- (importance: ${t.importance}/10) "${news.articles[t.index]?.title ?? "Unknown"}" [${t.url}]\n  Reasoning: ${t.reasoning}`
+      )
+      .join("\n");
+    sections.push(`## AI Triage Pre-Analysis
+The following articles were identified as most important by a preliminary triage pass. Use this as a signal but apply your own judgment. Articles with full text below were scraped based on this ranking.
+
+${triageText}`);
   }
 
   if (yesterday) {

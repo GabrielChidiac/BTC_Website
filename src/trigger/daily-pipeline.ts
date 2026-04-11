@@ -3,6 +3,8 @@ import { newsCollector } from "./collectors/news";
 import { marketCollector } from "./collectors/market";
 import { aiBrainTask } from "./processors/ai-brain";
 import { enrichmentTask } from "./processors/enrichment";
+import { triageTask, perplexityCrossRefTask, mergeTriageWithCrossRef } from "./processors/triage";
+import { scrapeArticles } from "./lib/jina";
 import { saveBriefingTask } from "./publishers/save-briefing";
 import { revalidateSiteTask } from "./publishers/revalidate-site";
 import { sendDigestTask } from "./publishers/send-digest";
@@ -40,12 +42,71 @@ export const dailyPipelineTask = schedules.task({
       market: marketRun?.ok ?? false,
     });
 
+    const newsOutput = newsRun?.ok ? newsRun.output : { articles: [] };
+
+    // ── Step 1.5: Parallel triage + Perplexity cross-reference ────────────
+    let triageRankings: import("@/lib/types").TriageItem[] = [];
+
+    if (newsOutput.articles.length > 0) {
+      const [triageResult, crossRefResult] = await Promise.allSettled([
+        triageTask.triggerAndWait({ articles: newsOutput.articles }),
+        perplexityCrossRefTask.triggerAndWait(),
+      ]);
+
+      const triageRun = triageResult.status === "fulfilled" ? triageResult.value : null;
+      const crossRefRun = crossRefResult.status === "fulfilled" ? crossRefResult.value : null;
+
+      if (!triageRun?.ok) logger.warn("Triage failed, will fall back to recency-based scraping");
+      if (!crossRefRun?.ok) logger.warn("Perplexity cross-ref failed, proceeding without");
+
+      // ── Step 1.7: Merge results + targeted scraping ───────────────────
+      const { articlesToScrape, triageRankings: rankings } = mergeTriageWithCrossRef(
+        newsOutput.articles,
+        triageRun?.ok ? triageRun.output : null,
+        crossRefRun?.ok ? crossRefRun.output : null,
+      );
+      triageRankings = rankings;
+
+      // Scrape full text for importance-ranked articles (not recency-ranked)
+      try {
+        const scraped = await scrapeArticles(articlesToScrape, 15);
+        for (const article of newsOutput.articles) {
+          const fullText = scraped.get(article.url);
+          if (fullText) article.content = fullText;
+        }
+        // Also enrich any synthetic articles from cross-ref
+        for (const article of articlesToScrape) {
+          if (
+            !newsOutput.articles.find(
+              (a) => a.url.toLowerCase() === article.url.toLowerCase()
+            ) &&
+            scraped.has(article.url)
+          ) {
+            article.content = scraped.get(article.url);
+            newsOutput.articles.push(article);
+          }
+        }
+        logger.info("Targeted scraping complete", { scraped: scraped.size });
+      } catch (e) {
+        logger.warn("Jina scraping failed, continuing with headlines only", {
+          error: (e as Error).message,
+        });
+      }
+    }
+
+    logger.info("Triage and scraping complete", {
+      articleCount: newsOutput.articles.length,
+      triageRankCount: triageRankings.length,
+      articlesWithContent: newsOutput.articles.filter((a) => a.content).length,
+    });
+
     // ── Step 2: AI Brain (fatal) ──────────────────────────────────────────
     const briefing = await aiBrainTask
       .triggerAndWait({
         date,
-        news: newsRun?.ok ? newsRun.output : { articles: [] },
+        news: newsOutput,
         market: marketRun?.ok ? marketRun.output : null,
+        triageContext: triageRankings.length > 0 ? triageRankings : undefined,
       })
       .unwrap();
 
@@ -76,7 +137,7 @@ export const dailyPipelineTask = schedules.task({
       const enriched = await enrichmentTask
         .triggerAndWait({
           top_stories: briefing.top_stories,
-          all_articles: newsRun?.ok ? newsRun.output.articles : [],
+          all_articles: newsOutput.articles,
           market_summary: marketSummary,
           briefing_summary: {
             one_line: briefing.one_line ?? "",
