@@ -362,7 +362,7 @@ export default async function Home() {
 
                   {briefing.expert_insights && briefing.expert_insights.length > 0 && (
                     <ScrollReveal>
-                      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3 items-start">
                         {briefing.expert_insights.slice(0, 3).map((insight, i) => (
                           <ExpertExpandable key={i} insight={insight} />
                         ))}
