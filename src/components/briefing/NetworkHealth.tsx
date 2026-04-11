@@ -17,7 +17,7 @@ export function NetworkHealth({
   network: NetworkHealthType;
 }) {
   return (
-    <section className="mt-10">
+    <section>
       <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-text-primary)] mb-1">
         Network Fundamentals
       </h2>

@@ -291,8 +291,8 @@ export default async function ArchiveDatePage({
                   <Adoption updates={briefing.adoption} />
                   <Regulatory updates={briefing.regulatory} />
                   <InstitutionalFlows flows={briefing.institutional_flows} />
-                  <TechnicalSignals signals={briefing.technical_signals} />
-                  <NetworkHealth network={briefing.network_health} />
+                  <div className="mt-10"><TechnicalSignals signals={briefing.technical_signals} /></div>
+                  <div className="mt-10"><NetworkHealth network={briefing.network_health} /></div>
                   <ExpertInsights insights={briefing.expert_insights} />
                   <SupplyDynamics supply={briefing.supply_dynamics} />
                   <CountdownEvents events={briefing.countdown_events} />
