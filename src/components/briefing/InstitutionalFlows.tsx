@@ -7,11 +7,7 @@ export function InstitutionalFlows({
 }) {
   if (!flows) return null;
 
-  const hasContent =
-    (flows.notable_moves && flows.notable_moves.length > 0) ||
-    (flows.summary && flows.summary !== "Data unavailable");
-
-  if (!hasContent) return null;
+  if (!flows.notable_moves || flows.notable_moves.length === 0) return null;
 
   return (
     <div>
@@ -20,23 +16,20 @@ export function InstitutionalFlows({
       </h3>
 
       {flows.summary && flows.summary !== "Data unavailable" && (
-        <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed mb-3">
-          {flows.summary}
+        <p className="text-[11px] text-[var(--color-text-muted)] mb-2">
+          {flows.summary.split(/[.!?]/)[0]?.trim()}.
         </p>
       )}
-
-      {flows.notable_moves && flows.notable_moves.length > 0 && (
-        <ul className="space-y-1.5 border-t border-[var(--color-border)]/50 pt-3">
-          {flows.notable_moves.map((move, i) => (
-            <li
-              key={i}
-              className="text-xs text-[var(--color-text-secondary)] pl-3 border-l-2 border-[var(--color-accent)]/30 leading-relaxed"
-            >
-              {move}
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul className="space-y-1.5">
+        {flows.notable_moves.map((move, i) => (
+          <li
+            key={i}
+            className="text-xs text-[var(--color-text-secondary)] pl-3 border-l-2 border-[var(--color-accent)]/30 leading-relaxed"
+          >
+            {move}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

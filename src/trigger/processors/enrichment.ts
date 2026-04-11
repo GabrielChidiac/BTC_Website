@@ -104,12 +104,12 @@ IMPORTANT: Do NOT include ETF flow data (daily inflows/outflows, AUM, fund-level
 Search for the latest institutional Bitcoin activity and return the data in this exact JSON format:
 
 {
-  "summary": "<2-3 sentence overview of institutional Bitcoin activity this week>",
+  "summary": "<one short sentence introducing the institutional theme this week, max 12 words>",
   "notable_moves": ["<string>", ...]
 }
 
 Rules:
-- summary: concise overview of institutional positioning and activity, excluding ETF flows
+- summary: one short sentence that frames the moves below. E.g. "Corporate treasuries led accumulation this week." or "Quiet week for institutional activity outside ETFs."
 - notable_moves: 3-5 notable moves from the categories below. Each should include entity name, action, and specific numbers where available.
   Categories to cover:
   * Corporate treasury purchases/sales (MicroStrategy, Tesla, Block, Metaplanet, etc.)

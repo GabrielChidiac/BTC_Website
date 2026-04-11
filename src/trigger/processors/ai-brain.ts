@@ -75,7 +75,7 @@ interface TechnicalSignals {
   sma_200: number;
   support_level: number;
   resistance_level: number;
-  signal_summary: string;      // 1-2 sentences. Write for investors, not traders. E.g. "Price holds above the 200-day moving average with RSI suggesting room to run before overheated territory."
+  signal_summary: string;      // ONE short sentence, max 15 words. E.g. "Room to run: RSI neutral, price above 50-day but below 200-day."
 }
 
 interface AssetComparison {
