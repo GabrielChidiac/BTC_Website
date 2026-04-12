@@ -334,13 +334,22 @@ export default async function Home() {
                   <SectionLabel number="06" title="Deep Dive" className="mb-4" />
                   <ScrollReveal>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 items-start">
-                      <MotionCard>
-                        <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
-                          <CardContent className="p-4 sm:p-5">
-                            <InstitutionalFlows flows={briefing.institutional_flows} />
-                          </CardContent>
-                        </Card>
-                      </MotionCard>
+                      {(() => {
+                        const flows = briefing.institutional_flows;
+                        const hasFlowsContent =
+                          (flows?.notable_moves && flows.notable_moves.length > 0) ||
+                          (flows?.summary && flows.summary !== "Data unavailable");
+                        if (!hasFlowsContent) return null;
+                        return (
+                          <MotionCard>
+                            <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                              <CardContent className="p-4 sm:p-5">
+                                <InstitutionalFlows flows={flows} />
+                              </CardContent>
+                            </Card>
+                          </MotionCard>
+                        );
+                      })()}
 
                       <MotionCard>
                         <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
