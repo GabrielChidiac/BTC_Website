@@ -175,7 +175,7 @@ export const sendDigestTask = task({
     if (adoption?.length) sigLines.push(`${adoption[0].category}: ${adoption[0].summary.split(/\.\s/)[0]}.`);
     if (sigLines.length > 0) sections.push(`--- SIGNALS ---\n${sigLines.join("\n")}`);
 
-    sections.push(`Read full briefing: %%BRIEFING_URL%%\nDownload PDF: %%PDF_URL%%\nChat with AI: %%CHAT_URL%%\nUnsubscribe: %%UNSUBSCRIBE_URL%%\n\n- BTC Today`);
+    sections.push(`Read full briefing: %%BRIEFING_URL%%\nDownload PDF: %%PDF_URL%%\nUnsubscribe: %%UNSUBSCRIBE_URL%%\n\n- BTC Today`);
 
     const textTemplate = sections.join("\n\n");
 
@@ -201,7 +201,7 @@ export const sendDigestTask = task({
       .insert(tokenRows);
 
     if (tokenError) {
-      logger.warn("Failed to create chat tokens — emails will send without chat links", {
+      logger.warn("Failed to create magic link tokens, emails will send without auto-login", {
         error: tokenError.message,
       });
     }
@@ -216,9 +216,6 @@ export const sendDigestTask = task({
 
       const batchPayload = batch.map((email) => {
         const token = authTokens.get(email);
-        const chatUrl = token
-          ? `${siteUrl}/chat?token=${token}&email=${encodeURIComponent(email)}`
-          : `${siteUrl}/chat`;
         const subscriberName = nameByEmail.get(email);
 
         // Build auth-carrying briefing URL so clicking from email auto-logs the user in
@@ -236,18 +233,19 @@ export const sendDigestTask = task({
           : `${siteUrl}/sign-in`;
 
         let html = htmlTemplate
-          .replace(/%%CHAT_URL%%/g, chatUrl)
           .replace(/%%PDF_URL%%/g, subscriberPdfUrl)
           .replace(/%%BRIEFING_URL%%/g, briefingUrl)
           .replace(/%%UNSUBSCRIBE_URL%%/g, unsubscribeUrl);
         let text = textTemplate
-          .replace(/%%CHAT_URL%%/g, chatUrl)
           .replace(/%%BRIEFING_URL%%/g, briefingUrl)
           .replace(/%%UNSUBSCRIBE_URL%%/g, unsubscribeUrl);
 
-        // If no PDF was generated, remove the PDF link from the email
-        if (!subscriberPdfUrl) {
+        if (subscriberPdfUrl) {
+          text = text.replace(/%%PDF_URL%%/g, subscriberPdfUrl);
+        } else {
+          // No PDF generated: strip the link from both html and plain text
           html = html.replace(/<a[^>]*href=""[^>]*>[\s\S]*?Download PDF[\s\S]*?<\/a>/i, "");
+          text = text.replace(/Download PDF: %%PDF_URL%%\n/, "");
         }
 
         if (subscriberName) {

@@ -177,7 +177,7 @@ ${storySummaries || "No major stories this week."}
 
 Read the latest briefing: %%BRIEFING_URL%%
 
-Want the full picture? Go Pro for daily emails, AI chat, and more:
+Want the full picture? Go Pro for the daily email, PDF downloads, and full archive:
 ${siteUrl}/pricing
 
 Unsubscribe: %%UNSUBSCRIBE_URL%%

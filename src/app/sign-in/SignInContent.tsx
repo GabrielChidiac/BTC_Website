@@ -23,7 +23,7 @@ function SignInInner() {
     if (magicToken && magicEmail) {
       verifiedRef.current = true;
       setVerifying(true);
-      fetch("/api/chat/verify-check", {
+      fetch("/api/auth/verify-check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: magicEmail, token: magicToken }),
@@ -63,10 +63,10 @@ function SignInInner() {
     const trimmed = email.trim().toLowerCase();
 
     try {
-      const res = await fetch("/api/chat/verify-send", {
+      const res = await fetch("/api/auth/verify-send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmed, redirect: "/sign-in" }),
+        body: JSON.stringify({ email: trimmed }),
       });
 
       const data = await res.json();

@@ -37,7 +37,6 @@ export default function PrivacyPage() {
               <ul className="list-disc pl-5 space-y-2">
                 <li>Send you daily briefing emails and/or weekly recaps based on your subscription tier</li>
                 <li>Authenticate your sessions via magic link (no passwords stored)</li>
-                <li>Provide access to the AI chat feature (Pro subscribers)</li>
                 <li>Improve the service based on aggregate, anonymized usage patterns</li>
               </ul>
             </Section>
@@ -53,8 +52,8 @@ export default function PrivacyPage() {
             <Section title="Third-party services">
               <p>
                 We use trusted third-party providers to operate the service, including database hosting,
-                email delivery, payment processing, AI chat, and website hosting. We only share the
-                minimum data necessary for each service to function.
+                email delivery, payment processing, and website hosting. We only share the minimum
+                data necessary for each service to function.
               </p>
             </Section>
 

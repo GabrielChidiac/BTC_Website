@@ -123,7 +123,7 @@ export function ProGateCompact({ message, foundingOffer }: { message?: string; f
         </>
       ) : (
         <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed max-w-md">
-          {message ?? "This content is available to Pro subscribers. Upgrade for the daily email briefing, AI chat, PDF downloads, and full archive."}
+          {message ?? "This content is available to Pro subscribers. Upgrade for the daily email briefing, PDF downloads, and full archive."}
         </p>
       )}
       {isFoundingActive ? (

@@ -94,7 +94,7 @@ export default function WelcomeEmail({
           <Section style={styles.content}>
             <Text style={styles.proText}>
               When you are ready for the full picture (daily email delivery,
-              institutional flows, expert insights, AI chat, PDF downloads,
+              institutional flows, expert insights, PDF downloads,
               and unlimited archive access),{" "}
               <Link href={`${siteUrl}/pricing`} style={styles.proLink}>
                 Pro is here

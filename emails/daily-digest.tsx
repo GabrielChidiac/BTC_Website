@@ -497,10 +497,6 @@ export default function DailyDigest({
               <Link href="%%PDF_URL%%" style={s.ctaSecondary}>
                 Download PDF
               </Link>
-              {"   "}
-              <Link href="%%CHAT_URL%%" style={s.ctaSecondary}>
-                Chat with AI
-              </Link>
             </Text>
           </Section>
 

@@ -89,12 +89,12 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - Session tokens stored as `session:<uuid>` in `verification_codes.code`; cookie stores `{ email, token }` JSON where `token` is the UUID portion
 - **Max 3 concurrent sessions** per email — oldest evicted on 4th login
 - PDF route (`/pdf/[date]`) accepts both session cookie and magic link token via query params
-- All email links (briefing, PDF, chat) share the same per-subscriber magic token
+- All email links (briefing, PDF) share the same per-subscriber magic token
 - `getBaseUrl()` (`src/lib/url.ts`) resolves site URL — never falls back to localhost
 
 ### Subscription Tiers
 - **Free tier:** Market overview, top stories, BTC vs everything, macro context, weekly recap email — **available for 7 days only**
-- **Pro tier:** All free features + regulatory/adoption signals, daily briefing email, ETF flows, institutional activity, technical signals, network health, expert insights, supply dynamics, forward outlook, countdown events, AI chat, PDF downloads, full archive (all dates)
+- **Pro tier:** All free features + regulatory/adoption signals, daily briefing email, ETF flows, institutional activity, technical signals, network health, expert insights, supply dynamics, forward outlook, countdown events, PDF downloads, full archive (all dates)
 - Tiers stored in `subscribers.tier` column (`'free'` | `'pro'`)
 - Whop handles payments via webhook at `/api/webhooks/whop`
 - `verifyWhopWebhook()` in `src/lib/whop.ts` validates webhook signatures via HMAC-SHA256
@@ -114,10 +114,10 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - **Homepage:** Free users see sections 01–04 (hero, market, what happened, top stories). Sections 05–07 (adoption & regulatory, deep dive, looking ahead) are behind `ProTeaser` blur.
 - **Archive list:** Free users see only last 7 days. Pro users see all dates.
 - **Archive [date]:** Free users on recent briefings (≤7 days) see free-tier sections only; pro-only sections show `ProGateCompact`. Old briefings (>7 days) show only DailyDiff + MarketSnapshot for free users.
-- **Chat:** Pro only — free users redirected to `/pricing` at page level.
 - **PDF:** Pro only — auth checked in route handler.
 
 ### Claude API Integration
+- Used only inside the Trigger.dev pipeline (AI Brain). There is no user-facing Claude chat endpoint.
 - `callClaudeJSON<T>()` in `src/trigger/lib/anthropic.ts` auto-retries once with a "fix your JSON" prompt on parse failure
 - Fallback chain: Anthropic SDK (Claude Sonnet) → Kie.ai (OpenAI-compatible endpoint) on 429/5xx errors
 - All wrappers return `Result<T>` — never throw
@@ -129,12 +129,12 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 All keys are listed in `.env.example` with descriptions. Key services: Anthropic, Perplexity, Kie.ai (Claude fallback), CoinGecko, SearchAPI, Jina Reader, Trigger.dev, Resend, Supabase, Whop.
 
 ## Database (Supabase)
-5 tables -- migrations in `supabase/migrations/`: `daily_briefings` (date PK + JSONB content), `subscribers`, `verification_codes`, `chat_rate_limits`, `chat_conversations`.
+3 tables -- migrations in `supabase/migrations/`: `daily_briefings` (date PK + JSONB content), `subscribers`, `verification_codes`. (The `chat_conversations` and `chat_rate_limits` tables were dropped when the AI chat feature was removed; see migration `20260412000000_drop_chat_tables.sql`.)
 
 RLS: briefings are publicly readable; all other tables are service-role only.
 
 ## API Routes
-Routes live in `src/app/api/`. Key endpoints: subscribe, unsubscribe, revalidate (ISR), chat (Claude, rate-limited 20/10min), chat/history (conversation retrieval), chat/verify-send + verify-check (magic link auth), logout, webhooks/whop, and `/pdf/[date]` (GET, Pro only). Chat supports conversation threading via `chat_conversations` table.
+Routes live in `src/app/api/`. Key endpoints: subscribe + subscribe/verify, unsubscribe, revalidate (ISR), auth/verify-send + auth/verify-check (magic link sign-in), logout, webhooks/whop, and `/pdf/[date]` (GET, Pro only).
 
 ## Pipeline Architecture
 ```
@@ -159,7 +159,7 @@ Routes live in `src/app/api/`. Key endpoints: subscribe, unsubscribe, revalidate
 **Fault tolerance:**
 - Collectors: **non-fatal** — failed sources default to empty/null, pipeline continues
 - AI Brain: **FATAL** — if Claude fails, entire pipeline stops (no briefing published)
-- Enrichment: **non-fatal** — Perplexity failures default to fallback text; runs 4 queries in parallel (forward outlook, institutional activity, expert insights, supply dynamics)
+- Enrichment: **non-fatal** — Perplexity failures default to fallback text; runs 4 queries in parallel (forward outlook, institutional activity, expert insights, supply dynamics). The 4 queries are parallelized **inside** a single enrichment Trigger task via `Promise.allSettled`, not as 4 separate subtasks
 - Publishers: **sequential** — if save fails, email is never sent
 
 **BriefingJSON composition:**
@@ -181,6 +181,9 @@ Routes live in `src/app/api/`. Key endpoints: subscribe, unsubscribe, revalidate
 - Welcome email links directly to `/sign-in` (no magic token available at subscribe time)
 - Contact/support email: `hello@btctoday.co` (used in email FROM, website footer, pricing FAQ)
 - Email templates live in `emails/` directory: `welcome.tsx`, `pro-welcome.tsx`, `founding-welcome.tsx`, `verification.tsx`, `daily-digest.tsx`, `weekly-recap.tsx`, `daily-summary-pdf.tsx`, `unsubscribe-confirmation.tsx`
+
+## Removed: AI chat feature
+The user-facing Claude chat feature was intentionally removed (user decision, 2026-04-12). Do not reintroduce it. `ANTHROPIC_API_KEY` and `KIE_API_KEY` remain in use, but only by the Trigger.dev pipeline (AI Brain) — not by any user-facing route. Never suggest adding a chat route, chat component, or chat CTA.
 
 ## Frontend Rules
 
@@ -231,10 +234,11 @@ Routes live in `src/app/api/`. Key endpoints: subscribe, unsubscribe, revalidate
 | `/` | Homepage — latest briefing |
 | `/archive` | Briefing archive list |
 | `/archive/[date]` | Single archived briefing |
-| `/chat` | AI chat interface (requires auth, Pro only) |
 | `/sign-in` | Magic link sign-in page |
 | `/pricing` | Free vs Pro comparison, Whop checkout links |
 | `/pdf/[date]` | PDF download (auth required, Pro only) |
+| `/privacy` | Privacy policy |
+| `/terms` | Terms of service |
 
 ## Deployment Notes
 See `docs/deployment.md` for the full deployment guide. Remaining production TODOs:

@@ -4,13 +4,6 @@ export type Result<T> =
   | { data: T; error: null }
   | { data: null; error: string };
 
-// ─── Chat types ─────────────────────────────────────────────────────────────
-
-export interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
-}
-
 // ─── Briefing sub-types ─────────────────────────────────────────────────────
 
 export interface TopStory {

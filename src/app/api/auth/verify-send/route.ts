@@ -15,7 +15,7 @@ function generateToken(): string {
 }
 
 export async function POST(request: Request) {
-  let body: { email?: string; redirect?: string };
+  let body: { email?: string };
 
   try {
     body = await request.json();
@@ -27,8 +27,6 @@ export async function POST(request: Request) {
   }
 
   const email = body.email?.trim().toLowerCase();
-  // Allow callers to specify where the magic link should land (default: /chat)
-  const redirectPath = body.redirect === "/sign-in" ? "/sign-in" : "/chat";
 
   if (!email || !EMAIL_RE.test(email)) {
     return NextResponse.json(
@@ -39,7 +37,6 @@ export async function POST(request: Request) {
 
   const supabase = createServiceClient();
 
-  // Check if email is an active subscriber
   const { data: subscriber, error: subError } = await supabase
     .from("subscribers")
     .select("status")
@@ -54,14 +51,12 @@ export async function POST(request: Request) {
   }
 
   if (!subscriber || subscriber.status !== "active") {
-    // Return same success response to prevent email enumeration
     return NextResponse.json(
       { success: true, message: "Magic link sent" },
       { status: 200 }
     );
   }
 
-  // Rate limit: check for recent magic links sent to this email
   const { data: recentCode } = await supabase
     .from("verification_codes")
     .select("created_at")
@@ -80,7 +75,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Generate magic link token
   const token = generateToken();
   const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_MINUTES * 60 * 1000);
 
@@ -95,11 +89,9 @@ export async function POST(request: Request) {
     );
   }
 
-  // Build magic link URL
   const siteUrl = getBaseUrl();
-  const magicLink = `${siteUrl}${redirectPath}?token=${token}&email=${encodeURIComponent(email)}`;
+  const magicLink = `${siteUrl}/sign-in?token=${token}&email=${encodeURIComponent(email)}`;
 
-  // Send magic link email
   const resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) {
     return NextResponse.json(
@@ -113,13 +105,13 @@ export async function POST(request: Request) {
     await resend.emails.send({
       from: "BTC Today <hello@btctoday.co>",
       to: email,
-      subject: redirectPath === "/sign-in" ? "Login to BTC Today" : "Your BTC Today chat access link",
-      text: `Click the link below to ${redirectPath === "/sign-in" ? "log in to" : "access the AI assistant on"} BTC Today:\n\n${magicLink}\n\nThis link expires in ${TOKEN_EXPIRY_MINUTES} minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\n- BTC Today`,
+      subject: "Login to BTC Today",
+      text: `Click the link below to log in to BTC Today:\n\n${magicLink}\n\nThis link expires in ${TOKEN_EXPIRY_MINUTES} minutes.\n\nIf you didn't request this, you can safely ignore this email.\n\n- BTC Today`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
           <h2 style="font-size: 20px; font-weight: 700; color: #1a1a1a; margin: 0 0 8px;">BTC Today</h2>
-          <p style="font-size: 14px; color: #666; margin: 0 0 24px;">${redirectPath === "/sign-in" ? "Log in to your account" : "Access your AI Assistant"}</p>
-          <a href="${magicLink}" style="display: inline-block; background-color: #F7931A; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; padding: 12px 32px; border-radius: 8px;">${redirectPath === "/sign-in" ? "Login" : "Open Chat"}</a>
+          <p style="font-size: 14px; color: #666; margin: 0 0 24px;">Log in to your account</p>
+          <a href="${magicLink}" style="display: inline-block; background-color: #F7931A; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; padding: 12px 32px; border-radius: 8px;">Login</a>
           <p style="font-size: 13px; color: #999; margin: 24px 0 0;">This link expires in ${TOKEN_EXPIRY_MINUTES} minutes. If you didn't request this, ignore this email.</p>
         </div>
       `,

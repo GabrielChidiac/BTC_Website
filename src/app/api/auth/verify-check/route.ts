@@ -35,7 +35,6 @@ export async function POST(request: Request) {
 
   const supabase = createServiceClient();
 
-  // Find valid, unused magic link token
   const { data: magicToken, error: lookupError } = await supabase
     .from("verification_codes")
     .select("id, expires_at")
@@ -62,10 +61,9 @@ export async function POST(request: Request) {
   }
 
   // Magic tokens are NOT consumed — they remain valid until expiry so
-  // all links in a single digest email (briefing, chat, PDF) keep working.
+  // all links in a single digest email (briefing, PDF) keep working.
   // The 30-day session cookie handles ongoing authentication.
 
-  // Verify subscriber is still active before creating a session
   const { data: subscriber, error: subscriberError } = await supabase
     .from("subscribers")
     .select("name, status, tier, is_founding_member")
@@ -87,8 +85,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Re-activate subscribers who click a valid magic link — having a valid
-  // token proves email ownership and intent to access the site.
   if (subscriber.status !== "active") {
     await supabase
       .from("subscribers")
@@ -96,7 +92,6 @@ export async function POST(request: Request) {
       .eq("email", email);
   }
 
-  // Auto-upgrade free subscribers to Pro if founding offer is still active
   if (subscriber.tier === "free" && !subscriber.is_founding_member) {
     const founding = await getFoundingMemberStatus();
     if (founding.isOfferActive) {
@@ -111,7 +106,6 @@ export async function POST(request: Request) {
     }
   }
 
-  // Enforce max 3 concurrent sessions — evict oldest if at limit
   const MAX_SESSIONS = 3;
   const { data: activeSessions } = await supabase
     .from("verification_codes")
@@ -123,7 +117,6 @@ export async function POST(request: Request) {
     .order("created_at", { ascending: true });
 
   if (activeSessions && activeSessions.length >= MAX_SESSIONS) {
-    // Delete oldest sessions to make room for the new one
     const toEvict = activeSessions.slice(0, activeSessions.length - MAX_SESSIONS + 1);
     await supabase
       .from("verification_codes")
@@ -131,14 +124,13 @@ export async function POST(request: Request) {
       .in("id", toEvict.map((s) => s.id));
   }
 
-  // Generate a long-lived session token
   const sessionBytes = new Uint8Array(32);
   crypto.getRandomValues(sessionBytes);
   const sessionToken = Array.from(sessionBytes)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
-  const sessionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+  const sessionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await supabase
     .from("verification_codes")
     .insert({

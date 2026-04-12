@@ -154,7 +154,7 @@ export default async function PricingPage() {
                 ? (isFoundingMember ? "You have lifetime Pro access as one of our first subscribers." : "You have full access to all features.")
                 : isFoundingActive
                   ? "The first 100 subscribers get full Pro access. Free, permanently. No credit card required."
-                  : "Unlock the daily email briefing, AI chat, PDF downloads, and complete archive."}
+                  : "Unlock the daily email briefing, PDF downloads, and complete archive."}
             </p>
             {!isPro && isFoundingActive && (
               <div className="mt-4 mx-auto max-w-xs">

@@ -2,7 +2,6 @@
 
 export const NAV_LINKS = [
   { href: "/", label: "Briefing" },
-  { href: "/chat", label: "Ask AI" },
   { href: "/archive", label: "Archive" },
 ] as const;
 
@@ -55,7 +54,6 @@ export const FEATURES: ProFeature[] = [
   { label: "Network health & halving", desc: "Hashrate, fees, halving countdown", freeIncluded: false },
   { label: "Expert insights", desc: "Lyn Alden, Dylan LeClair, and more", freeIncluded: false },
   { label: "Forward outlook", desc: "Macro, regulatory, technical analysis", freeIncluded: false },
-  { label: "AI Chat assistant", desc: "Ask questions about today's data", freeIncluded: false },
   { label: "PDF downloads", desc: "1-page daily summary", freeIncluded: false },
   { label: "Full archive access", desc: "Access all historical briefings", freeIncluded: false },
 ];

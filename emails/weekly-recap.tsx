@@ -328,15 +328,15 @@ export default function WeeklyRecap({
             <Link href={briefingUrl} style={styles.ctaButton}>
               Read the Latest Briefing
             </Link>
-            <Text style={styles.ctaChatText}>
+            <Text style={styles.ctaProText}>
               Want the full picture?
             </Text>
-            <Link href={`${siteUrl}/pricing`} style={styles.ctaChatButton}>
+            <Link href={`${siteUrl}/pricing`} style={styles.ctaProButton}>
               Go Pro / $59/year
             </Link>
             <Text style={styles.proText}>
               Pro subscribers get the full briefing delivered to their inbox every morning,
-              plus institutional flows, expert insights, AI chat, and PDF summaries.
+              plus institutional flows, expert insights, and PDF summaries.
             </Text>
           </Section>
 
@@ -602,14 +602,14 @@ const styles = {
     letterSpacing: "0.01em",
   } as React.CSSProperties,
 
-  ctaChatText: {
+  ctaProText: {
     fontSize: "13px",
     color: colors.textMuted,
     margin: "20px 0 12px",
     lineHeight: "1.6",
   } as React.CSSProperties,
 
-  ctaChatButton: {
+  ctaProButton: {
     display: "inline-block" as const,
     backgroundColor: "transparent",
     color: colors.accent,

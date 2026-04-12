@@ -158,7 +158,7 @@ export async function POST(request: Request) {
           to: email,
           subject: "You're a Founding Member",
           html,
-          text: `You're a Founding Member.\n\nYou joined BTC Today early, and that means something. As one of our first 100 subscribers, you have full Pro access, on the house, permanently.\n\nEvery morning at 2 AM CET, you'll receive a comprehensive briefing in your inbox.\n\nWhat you get:\n- Daily briefing delivered to your inbox\n- Adoption signals and regulatory developments\n- ETF flows, institutional activity, and whale movements\n- Technical signals, network health, and on-chain data\n- Expert insights and forward outlook\n- AI chat for live questions\n- PDF downloads and full archive access\n\nThis is yours to keep.\n\nRead today's briefing: ${siteUrl}\n\n- BTC Today`,
+          text: `You're a Founding Member.\n\nYou joined BTC Today early, and that means something. As one of our first 100 subscribers, you have full Pro access, on the house, permanently.\n\nEvery morning at 2 AM CET, you'll receive a comprehensive briefing in your inbox.\n\nWhat you get:\n- Daily briefing delivered to your inbox\n- Adoption signals and regulatory developments\n- ETF flows, institutional activity, and whale movements\n- Technical signals, network health, and on-chain data\n- Expert insights and forward outlook\n- PDF downloads and full archive access\n\nThis is yours to keep.\n\nRead today's briefing: ${siteUrl}\n\n- BTC Today`,
         });
       } else {
         const html = await render(WelcomeEmail({ email, name: subscriberName, siteUrl }));
@@ -168,7 +168,7 @@ export async function POST(request: Request) {
           to: email,
           subject: "Welcome to BTC Today",
           html,
-          text: `Welcome to BTC Today!\n\nA new briefing publishes every morning at 2 AM CET. Visit btctoday.co to read the latest. You'll also receive a weekly recap every Sunday.\n\nRead today's briefing: ${siteUrl}\n\nUpgrade to Pro for the daily email, AI chat, PDF downloads, and more: ${siteUrl}/pricing\n\n- BTC Today`,
+          text: `Welcome to BTC Today!\n\nA new briefing publishes every morning at 2 AM CET. Visit btctoday.co to read the latest. You'll also receive a weekly recap every Sunday.\n\nRead today's briefing: ${siteUrl}\n\nUpgrade to Pro for the daily email, PDF downloads, and more: ${siteUrl}/pricing\n\n- BTC Today`,
         });
       }
     } catch {

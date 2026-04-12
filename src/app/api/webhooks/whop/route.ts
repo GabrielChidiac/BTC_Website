@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
             to: email,
             subject: "Welcome to BTC Today Pro",
             html,
-            text: `You're Pro.\n\nThanks for upgrading. You now have the full BTC Today experience.\n\nWhat you get:\n- Daily briefing delivered to your inbox at 2 AM CET\n- ETF flows, institutional activity, and whale movements\n- Technical signals, network health, and on-chain data\n- Expert insights and forward outlook\n- AI chat for live questions\n- PDF downloads and full archive access\n\nLog in here: ${magicLink}\n\n- BTC Today`,
+            text: `You're Pro.\n\nThanks for upgrading. You now have the full BTC Today experience.\n\nWhat you get:\n- Daily briefing delivered to your inbox at 2 AM CET\n- ETF flows, institutional activity, and whale movements\n- Technical signals, network health, and on-chain data\n- Expert insights and forward outlook\n- PDF downloads and full archive access\n\nLog in here: ${magicLink}\n\n- BTC Today`,
           });
         } catch {
           // Non-fatal - upgrade already applied

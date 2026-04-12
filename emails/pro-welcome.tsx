@@ -101,10 +101,6 @@ export default function ProWelcomeEmail({
               </Text>
               <Text style={styles.benefitItem}>
                 <span style={styles.bullet}>06</span>
-                AI chat for live questions about your briefing
-              </Text>
-              <Text style={styles.benefitItem}>
-                <span style={styles.bullet}>07</span>
                 PDF downloads and full archive access
               </Text>
             </Section>

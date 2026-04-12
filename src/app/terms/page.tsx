@@ -52,14 +52,6 @@ export default function TermsPage() {
               </p>
             </Section>
 
-            <Section title="AI chat">
-              <p>
-                The AI chat feature (Pro only) is powered by Anthropic&apos;s Claude. Responses are
-                generated based on the latest briefing data and should be treated as AI-assisted
-                analysis, not professional advice. Chat is rate-limited to ensure fair usage.
-              </p>
-            </Section>
-
             <Section title="Account and access">
               <ul className="list-disc pl-5 space-y-2">
                 <li>You must provide a valid email address to subscribe</li>
