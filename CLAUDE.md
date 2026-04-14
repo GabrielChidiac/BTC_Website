@@ -12,236 +12,180 @@ You are my ruthless mentor and my reflection partner. Your role is finding the t
 - If I'm searching for validation instead of the truth, point it out.
 
 ## Project
-AI-curated daily Bitcoin intelligence for high-net-worth individuals and business executives. Runs a Trigger.dev pipeline at 2 AM CET that collects news and market data, processes through Claude Sonnet into a structured briefing, enriches via Perplexity (institutional flows, expert insights, supply dynamics), and publishes to a Next.js site + email subscribers.
+AI-curated daily Bitcoin intelligence for busy BTC holders who have jobs. A Trigger.dev pipeline runs at 2 AM CET, collects news + market data, processes through Claude Sonnet, enriches via Perplexity (institutional flows, expert insights, supply dynamics), and publishes to a Next.js site + email subscribers. A 4-minute Pro audio brief (Pillar 2 of the 2026-04-13 pivot) is the primary Pro differentiator.
 
-**Target audience:** Busy executives, HNW individuals, institutional investors. Not beginners. Write peer-to-peer with sophisticated investors. Let the data speak for itself — no hype, no hand-holding.
+**Target audience:** Busy professionals who own Bitcoin and do not have time. Doctors, lawyers, founders, engineers, corporate managers, wealth advisors. Not crypto-native. Not institutional HNW (different pricing/distribution). The product promise is ruthless time-respect: every text brief finishes in under 3 minutes, every audio brief in under 4. Write peer-to-peer with a professional adult, not a Crypto Twitter degen. Let the data speak for itself. No hype, no hand-holding, no tribal crypto voice.
 
 ## Tech Stack
 | Layer | Tech | Notes |
 |---|---|---|
 | Framework | Next.js 16 (App Router, ISR) | `next@16.2.1`, React 19 |
-| Pipeline | Trigger.dev v3 (`@trigger.dev/sdk@^4.4.3`) | Cron tasks, 15min global max (`maxDuration: 900`) |
+| Pipeline | Trigger.dev v3 (`@trigger.dev/sdk@^4.4.3`) | Cron tasks, `maxDuration: 900` (15 min) |
 | Database | Supabase (Postgres + RLS) | `@supabase/ssr@^0.9.0` |
 | Styling | Tailwind CSS v4 | CSS-only config via `@theme` |
-| AI | Claude Sonnet (briefing) + Perplexity sonar-pro (enrichment) | Kie.ai fallback for Claude |
-| Payments | Whop | Free/Pro tiers, $7/month or $59/year |
+| AI | Claude Sonnet (briefing) + Perplexity sonar-pro (enrichment) + OpenAI `tts-1-hd` (audio) | Kie.ai fallback for Claude |
+| Payments | Whop | $7/month or $59/year |
 | Email | Resend + React Email | |
-| UI Components | shadcn/ui (base-nova) | `npx shadcn@latest add <component>` |
-| Animation | Framer Motion + GSAP | Only animate `transform` and `opacity` |
-| Technical Analysis | trading-signals | RSI-14, SMA-50, SMA-200 |
+| UI | shadcn/ui (base-nova), Framer Motion, GSAP | Animate only `transform`/`opacity` |
+| TA | trading-signals | RSI-14, SMA-50, SMA-200 |
 | Language | TypeScript (strict) | No tests or linter configured |
 
 ## Dev Commands
 ```bash
 npm run dev                   # Next.js at http://localhost:3000
 npm run build                 # Production build (verifies all types)
-npm start                     # Start production server
 npx trigger.dev@latest dev    # Trigger.dev local runner
 ```
-
-CI/CD: `.github/workflows/trigger-deploy.yml` deploys Trigger.dev tasks on push to main.
-
-Path alias: `@/*` maps to `./src/*` (configured in `tsconfig.json`).
+Path alias `@/*` → `./src/*`. CI in `.github/workflows/trigger-deploy.yml` deploys Trigger.dev tasks on push to `main`.
 
 ## Documentation
-- [docs/plan.md](docs/plan.md) — Implementation plan
-- [docs/architecture.md](docs/architecture.md) — Full file tree, data flow
-- [docs/decisions.md](docs/decisions.md) — Key technical decisions
-- [docs/orchestrator.md](docs/orchestrator.md) — Pipeline orchestrator reference
-- [docs/deployment.md](docs/deployment.md) — Deployment guide
-- [docs/design-brief.md](docs/design-brief.md) — Design brief (color system, typography lockups)
+[docs/plan.md](docs/plan.md), [docs/architecture.md](docs/architecture.md), [docs/decisions.md](docs/decisions.md), [docs/orchestrator.md](docs/orchestrator.md), [docs/deployment.md](docs/deployment.md), [docs/design-brief.md](docs/design-brief.md).
 
 ## Working Rules
-- **Always verify before writing.** Read the relevant schema, types, and existing code before writing any new code. Never assume a field, type, or pattern exists — confirm it first.
+- **Always verify before writing.** Read schemas, types, and existing code before writing any new code. Never assume a field, type, or pattern exists — confirm it first.
+- **This file must stay ≤230 lines.** When editing CLAUDE.md, run `wc -l CLAUDE.md` afterwards. If it exceeds 230, compress before finishing — collapse repetition, drop discoverable details, never split into a second doc.
 
 ## Critical Patterns
 
-### Result Type
-All API wrappers return `Result<T>`. Never throw from wrappers.
+### Result type
+All API wrappers return `Result<T>` and never throw.
 ```typescript
 type Result<T> = { data: T; error: null } | { data: null; error: string };
 ```
 
 ### Trigger.dev
-- Use `batch.triggerAndWait()` for parallel sub-tasks
-- **Never** `Promise.all` with individual `triggerAndWait` calls
-- `Promise.allSettled` is fine inside wrapper functions
-- Cron: `"0 1 * * *"` (1 UTC = 2 CET)
-- Max duration: 15 min global (`maxDuration: 900` in `trigger.config.ts`)
-- Task files go in `src/trigger/` (configured via `dirs` in `trigger.config.ts`)
+- Use `batch.triggerAndWait()` for parallel sub-tasks. **Never** `Promise.all` with individual `triggerAndWait` calls. `Promise.allSettled` is fine inside wrapper functions.
+- Cron `"0 1 * * *"` (1 UTC = 2 CET). Task files live in `src/trigger/` (configured via `dirs` in `trigger.config.ts`).
 
 ### Supabase
-- `@supabase/ssr` only — never import `@supabase/supabase-js` directly
-- `createServerClient()` in `src/lib/supabase/server.ts` — for Server Components (respects RLS)
-- `createServiceClient()` in `src/lib/supabase/server.ts` — for Trigger tasks + API route handlers (bypasses RLS via `SUPABASE_SERVICE_ROLE_KEY`)
-- `createClient()` in `src/lib/supabase/client.ts` — for client components
-- **Always use `.maybeSingle()`** for single-row queries — never `.single()` (which throws on 0 results). All queries in the codebase follow this pattern.
+- `@supabase/ssr` only — never import `@supabase/supabase-js` directly.
+- `createServerClient()` for Server Components (respects RLS). `createServiceClient()` for Trigger tasks + API route handlers (bypasses RLS via `SUPABASE_SERVICE_ROLE_KEY`). `createClient()` for client components. All in `src/lib/supabase/`.
+- **Always `.maybeSingle()`** for single-row queries — never `.single()` (throws on 0 results).
 
 ### Tailwind v4
-- Config lives in `src/app/globals.css` via `@import "tailwindcss"` + `@theme inline`
-- **No `tailwind.config.js`** — Tailwind v4 doesn't use one
+- Config lives in `src/app/globals.css` via `@import "tailwindcss"` + `@theme inline`. **No `tailwind.config.js`.**
 - Custom CSS variables defined in `@theme`: `--color-bg-base`, `--color-accent`, `--font-heading`, etc.
 
+### Claude API
+- Used only inside the Trigger.dev pipeline (AI Brain). No user-facing chat endpoint.
+- `callClaudeJSON<T>()` ([src/trigger/lib/anthropic.ts](src/trigger/lib/anthropic.ts)) auto-retries once with a "fix your JSON" prompt on parse failure. Fallback chain: Anthropic SDK → Kie.ai (OpenAI-compatible) on 429/5xx. All wrappers return `Result<T>`.
+- All HTTP uses native `fetch` — no axios.
+
 ### Authentication
-- **Magic link auth** — no passwords. Email subscribers get magic link tokens (10-min expiry, not consumed on use)
-- `verify-send` sends magic link → `verify-check` validates token, checks subscriber is active, creates 30-day session
-- Session cookie (`btc-session`): httpOnly, secure in production, sameSite lax, 30-day maxAge
-- Session tokens stored as `session:<uuid>` in `verification_codes.code`; cookie stores `{ email, token }` JSON where `token` is the UUID portion
-- **Max 3 concurrent sessions** per email — oldest evicted on 4th login
-- PDF route (`/pdf/[date]`) accepts both session cookie and magic link token via query params
-- All email links (briefing, PDF) share the same per-subscriber magic token
-- `getBaseUrl()` (`src/lib/url.ts`) resolves site URL — never falls back to localhost
+- **Magic link only**, no passwords. Tokens have a 10-min expiry and are not consumed on use.
+- `verify-send` issues a magic link → `verify-check` validates the token, confirms the subscriber is active, and creates a 30-day session. Session cookie `btc-session`: httpOnly, secure in prod, sameSite lax.
+- Session tokens stored as `session:<uuid>` in `verification_codes.code`; cookie is `{ email, token }` JSON. **Max 3 concurrent sessions per email** — oldest evicted on 4th login.
+- `/pdf/[date]` and `/api/audio/[date]` accept either the session cookie or a magic-link token via `?token=...&email=...` query params. All email links share the same per-subscriber token.
+- `getBaseUrl()` ([src/lib/url.ts](src/lib/url.ts)) resolves the site URL — never falls back to localhost.
 
-### Subscription Tiers
-- **Free tier:** Market overview, top stories, BTC vs everything, macro context, weekly recap email — **available for 7 days only**
-- **Pro tier:** All free features + regulatory/adoption signals, daily briefing email, ETF flows, institutional activity, technical signals, network health, expert insights, supply dynamics, forward outlook, countdown events, PDF downloads, full archive (all dates)
-- Tiers stored in `subscribers.tier` column (`'free'` | `'pro'`)
-- Whop handles payments via webhook at `/api/webhooks/whop`
-- `verifyWhopWebhook()` in `src/lib/whop.ts` validates webhook signatures via HMAC-SHA256
-- Webhook handles `membership.went_valid` (→ pro) and `membership.went_invalid` (→ free)
-- If a paying user isn't already a subscriber, the webhook auto-creates them as active/pro
-- `getSubscriberTier()` in `src/lib/tier.ts` reads session cookie → checks tier
-- All existing active subscribers were gifted Pro tier at launch
-- Subscriber status: `'active'` | `'inactive'` | `'pending'` (stored in `subscribers.status`)
+### Subscription tiers (Free / Pro)
+- Stored in `subscribers.tier` (`'free'` | `'pro'`); status in `subscribers.status` (`'active'` | `'inactive'` | `'pending'`).
+- `getSubscriberTier()` ([src/lib/tier.ts](src/lib/tier.ts)) reads the session cookie → checks tier.
+- Whop handles payments via webhook at `/api/webhooks/whop`; `verifyWhopWebhook()` ([src/lib/whop.ts](src/lib/whop.ts)) validates HMAC-SHA256 signatures. Webhook handles `membership.went_valid` (→ pro) / `membership.went_invalid` (→ free) and auto-creates the subscriber if missing.
+- All existing active subscribers were gifted Pro tier at launch.
+- **Founding members:** `is_founding_member` boolean on `subscribers`; `FOUNDING_MEMBER_LIMIT` in [src/lib/constants.ts](src/lib/constants.ts); `getFoundingMemberStatus()` ([src/lib/founding.ts](src/lib/founding.ts)) checks remaining spots. Founding members get `founding-welcome.tsx`; other Pro subscribers get `pro-welcome.tsx`.
 
-**Founding members:**
-- `is_founding_member` boolean on `subscribers` table
-- `FOUNDING_MEMBER_LIMIT` constant in `src/lib/constants.ts`
-- `getFoundingMemberStatus()` in `src/lib/founding.ts` checks spots remaining
-- Founding members get `founding-welcome.tsx` email; other Pro subscribers get `pro-welcome.tsx`
-
-**Tier gating rules:**
-- **Homepage:** Free users see sections 01–04 (hero, market, what happened, top stories). Sections 05–07 (adoption & regulatory, deep dive, looking ahead) are behind `ProTeaser` blur.
-- **Archive list:** Free users see only last 7 days. Pro users see all dates.
-- **Archive [date]:** Free users on recent briefings (≤7 days) see free-tier sections only; pro-only sections show `ProGateCompact`. Old briefings (>7 days) show only DailyDiff + MarketSnapshot for free users.
-- **PDF:** Pro only — auth checked in route handler.
-
-### Claude API Integration
-- Used only inside the Trigger.dev pipeline (AI Brain). There is no user-facing Claude chat endpoint.
-- `callClaudeJSON<T>()` in `src/trigger/lib/anthropic.ts` auto-retries once with a "fix your JSON" prompt on parse failure
-- Fallback chain: Anthropic SDK (Claude Sonnet) → Kie.ai (OpenAI-compatible endpoint) on 429/5xx errors
-- All wrappers return `Result<T>` — never throw
-
-### Native fetch
-- All HTTP calls use native `fetch` — no axios
+**Tier gating rules (scattered across the codebase — keep them straight):**
+- **Homepage:** Free sees sections 01–04 (hero, market, what happened, top stories). Sections 05–07 (adoption/regulatory, deep dive, looking ahead) sit behind `ProTeaser` blur.
+- **Archive list:** Free sees only the last 7 days. Pro sees all dates.
+- **Archive [date]:** ≤7 days → free-tier sections shown, pro-only sections show `ProGateCompact`. >7 days → free sees only DailyDiff + MarketSnapshot.
+- **PDF + audio brief:** Pro only. `/listen/[date]` server-side gates via `getSubscriberTier()` and redirects non-Pro to `/pricing`. `/api/audio/[date]` re-checks tier per request.
 
 ## Environment Variables
-All keys are listed in `.env.example` with descriptions. Key services: Anthropic, Perplexity, Kie.ai (Claude fallback), CoinGecko, SearchAPI, Jina Reader, Trigger.dev, Resend, Supabase, Whop.
+All keys live in `.env.example`. Services: Anthropic, Perplexity, Kie.ai (Claude fallback), OpenAI (TTS for the audio brief), CoinGecko, SearchAPI, Jina Reader, Trigger.dev, Resend, Supabase, Whop.
 
 ## Database (Supabase)
-3 tables -- migrations in `supabase/migrations/`: `daily_briefings` (date PK + JSONB content), `subscribers`, `verification_codes`. (The `chat_conversations` and `chat_rate_limits` tables were dropped when the AI chat feature was removed; see migration `20260412000000_drop_chat_tables.sql`.)
-
-RLS: briefings are publicly readable; all other tables are service-role only.
+4 tables in [supabase/migrations/](supabase/migrations/). RLS: briefings publicly readable, all others service-role only.
+- `daily_briefings` — date PK + JSONB content
+- `subscribers` — email, tier, status, founding flag
+- `verification_codes` — magic-link tokens + session tokens
+- `predictions` — silent data collection for the day-60 accuracy scorecard. Stores 2–3 directional claims per briefing (`claim_text`, `direction`, `metric`, `target_date`, `resolution_status`). **No user-facing UI yet.**
 
 ## API Routes
-Routes live in `src/app/api/`. Key endpoints: subscribe + subscribe/verify, unsubscribe, revalidate (ISR), auth/verify-send + auth/verify-check (magic link sign-in), logout, webhooks/whop, and `/pdf/[date]` (GET, Pro only).
+Routes in [src/app/api/](src/app/api/): subscribe + subscribe/verify, unsubscribe, revalidate (ISR), auth/verify-send + auth/verify-check, logout, webhooks/whop, `/pdf/[date]` (Pro), `/api/audio/[date]` (Pro — returns a 1-hour signed Supabase Storage URL for the day's MP3; 404 if missing; redirects non-Pro to `/pricing`).
 
 ## Pipeline Architecture
+2 AM CET cron in [daily-pipeline.ts](src/trigger/daily-pipeline.ts):
 ```
-2 AM CET daily (Trigger.dev cron):
-
-  ┌─ news collector ──────┐
-  │  (RSS feeds +          │
-  │   SearchAPI)           │──→ AI Brain (Claude) ──→ Enrichment (Perplexity x4)
-  └─ market collector ─────┘         │                       │
-     (CoinGecko, Mempool,           │                       ├── looking_ahead
-      Yahoo Finance,                v                       ├── institutional_flows
-      Alternative.me,          BriefingJSON ◄───────────────├── expert_insights
-      SoSoValue ETF)                │                       └── supply_dynamics
-                                    ├──→ Save to Supabase
-                                    ├──→ Revalidate Next.js (ISR)
-                                    └──→ Send email digest (Resend)
+collectors (news + market, parallel via batch.triggerAndWait)
+  → triage (rank + Jina scrape)
+  → AI Brain (Claude → BriefingJSON)
+  → enrichment (Perplexity ×4: looking_ahead, institutional_flows, expert_insights, supply_dynamics)
+  → computeReadTimeSeconds()
+  → audio brief (Claude script + OpenAI TTS → briefing-audio bucket)
+  → save (briefing + predictions)
+  → revalidate Next.js (ISR)
+  → send digest (Resend)
 ```
-- Collectors run **parallel** via `batch.triggerAndWait`
-- AI Brain → Enrichment → Save → Revalidate → Email run **sequential**
-- `src/trigger/lib/fetch-timeout.ts` provides `fetchWithTimeout()` and `withTimeout()` helpers for API calls
+- Collectors run **parallel**. Everything after runs **sequential**.
+- [src/trigger/lib/fetch-timeout.ts](src/trigger/lib/fetch-timeout.ts) provides `fetchWithTimeout()` / `withTimeout()`.
+- Triage rankings ([src/trigger/processors/triage.ts](src/trigger/processors/triage.ts)) are passed to AI Brain via `triageContext` as a *signal*, not a hard filter — Claude is free to override.
 
 **Fault tolerance:**
-- Collectors: **non-fatal** — failed sources default to empty/null, pipeline continues
-- AI Brain: **FATAL** — if Claude fails, entire pipeline stops (no briefing published)
-- Enrichment: **non-fatal** — Perplexity failures default to fallback text; runs 4 queries in parallel (forward outlook, institutional activity, expert insights, supply dynamics). The 4 queries are parallelized **inside** a single enrichment Trigger task via `Promise.allSettled`, not as 4 separate subtasks
-- Publishers: **sequential** — if save fails, email is never sent
+- Collectors / triage / enrichment / audio brief: **non-fatal** — failures default to fallback values; pipeline ships without the missing piece.
+- Enrichment runs its 4 Perplexity queries in parallel **inside one** Trigger task via `Promise.allSettled` — not as 4 subtasks.
+- AI Brain: **FATAL** — if Claude fails, no briefing is published.
+- Publishers: **sequential** — if save fails, email is never sent.
 
-**BriefingJSON composition:**
-- AI Brain generates the base `BriefingJSON` structure (stories, market, technical, narrative, macro, etc.)
-- Enrichment *overwrites* 4 fields: `looking_ahead`, `institutional_flows`, `expert_insights`, `supply_dynamics`
-- `fear_greed` comes from market collector directly (not AI Brain or enrichment)
-- `etf_flows` comes from SoSoValue API via market collector (not enrichment) — daily net flow, MTD, total AUM
-- `institutional_flows` from Perplexity focuses on non-ETF activity: corporate treasury, whale movements, fund allocations, OTC desk, mining companies
+**BriefingJSON composition** (see [src/lib/types.ts](src/lib/types.ts)):
+- AI Brain generates the base structure (stories, market, technical, narrative, macro, etc.) plus `looking_ahead_predictions` (2–3 testable directional claims).
+- Enrichment overwrites `looking_ahead`, `institutional_flows`, `expert_insights`, `supply_dynamics`. `institutional_flows` from Perplexity focuses on **non-ETF** activity (corporate treasury, whales, fund allocations, OTC, mining).
+- `fear_greed` and `etf_flows` come straight from the market collector (not AI Brain or enrichment).
+- `read_time_seconds` is computed by `computeReadTimeSeconds()` ([src/lib/utils.ts](src/lib/utils.ts)) after enrichment — powers the 3-minute contract display.
+- `hero_three_lines`, `audio_url`, `audio_duration_seconds`, `audio_script` are populated by the audio brief step.
+- `looking_ahead_predictions` is also persisted to the `predictions` table by [save-briefing.ts](src/trigger/publishers/save-briefing.ts) (try/catch wrapped — failure does not block the briefing save).
 
-**News pipeline:** Articles deduped by normalized URL (lowercase, trimmed), filtered by BTC-relevance keyword regex, top 10 scraped for full text via Jina Reader (non-fatal per article)
+**Audio brief (Pillar 2):**
+- Script generated by Claude via prompts in [src/trigger/audio-brief/prompts.ts](src/trigger/audio-brief/prompts.ts), then synthesized to MP3 by OpenAI `tts-1-hd` + `onyx` voice ([openai-tts.ts](src/trigger/lib/openai-tts.ts)). MP3s land in Supabase Storage bucket `briefing-audio` as `YYYY-MM-DD.mp3`.
+- Target: 350–500 words (~4 min @ 150 WPM), 9-section structure (OPEN, MARKET SNAPSHOT, TOP STORIES, ADOPTION, REGULATORY, INSTITUTIONAL FLOWS, DEEP DIVE, OUTLOOK, CLOSE). Section markers like `[OPEN]` are stripped before TTS so brackets are not read aloud.
+- **FACTS BLOCK** anti-hallucination pattern: the prompt feeds Claude plain-text enumerated facts (not JSON) so Claude is forced to use *today's* data instead of training-data priors.
+
+**News pipeline:** Articles deduped by normalized URL (lowercase, trimmed), filtered by BTC-relevance regex, then ranked + scraped by the triage processor (Jina Reader full text, non-fatal per article).
 
 **Email & PDF:**
-- Digest emails batched in chunks of 100 (Resend limit)
-- PDF generated via `@react-pdf/renderer`, uploaded to Supabase Storage bucket `briefing-pdfs`
-- `send-weekly-recap` runs Sunday 9 AM UTC, sent to free-tier subscribers only
-- Weekly recap date range: yesterday (Saturday) back 6 days (previous Sunday) — avoids including Sunday with no briefing
-- All emails (daily-digest, weekly-recap, welcome) include unsubscribe links in footers
-- Daily-digest and weekly-recap use `%%UNSUBSCRIBE_URL%%` placeholder, replaced per-subscriber with a magic-token sign-in URL
-- Welcome email links directly to `/sign-in` (no magic token available at subscribe time)
-- Contact/support email: `hello@btctoday.co` (used in email FROM, website footer, pricing FAQ)
-- Email templates live in `emails/` directory: `welcome.tsx`, `pro-welcome.tsx`, `founding-welcome.tsx`, `verification.tsx`, `daily-digest.tsx`, `weekly-recap.tsx`, `daily-summary-pdf.tsx`, `unsubscribe-confirmation.tsx`
+- Daily digest batched in chunks of 100 (Resend limit). PDF via `@react-pdf/renderer` → Supabase Storage bucket `briefing-pdfs`.
+- `send-weekly-recap` runs Sunday 9 AM UTC to free-tier only. Date range: Saturday back 6 days (previous Sunday → Saturday) to skip Sunday's missing briefing.
+- Daily-digest + weekly-recap use the `%%UNSUBSCRIBE_URL%%` placeholder, replaced per-subscriber with a magic-token sign-in URL. Welcome email links to `/sign-in` (no token at subscribe time).
+- Templates in `emails/`. Contact email: `hello@btctoday.co`.
 
 ## Removed: AI chat feature
-The user-facing Claude chat feature was intentionally removed (user decision, 2026-04-12). Do not reintroduce it. `ANTHROPIC_API_KEY` and `KIE_API_KEY` remain in use, but only by the Trigger.dev pipeline (AI Brain) — not by any user-facing route. Never suggest adding a chat route, chat component, or chat CTA.
+The user-facing Claude chat was intentionally removed (2026-04-12). `ANTHROPIC_API_KEY` and `KIE_API_KEY` are pipeline-only now. **Never** suggest adding a chat route, component, or CTA.
 
 ## Frontend Rules
-
-### Always Do First
 - **Invoke the `frontend-design` skill** before writing any frontend code. No exceptions.
+- Check `public/` for static assets before designing — use real assets over placeholders.
 
-### Design System
-- Light/cool gray theme: bg `#E2E5EE`, surfaces translucent `rgba(240,240,246,0.65)`, accent `#F7931A` (BTC orange) + `#3B82F6` (atmospheric blue, background only)
-- Space Grotesk (headings, tracking `-0.04em`, line-height `1.1`) + Inter (body, weight `300`, line-height `1.8`)
-- Bloomberg terminal / editorial aesthetic
-- Mobile-first, `max-w-3xl`, information-dense
-- Font variables: `--font-space-grotesk`, `--font-inter`, `--font-sans` (Geist) (set in `layout.tsx`)
+**Design system:** Light/cool gray theme — bg `#E2E5EE`, surfaces `rgba(240,240,246,0.65)`, accent `#F7931A` (BTC orange) + `#3B82F6` (atmospheric blue, background only). Space Grotesk (headings, tracking `-0.04em`, line-height `1.1`) + Inter (body, weight `300`, line-height `1.8`). Bloomberg-terminal / editorial aesthetic. Mobile-first, `max-w-3xl`, information-dense. Font vars `--font-space-grotesk`, `--font-inter`, `--font-sans` (Geist) set in `layout.tsx`.
 
-### Brand Assets
-- Check `public/` for any static assets before designing. Use real assets over placeholders.
-
-### Anti-Generic Guardrails
-- **Colors:** Never default Tailwind palette. Derive from brand `#F7931A` (orange) + `#3B82F6` (blue atmosphere).
-- **Shadows:** Layered, color-tinted, low opacity. Never flat `shadow-md`.
+**Anti-generic guardrails:**
+- **Colors:** Never default Tailwind palette. Derive from brand orange + blue.
 - **Typography:** Different fonts for headings vs body. Always.
+- **Shadows:** Layered, color-tinted, low opacity. Never flat `shadow-md`.
 - **Gradients:** Layer multiple radial gradients. Add SVG noise for texture.
-- **Animations:** Only `transform` and `opacity`. Never `transition-all`. Spring easing.
+- **Animations:** Only `transform` / `opacity`. **Never `transition-all`.** Spring easing.
 - **Interactive states:** Every clickable element needs hover, focus-visible, active.
+- **Spacing:** Consistent tokens, no random Tailwind steps. Layering: base → elevated → floating.
 - **Images:** Gradient overlay (`from-black/60`) + `mix-blend-multiply` color layer.
-- **Spacing:** Consistent tokens. No random Tailwind steps.
-- **Depth:** Layering system (base → elevated → floating).
 
-### Reference Images
-- If provided: match exactly. Do not improve or add to the design.
-- If not provided: design from scratch with high craft per guardrails above.
+**Hard rules:** Do not add sections/features beyond what's in the reference. Do not use `transition-all`. Do not use default Tailwind blue/indigo as primary color.
 
-### Hard Rules
-- Do not add sections/features not in the reference
-- Do not use `transition-all`
-- Do not use default Tailwind blue/indigo as primary color
+**Reference images:** If provided, match exactly — do not "improve". If not provided, design from scratch per guardrails.
 
 ## Content Philosophy
-- **Quality over quantity** — fewer sections, each must be top-notch
-- **No basic education** — no "What is mining?" or "Explain Like I'm New"
-- **Institutional lens** — frame everything through where money flows, macro implications, long-term value
-- **Anti-skeptic by data** — let BTC vs Everything comparisons (24h, YTD, 1Y) speak for themselves
-- **Expert voices** — Perplexity-sourced insights from recognized analysts (Lyn Alden, Saylor, etc.), not YouTube influencers
-- **Chat starter prompts** must be institutional-grade (macro catalysts, ETF data, expert commentary) — never beginner questions
+- **Quality over quantity** — fewer sections, each must be top-notch.
+- **No basic education** — no "What is mining?" or ELI5.
+- **Institutional lens** — frame everything through where money flows, macro implications, long-term value.
+- **Anti-skeptic by data** — let BTC vs Everything (24h, YTD, 1Y) speak for itself.
+- **Expert voices** — Perplexity-sourced from recognized analysts (Lyn Alden, Saylor), not YouTube influencers.
 
 ## Pages
 | Route | Purpose |
 |---|---|
-| `/` | Homepage — latest briefing |
-| `/archive` | Briefing archive list |
-| `/archive/[date]` | Single archived briefing |
-| `/sign-in` | Magic link sign-in page |
-| `/pricing` | Free vs Pro comparison, Whop checkout links |
-| `/pdf/[date]` | PDF download (auth required, Pro only) |
-| `/privacy` | Privacy policy |
-| `/terms` | Terms of service |
+| `/` | Latest briefing (homepage) |
+| `/archive`, `/archive/[date]` | Briefing archive |
+| `/listen/[date]` | Pro-only audio player ([AudioPlayer.tsx](src/components/player/AudioPlayer.tsx)). Falls back to "Audio unavailable" if `audio_url` is null. |
+| `/pdf/[date]` | PDF download (Pro only) |
+| `/sign-in`, `/pricing`, `/privacy`, `/terms` | Standard pages |
 
-## Deployment Notes
-See `docs/deployment.md` for the full deployment guide. Remaining production TODOs:
-- Set all env vars in Vercel (see `.env.example`)
-- Set Whop env vars (`WHOP_WEBHOOK_KEY`, `NEXT_PUBLIC_WHOP_MONTHLY_URL`, `NEXT_PUBLIC_WHOP_ANNUAL_URL`)
-- Configure webhook URL in Whop dashboard → `https://btctoday.co/api/webhooks/whop`
+## Deployment
+See [docs/deployment.md](docs/deployment.md). Production TODOs: env vars in Vercel; Whop env vars (`WHOP_WEBHOOK_KEY`, `NEXT_PUBLIC_WHOP_MONTHLY_URL`, `NEXT_PUBLIC_WHOP_ANNUAL_URL`); webhook URL in Whop dashboard → `https://btctoday.co/api/webhooks/whop`.
