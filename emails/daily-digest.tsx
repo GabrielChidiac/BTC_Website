@@ -15,6 +15,7 @@ import {
   Img,
 } from "@react-email/components";
 import type { BriefingJSON } from "../src/lib/types";
+import { formatReadTime } from "../src/lib/utils";
 
 // ─── Palette ─────────────────────────────────────────────────────────────────
 const c = {
@@ -99,10 +100,20 @@ function firstTwoSentences(text: string): string {
   return matches.slice(0, 2).join("").trim();
 }
 
-/** Return the first paragraph of the outlook as a cohesive mini-editorial. */
+/** Return the first paragraph of the outlook, mirroring the website's
+ *  LookingAhead lead-paragraph filter so the email and website always
+ *  display the exact same opening line. Skips markdown headings and
+ *  meta-commentary paragraphs that occasionally leak through from
+ *  Perplexity despite the upstream filter in enrichment.ts. */
 function outlookDigest(text: string): string {
-  const first = text.split(/\n\n+/).map((p) => p.trim()).find(Boolean);
-  return first || text;
+  const metaPattern = /\b(my instructions|critical constraint|let me deliver|briefing you['']ve provided|I appreciate the.*briefing|I need to flag|plain text format|three.paragraph editorial)\b/i;
+  const paragraphs = text
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter((p) => !p.match(/^#{1,6}\s/))
+    .filter((p) => !metaPattern.test(p))
+    .filter(Boolean);
+  return paragraphs[0] ?? text;
 }
 
 function isAvailable(text: string | null | undefined): boolean {
@@ -187,7 +198,7 @@ const previewBriefing: BriefingJSON = {
     { name: "Gold", ticker: "XAU", change_24h_pct: -0.12, change_ytd_pct: 5.3, change_1y_pct: 18.4, btc_relative_24h_pct: 3.54, btc_relative_ytd_pct: 44.7, btc_relative_1y_pct: 31.6 },
     { name: "DXY", ticker: "DXY", change_24h_pct: -0.31, change_ytd_pct: -2.1, change_1y_pct: -4.5, btc_relative_24h_pct: 3.73, btc_relative_ytd_pct: 52.1, btc_relative_1y_pct: 54.5 },
   ],
-  network_health: { hashrate_eh_s: 745.2, difficulty: 95_670_000_000_000, block_height: 892_140, mempool_tx_count: 32_451, mempool_size_mb: 18.7, fee_fast_sat_vb: 42, fee_medium_sat_vb: 18, fee_slow_sat_vb: 8, halving_progress_pct: 72.4, blocks_until_halving: 57_860 },
+  network_health: { hashrate_eh_s: 745.2, difficulty: 95_670_000_000_000, block_height: 944_000, mempool_tx_count: 32_451, mempool_size_mb: 18.7, fee_fast_sat_vb: 42, fee_medium_sat_vb: 18, fee_slow_sat_vb: 8, halving_progress_pct: 49.5, blocks_until_halving: 106_000 },
   daily_diff: { price_change: "+$3,012 (+3.42%)", sentiment_shift: "Institutional inflows drove sentiment higher", key_changes: ["ETF inflows surged", "SEC eased custody rules"] },
   countdown_events: [],
   looking_ahead: "Markets will watch for Friday's PCE inflation data and its impact on Fed rate expectations.",
@@ -200,6 +211,14 @@ const previewBriefing: BriefingJSON = {
   expert_insights: [{ expert_name: "Lyn Alden", role: "Macro analyst", quote_or_summary: "Global liquidity expansion is the dominant driver right now. Bitcoin tends to perform well when M2 is expanding, and we're seeing that across all major economies.", source: "The Investors Podcast", date: "2026-03-22" }],
   fear_greed: { value: 72, label: "Greed" },
   etf_flows: { daily_net_flow_usd: 420_000_000, mtd_net_flow_usd: 3_200_000_000, total_net_assets_usd: 115_000_000_000 },
+  audio_url: "/api/audio/2026-03-24",
+  audio_duration_seconds: 212,
+  read_time_seconds: 165,
+  hero_three_lines: {
+    move: "Bitcoin rallied 3.4 percent to 91,247 dollars on record ETF inflows and a softer dollar.",
+    signal: "ETF flows stayed positive through the dip, the opposite of what panic selling looks like.",
+    watch: "PCE inflation data Friday. The Fed's preferred gauge will set the tone for rate cut expectations.",
+  },
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -260,6 +279,28 @@ export default function DailyDigest({
           <Section style={s.header}>
             <Img src={`${siteUrl}/logo.png`} width="120" height="144" alt="BTC Today" style={{ margin: "0 auto 8px", width: "80px", height: "auto" }} />
             <Text style={s.date}>{formatDisplayDate(briefing.date)}</Text>
+          </Section>
+
+          <Hr style={s.hr} />
+
+          {/* ── Pro Listen Button (always rendered, Pro-only email) ───
+              Sits at the top of the email as the first content element so
+              the listen option is the FIRST thing a Pro subscriber sees.
+              Unconditional: audio is a paid feature and must never be hidden.
+              %%AUDIO_URL%% is substituted per-subscriber by send-digest.ts
+              to a token-carrying /listen/[date] URL; the listen page itself
+              handles the "audio unavailable today" fallback gracefully when
+              the pipeline's audio generation step fails. */}
+          <Section style={s.listenSection}>
+            <Link href="%%AUDIO_URL%%" style={s.listenButton}>
+              🎧 Listen to today&rsquo;s brief
+              {briefing.audio_duration_seconds != null && (
+                <span style={s.listenButtonDuration}>
+                  {" · "}
+                  {formatReadTime(briefing.audio_duration_seconds)}
+                </span>
+              )}
+            </Link>
           </Section>
 
           <Hr style={s.hr} />
@@ -576,6 +617,30 @@ const s = {
     color: c.textSecondary,
     margin: "0",
     lineHeight: "1.4",
+  } as React.CSSProperties,
+
+  // ── Pro Listen Button ─────────────────────────
+  listenSection: {
+    padding: "6px 0 14px",
+    textAlign: "center" as const,
+  } as React.CSSProperties,
+
+  listenButton: {
+    display: "inline-block" as const,
+    backgroundColor: c.accent,
+    color: "#000000",
+    fontFamily: sans,
+    fontSize: "14px",
+    fontWeight: "700" as const,
+    textDecoration: "none",
+    padding: "12px 28px",
+    borderRadius: "8px",
+    letterSpacing: "0.01em",
+  } as React.CSSProperties,
+
+  listenButtonDuration: {
+    fontWeight: "500" as const,
+    opacity: 0.75,
   } as React.CSSProperties,
 
   // ── Banner ───────────────────────────────────

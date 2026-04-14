@@ -1,25 +1,16 @@
 "use client";
 
 import { useState, useEffect, useRef, type ReactNode } from "react";
-import { Lock } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ProTeaser } from "@/components/premium/ProTeaser";
 import { TAB_BRIEFING, TAB_DEEP_DIVE, SECTION_TAB_MAP } from "@/lib/constants";
 
 gsap.registerPlugin(ScrollTrigger);
 
-interface FoundingOffer {
-  spotsLeft: number;
-  limit: number;
-}
-
 interface BriefingTabsProps {
   tab1Content: ReactNode;
   tab2Content: ReactNode;
-  isPro: boolean;
-  foundingOffer?: FoundingOffer | null;
 }
 
 function refreshAndScroll(hash?: string) {
@@ -41,7 +32,7 @@ function getTabForHash(hash: string): string | null {
   return SECTION_TAB_MAP[sectionId] ?? null;
 }
 
-export function BriefingTabs({ tab1Content, tab2Content, isPro, foundingOffer }: BriefingTabsProps) {
+export function BriefingTabs({ tab1Content, tab2Content }: BriefingTabsProps) {
   const [activeTab, setActiveTab] = useState<string>(TAB_BRIEFING);
   const tabsRef = useRef<HTMLDivElement>(null);
 
@@ -117,9 +108,6 @@ export function BriefingTabs({ tab1Content, tab2Content, isPro, foundingOffer }:
               <span className="text-[9px] font-medium tracking-[0.08em] text-[var(--color-text-muted)] opacity-50">
                 2/2
               </span>
-              {!isPro && (
-                <Lock size={11} className="text-[var(--color-text-muted)] opacity-60" />
-              )}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -130,14 +118,7 @@ export function BriefingTabs({ tab1Content, tab2Content, isPro, foundingOffer }:
         </TabsContent>
 
         <TabsContent value={TAB_DEEP_DIVE} className="outline-none">
-          {isPro ? (
-            tab2Content
-          ) : (
-            <ProTeaser
-              variant="tab"
-              foundingOffer={foundingOffer}
-            />
-          )}
+          {tab2Content}
         </TabsContent>
       </Tabs>
     </div>

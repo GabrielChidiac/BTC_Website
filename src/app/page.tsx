@@ -4,6 +4,7 @@ import { getSubscriberTier } from "@/lib/tier";
 import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
 import { compactNumber } from "@/lib/utils";
 import { BLOCKED_EVENT_KEYWORDS } from "@/lib/constants";
+import { safeJsonLd } from "@/lib/json-ld";
 
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -28,8 +29,9 @@ import { InstitutionalFlows } from "@/components/briefing/InstitutionalFlows";
 import { TechnicalSignals } from "@/components/briefing/TechnicalSignals";
 import { NetworkHealth } from "@/components/briefing/NetworkHealth";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
-import { NextBriefingCountdown } from "@/components/briefing/NextBriefingCountdown";
 import { BriefingTabs } from "@/components/briefing/BriefingTabs";
+import { ThreeMinuteHero } from "@/components/briefing/ThreeMinuteHero";
+import { BriefEndState } from "@/components/briefing/BriefEndState";
 import { getFoundingMemberStatus } from "@/lib/founding";
 
 
@@ -145,7 +147,6 @@ export default async function Home() {
   }
 
   const isPro = tier === "pro";
-  const founding = isPro ? null : await getFoundingMemberStatus();
 
   // Filter countdown events for reuse
   const filteredEvents = briefing.countdown_events
@@ -185,30 +186,28 @@ export default async function Home() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(articleJsonLd) }}
       />
       <Header date={briefing.date} />
       <main className="relative pb-10">
         <Container wide>
 
           {/* ═══════════════════════════════════════════════════════════════
-              THE ONE LINE — The day's most important conclusion
+              THE 3-MINUTE CONTRACT HERO
+              Move / Signal / Watch plus read time. Falls back to one_line
+              for briefings generated before the pivot.
              ═══════════════════════════════════════════════════════════════ */}
-          {briefing.one_line && (
-            <div className="mt-6">
-              <div className="border-l-[3px] border-[var(--color-accent)] pl-4 py-1">
-                <p className="font-[family-name:var(--font-heading)] text-base sm:text-lg font-bold text-[var(--color-text-primary)] leading-snug">
-                  {briefing.one_line}
-                </p>
-              </div>
-            </div>
-          )}
+          <ThreeMinuteHero
+            heroLines={briefing.hero_three_lines}
+            readTimeSeconds={briefing.read_time_seconds}
+            fallbackInsight={briefing.one_line}
+          />
 
           {/* ═══════════════════════════════════════════════════════════════
               TIER 1: THE SNAPSHOT
               01 — TODAY'S INSIGHT: Hero + Sentiment Gauge
              ═══════════════════════════════════════════════════════════════ */}
-          <div id="insight" className={`scroll-mt-16 ${briefing.one_line ? "mt-6" : "mt-6"}`}>
+          <div id="insight" className="scroll-mt-16 mt-6">
             <SectionLabel number="01" title="Today&rsquo;s Insight" className="mb-4" />
             <BitcoinHero
               market={market}
@@ -224,8 +223,6 @@ export default async function Home() {
               BRIEFING TABS — Two-page book layout
              ═══════════════════════════════════════════════════════════════ */}
           <BriefingTabs
-            isPro={isPro}
-            foundingOffer={founding ? { spotsLeft: founding.spotsLeft, limit: founding.limit } : null}
             tab1Content={
               <>
                 {/* 02 — MARKET EVIDENCE */}
@@ -244,10 +241,21 @@ export default async function Home() {
                         size="sm"
                       />
                       <StatTile
-                        label="Dominance"
+                        label="BTC Dominance"
                         value={`${market.dominance_pct.toFixed(1)}%`}
                         size="sm"
                       />
+                      {briefing.fear_greed != null && (
+                        <StatTile
+                          label="Fear & Greed"
+                          value={String(briefing.fear_greed.value)}
+                          delta={{
+                            value: briefing.fear_greed.label,
+                            positive: briefing.fear_greed.value >= 50,
+                          }}
+                          size="sm"
+                        />
+                      )}
                       {isPro && (() => {
                         const flow = briefing.etf_flows?.daily_net_flow_usd ?? null;
                         if (flow == null) return null;
@@ -275,6 +283,17 @@ export default async function Home() {
                       })()}
                     </BentoGrid>
                   </ScrollReveal>
+                  <p className="mt-3 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
+                    <span className="font-semibold text-[var(--color-text-secondary)]">BTC Dominance:</span>{" "}
+                    Bitcoin&rsquo;s share of total crypto market capitalisation. Rising dominance means capital is rotating into BTC from altcoins.
+                    {briefing.fear_greed != null && (
+                      <>
+                        {" "}
+                        <span className="font-semibold text-[var(--color-text-secondary)]">Fear &amp; Greed:</span>{" "}
+                        0 to 100 composite of volatility, momentum, and survey sentiment. Extreme fear historically coincides with local bottoms; extreme greed with local tops.
+                      </>
+                    )}
+                  </p>
                 </div>
 
                 {/* 03 — WHAT HAPPENED */}
@@ -429,14 +448,14 @@ export default async function Home() {
           />
 
           {/* ═══════════════════════════════════════════════════════════════
-              YOU'RE CAUGHT UP — Completion marker
+              BRIEF END STATE — Explicit completion + share buttons
+              Satisfies the 3-Minute Contract promise with a definitive
+              "you are done" and turns finished readers into distribution.
              ═══════════════════════════════════════════════════════════════ */}
-          <div className="mt-10 flex flex-col items-center gap-1">
-            <p className="font-[family-name:var(--font-heading)] text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-accent)]">
-              You&rsquo;re caught up
-            </p>
-            <NextBriefingCountdown />
-          </div>
+          <BriefEndState
+            shareText={briefing.hero_three_lines?.move ?? briefing.one_line ?? "Today's Bitcoin brief"}
+            shareUrl="https://btctoday.co"
+          />
 
           {/* ═══════════════════════════════════════════════════════════════
               SUBSCRIBE CTA

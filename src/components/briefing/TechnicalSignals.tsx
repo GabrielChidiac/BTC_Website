@@ -22,6 +22,15 @@ export function TechnicalSignals({
         Technical Signals
       </h2>
 
+      {/* Signal summary — placed above the metrics as the inverted-pyramid
+          take. A reader who scans for 5 seconds gets the synthesis; the
+          grid below supplies the supporting evidence. */}
+      <div className="mb-3 border-l-2 border-l-[var(--color-accent)]/60 pl-3 py-1.5">
+        <p className="text-sm font-medium leading-relaxed text-[var(--color-text-primary)]">
+          {signals.signal_summary}
+        </p>
+      </div>
+
       <div className="grid grid-cols-2 gap-2">
         {/* RSI */}
         <div className="card-interactive rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-3 col-span-2">
@@ -82,14 +91,20 @@ export function TechnicalSignals({
             {formatUSD(signals.resistance_level, 0)}
           </p>
         </div>
-
-        {/* Signal summary */}
-        <div className="col-span-2 border-l-2 border-l-[var(--color-accent)]/40 pl-3 py-1">
-          <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
-            {signals.signal_summary}
-          </p>
-        </div>
       </div>
+
+      {/* Glossary footer — visible reference for readers new to the metrics.
+          Plain adult language, no ELI5 voice. */}
+      <p className="mt-3 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
+        <span className="font-semibold text-[var(--color-text-secondary)]">RSI (Relative Strength Index):</span>{" "}
+        momentum gauge from 0 to 100. Above 70 is overheated, below 30 oversold.
+        {" "}
+        <span className="font-semibold text-[var(--color-text-secondary)]">50 and 200-day averages:</span>{" "}
+        average closing price over the last 50 or 200 days, used to judge trend direction. Price above both is a structural uptrend.
+        {" "}
+        <span className="font-semibold text-[var(--color-text-secondary)]">Support, Resistance:</span>{" "}
+        price levels where buyers or sellers have historically stepped in. Breaks of these levels often trigger larger moves.
+      </p>
     </section>
   );
 }

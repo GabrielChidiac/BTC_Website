@@ -7,6 +7,7 @@ import { getSubscriberTier } from "@/lib/tier";
 import { COOKIE_NAME } from "@/lib/session";
 import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
 import { formatDisplayDate } from "@/lib/utils";
+import { safeJsonLd } from "@/lib/json-ld";
 
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -27,6 +28,8 @@ import { NetworkHealth } from "@/components/briefing/NetworkHealth";
 import { SupplyDynamics } from "@/components/briefing/SupplyDynamics";
 import { CountdownEvents } from "@/components/briefing/CountdownEvents";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
+import { ThreeMinuteHero } from "@/components/briefing/ThreeMinuteHero";
+import { BriefEndState } from "@/components/briefing/BriefEndState";
 import { ProGateCompact } from "@/components/premium/ProGate";
 import { getFoundingMemberStatus } from "@/lib/founding";
 
@@ -136,10 +139,9 @@ export default async function ArchiveDatePage({
   const sevenDaysAgo = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 7));
   const briefingDate = new Date(date + "T00:00:00Z");
   const isOldBriefing = briefingDate < sevenDaysAgo;
-  // Free-tier content (market, stories, signals, macro, BTC vs everything) — recent only
-  const canViewFree = isPro || !isOldBriefing;
-  // Pro-only content (institutional flows, technical signals, network health, experts, supply, looking ahead)
-  const canViewPro = isPro;
+  // Free users can view briefings within the last 7 days (full content, unblurred).
+  // Pro users can view everything. Briefings older than 7 days remain Pro-only.
+  const canViewFull = isPro || !isOldBriefing;
 
   const cutoffDate = isPro ? undefined : sevenDaysAgo.toISOString().split("T")[0];
 
@@ -193,12 +195,12 @@ export default async function ArchiveDatePage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(articleJsonLd) }}
       />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             itemListElement: [
@@ -266,12 +268,19 @@ export default async function ArchiveDatePage({
             </div>
           </nav>
 
-          <DailyDiffBanner dailyDiff={briefing.daily_diff} />
-          <MarketSnapshot market={briefing.market_snapshot} />
-
-          {canViewFree ? (
+          {canViewFull ? (
             <>
-              {/* Free-tier sections */}
+              {/* 3-Minute Contract hero with read time and Move/Signal/Watch */}
+              <ThreeMinuteHero
+                heroLines={briefing.hero_three_lines}
+                readTimeSeconds={briefing.read_time_seconds}
+                fallbackInsight={briefing.one_line}
+              />
+
+              <DailyDiffBanner dailyDiff={briefing.daily_diff} />
+              <MarketSnapshot market={briefing.market_snapshot} />
+
+              {/* Full unblurred briefing content: all sections visible to free and Pro */}
               <MacroContext macro={briefing.macro_context} />
               <BtcVsEverything comparisons={briefing.btc_vs_everything} />
               <TopStories stories={briefing.top_stories} />
@@ -285,29 +294,29 @@ export default async function ArchiveDatePage({
                 </div>
               )}
 
-              {/* Pro-only sections */}
-              {canViewPro ? (
-                <>
-                  <Adoption updates={briefing.adoption} />
-                  <Regulatory updates={briefing.regulatory} />
-                  <InstitutionalFlows flows={briefing.institutional_flows} />
-                  <div className="mt-10"><TechnicalSignals signals={briefing.technical_signals} /></div>
-                  <div className="mt-10"><NetworkHealth network={briefing.network_health} /></div>
-                  <ExpertInsights insights={briefing.expert_insights} />
-                  <SupplyDynamics supply={briefing.supply_dynamics} />
-                  <CountdownEvents events={briefing.countdown_events} />
-                  <LookingAhead content={briefing.looking_ahead} />
-                </>
-              ) : (
-                <div className="mt-10">
-                  <ProGateCompact message="Adoption signals, regulatory updates, institutional flows, technical signals, expert insights, and more are available to Pro subscribers." foundingOffer={foundingOffer} />
-                </div>
-              )}
+              <Adoption updates={briefing.adoption} />
+              <Regulatory updates={briefing.regulatory} />
+              <InstitutionalFlows flows={briefing.institutional_flows} />
+              <div className="mt-10"><TechnicalSignals signals={briefing.technical_signals} /></div>
+              <div className="mt-10"><NetworkHealth network={briefing.network_health} /></div>
+              <ExpertInsights insights={briefing.expert_insights} />
+              <SupplyDynamics supply={briefing.supply_dynamics} />
+              <CountdownEvents events={briefing.countdown_events} />
+              <LookingAhead content={briefing.looking_ahead} />
+
+              <BriefEndState
+                shareText={briefing.hero_three_lines?.move ?? briefing.one_line ?? `Bitcoin brief for ${formatDisplayDate(date)}`}
+                shareUrl={`https://btctoday.co/archive/${date}`}
+              />
             </>
           ) : (
-            <div className="mt-10">
-              <ProGateCompact message="Full briefing content for older dates is available to Pro subscribers. Upgrade for the daily email, PDF downloads, and full archive." foundingOffer={foundingOffer} />
-            </div>
+            <>
+              <DailyDiffBanner dailyDiff={briefing.daily_diff} />
+              <MarketSnapshot market={briefing.market_snapshot} />
+              <div className="mt-10">
+                <ProGateCompact message="Full briefing content for older dates is available to Pro subscribers. Upgrade for the daily email, PDF downloads, and full archive." foundingOffer={foundingOffer} />
+              </div>
+            </>
           )}
 
           <nav className="mt-10 flex items-center justify-between border-t border-[var(--color-border)] pt-6">
