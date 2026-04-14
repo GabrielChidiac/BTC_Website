@@ -58,7 +58,12 @@ export const sendDigestTask = task({
       narrative_consensus, etf_flows,
     } = briefing;
 
-    const subject = `BTC Today: $${market_snapshot.price_usd.toLocaleString("en-US")} (${market_snapshot.change_24h_pct >= 0 ? "+" : ""}${market_snapshot.change_24h_pct.toFixed(2)}%)`;
+    // Subject line: prefer the Move sentence from hero_three_lines (3-Minute
+    // Contract positioning), fall back to price for pre-pivot briefings.
+    const moveSentence = briefing.hero_three_lines?.move;
+    const subject = moveSentence
+      ? `BTC Today: ${moveSentence.length > 90 ? moveSentence.slice(0, 87) + "..." : moveSentence}`
+      : `BTC Today: $${market_snapshot.price_usd.toLocaleString("en-US")} (${market_snapshot.change_24h_pct >= 0 ? "+" : ""}${market_snapshot.change_24h_pct.toFixed(2)}%)`;
 
     // Render React Email template (all recipients are Pro — full content)
     const htmlTemplate = await render(DailyDigest({ briefing, siteUrl, name: "%%NAME%%" }));
@@ -175,7 +180,7 @@ export const sendDigestTask = task({
     if (adoption?.length) sigLines.push(`${adoption[0].category}: ${adoption[0].summary.split(/\.\s/)[0]}.`);
     if (sigLines.length > 0) sections.push(`--- SIGNALS ---\n${sigLines.join("\n")}`);
 
-    sections.push(`Read full briefing: %%BRIEFING_URL%%\nDownload PDF: %%PDF_URL%%\nUnsubscribe: %%UNSUBSCRIBE_URL%%\n\n- BTC Today`);
+    sections.push(`Listen (Pro audio brief): %%AUDIO_URL%%\nRead full briefing: %%BRIEFING_URL%%\nDownload PDF: %%PDF_URL%%\nUnsubscribe: %%UNSUBSCRIBE_URL%%\n\n- BTC Today`);
 
     const textTemplate = sections.join("\n\n");
 
@@ -228,6 +233,18 @@ export const sendDigestTask = task({
           ? `${pdfUrl}?token=${token}&email=${encodeURIComponent(email)}`
           : pdfUrl;
 
+        // Listen URL is ALWAYS built for Pro subscribers — audio is a paid
+        // feature and the Listen button in the email always renders. Token
+        // forwarded so the listen page can pass it through to the token-gated
+        // audio stream route. On rare days when briefing.audio_url is null
+        // (audio generation failed), the /listen/[date] page itself shows an
+        // "audio unavailable today" message, so the link still goes somewhere
+        // sane instead of a dead href.
+        const listenBaseUrl = `${siteUrl}/listen/${date}`;
+        const subscriberListenUrl = token
+          ? `${listenBaseUrl}?token=${token}&email=${encodeURIComponent(email)}`
+          : listenBaseUrl;
+
         const unsubscribeUrl = token
           ? `${siteUrl}/sign-in?token=${token}&email=${encodeURIComponent(email)}`
           : `${siteUrl}/sign-in`;
@@ -235,9 +252,11 @@ export const sendDigestTask = task({
         let html = htmlTemplate
           .replace(/%%PDF_URL%%/g, subscriberPdfUrl)
           .replace(/%%BRIEFING_URL%%/g, briefingUrl)
+          .replace(/%%AUDIO_URL%%/g, subscriberListenUrl)
           .replace(/%%UNSUBSCRIBE_URL%%/g, unsubscribeUrl);
         let text = textTemplate
           .replace(/%%BRIEFING_URL%%/g, briefingUrl)
+          .replace(/%%AUDIO_URL%%/g, subscriberListenUrl)
           .replace(/%%UNSUBSCRIBE_URL%%/g, unsubscribeUrl);
 
         if (subscriberPdfUrl) {

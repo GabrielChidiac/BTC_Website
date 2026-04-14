@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { HALVING_INTERVAL } from "./constants";
+import type { BriefingJSON } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -122,4 +123,67 @@ export function formatUSD(amount: number, decimals = 2): string {
 export function formatPctChange(pct: number): string {
   const sign = pct >= 0 ? "+" : "";
   return `${sign}${pct.toFixed(2)}%`;
+}
+
+/**
+ * Compute the approximate read time in seconds for a briefing, based on word
+ * count of all reader-visible text fields at 200 words per minute. Powers the
+ * 3-Minute Contract display at the top of the homepage and the email header.
+ */
+export function computeReadTimeSeconds(briefing: BriefingJSON): number {
+  const wpm = 200;
+  const parts: Array<string | undefined> = [
+    briefing.one_line,
+    briefing.hero_three_lines?.move,
+    briefing.hero_three_lines?.signal,
+    briefing.hero_three_lines?.watch,
+    briefing.technical_signals?.signal_summary,
+    briefing.daily_diff?.price_change,
+    briefing.daily_diff?.sentiment_shift,
+    ...(briefing.daily_diff?.key_changes ?? []),
+    briefing.narrative_consensus?.label,
+    briefing.narrative_consensus?.rationale,
+    briefing.macro_context?.narrative,
+    briefing.macro_context?.btc_correlation_note,
+    ...(briefing.macro_context?.key_macro_events ?? []),
+    briefing.looking_ahead,
+    briefing.institutional_flows?.summary,
+    ...(briefing.institutional_flows?.notable_moves ?? []),
+    briefing.supply_dynamics?.exchange_reserve_trend,
+    briefing.supply_dynamics?.supply_narrative,
+  ];
+
+  for (const story of briefing.top_stories ?? []) {
+    parts.push(story.headline, story.summary);
+  }
+  for (const reg of briefing.regulatory ?? []) {
+    parts.push(reg.headline, reg.summary);
+  }
+  for (const adopt of briefing.adoption ?? []) {
+    parts.push(adopt.headline, adopt.summary);
+  }
+  for (const exp of briefing.expert_insights ?? []) {
+    parts.push(exp.quote_or_summary);
+  }
+  for (const ev of briefing.countdown_events ?? []) {
+    parts.push(ev.name, ev.description);
+  }
+
+  const totalWords = parts
+    .filter((t): t is string => typeof t === "string" && t.length > 0)
+    .reduce((sum, text) => sum + text.split(/\s+/).filter(Boolean).length, 0);
+
+  return Math.round((totalWords / wpm) * 60);
+}
+
+/**
+ * Format read time seconds as "X min Y sec", or "Y sec" under a minute.
+ * Used by the ThreeMinuteHero display and the daily digest email header.
+ */
+export function formatReadTime(seconds: number): string {
+  if (seconds < 60) return `${seconds} sec`;
+  const minutes = Math.floor(seconds / 60);
+  const rem = seconds % 60;
+  if (rem === 0) return `${minutes} min`;
+  return `${minutes} min ${rem} sec`;
 }

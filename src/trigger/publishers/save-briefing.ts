@@ -30,6 +30,42 @@ export const saveBriefingTask = task({
     }
 
     logger.info("Briefing saved successfully", { date });
+
+    // ─── Silent prediction data collection (non-fatal) ───────────────────
+    // The AI brain generates 2-3 looking_ahead_predictions per briefing. These
+    // feed a future accuracy scorecard launching at day 60. Failures here must
+    // never break the main save path (the table may not exist yet in every
+    // environment, or the AI output may be malformed).
+    const predictions = briefing.looking_ahead_predictions ?? [];
+    if (predictions.length > 0) {
+      try {
+        const rows = predictions.map((p) => ({
+          briefing_date: date,
+          claim_text: p.claim_text,
+          direction: p.direction,
+          metric: p.metric,
+          target_date: p.target_date,
+        }));
+
+        const { error: predictionError } = await supabase
+          .from("predictions")
+          .insert(rows);
+
+        if (predictionError) {
+          logger.warn("Failed to insert predictions (non-fatal)", {
+            error: predictionError.message,
+            count: rows.length,
+          });
+        } else {
+          logger.info("Predictions recorded", { count: rows.length });
+        }
+      } catch (e) {
+        logger.warn("Predictions insert threw (non-fatal)", {
+          error: (e as Error).message,
+        });
+      }
+    }
+
     return { saved: true };
   },
 });

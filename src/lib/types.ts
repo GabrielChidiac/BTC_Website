@@ -139,11 +139,39 @@ export interface FearGreedIndex {
   label: string;  // "Extreme Fear" | "Fear" | "Neutral" | "Greed" | "Extreme Greed"
 }
 
+// ─── 3-Minute Contract hero (Pillar 1) ─────────────────────────────────────
+
+export interface HeroThreeLines {
+  move: string;   // max 140 chars: what BTC did in last 24h + most likely catalyst
+  signal: string; // max 140 chars: what matters under the noise (interpretation, not headline)
+  watch: string;  // max 140 chars: single next catalyst with date or timeframe
+}
+
+// ─── Silent prediction tracking (background task, day-60 scorecard) ────────
+
+export interface LookingAheadPrediction {
+  claim_text: string;
+  direction: "up" | "down" | "flat";
+  metric: string;      // e.g. "btc_price", "spx", "etf_flow_net", "rate_decision"
+  target_date: string; // ISO date (YYYY-MM-DD)
+}
+
 // ─── Master Briefing type ───────────────────────────────────────────────────
 
 export interface BriefingJSON {
   date: string;
   one_line?: string; // Single-sentence key insight for the day
+  hero_three_lines?: HeroThreeLines; // Pillar 1: 3-Minute Contract hero
+  read_time_seconds?: number;        // Pillar 1: word count at 200 wpm
+  // Pillar 2: Morning Audio Brief. audio_url holds an internal path
+  // (e.g. "/api/audio/2026-04-14") served by the token-gated audio route.
+  // Null or undefined means audio generation failed or did not run.
+  audio_url?: string | null;
+  audio_duration_seconds?: number | null;
+  // Full generated spoken-word script, saved alongside the audio so the
+  // briefing can be audited (read the script from the DB, verify the data
+  // is accurate) without downloading and transcribing the MP3.
+  audio_script?: string | null;
   top_stories: TopStory[];
   market_snapshot: MarketSnapshot;
   technical_signals: TechnicalSignals;
@@ -152,6 +180,7 @@ export interface BriefingJSON {
   daily_diff: DailyDiff;
   countdown_events: CountdownEvent[];
   looking_ahead: string;
+  looking_ahead_predictions?: LookingAheadPrediction[]; // Silent data for day-60 scorecard
   regulatory: RegulatoryUpdate[];
   adoption: AdoptionUpdate[];
   narrative_consensus: NarrativeConsensus;

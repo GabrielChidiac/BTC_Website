@@ -8,6 +8,8 @@ import { scrapeArticles } from "./lib/jina";
 import { saveBriefingTask } from "./publishers/save-briefing";
 import { revalidateSiteTask } from "./publishers/revalidate-site";
 import { sendDigestTask } from "./publishers/send-digest";
+import { generateAudioBriefTask } from "./audio-brief/generate-audio-brief";
+import { computeReadTimeSeconds } from "@/lib/utils";
 import type { BriefingJSON } from "@/lib/types";
 
 export const dailyPipelineTask = schedules.task({
@@ -168,6 +170,41 @@ export const dailyPipelineTask = schedules.task({
       fear_greed: marketRun?.ok ? marketRun.output.fear_greed : null,
       etf_flows: etfFlows,
     };
+
+    // Compute read time after all fields (including enrichment) are populated.
+    // Powers the 3-Minute Contract display on the homepage and email header.
+    finalBriefing.read_time_seconds = computeReadTimeSeconds(finalBriefing);
+    logger.info("Read time computed", {
+      seconds: finalBriefing.read_time_seconds,
+      hasHeroLines: Boolean(finalBriefing.hero_three_lines),
+      predictionCount: finalBriefing.looking_ahead_predictions?.length ?? 0,
+    });
+
+    // ── Step 3.5: Audio Brief (non-fatal) ─────────────────────────────────
+    // Pillar 2: generate the 4-minute Pro audio brief. Runs before save so
+    // audio_url can be persisted in the same write. Failure is non-fatal:
+    // the pipeline continues and the daily digest email ships without a
+    // listen button.
+    try {
+      const audioRun = await generateAudioBriefTask
+        .triggerAndWait({ date, briefing: finalBriefing });
+      if (audioRun.ok) {
+        finalBriefing.audio_url = audioRun.output.audio_url;
+        finalBriefing.audio_duration_seconds = audioRun.output.audio_duration_seconds;
+        finalBriefing.audio_script = audioRun.output.audio_script;
+        logger.info("Audio brief complete", {
+          audio_url: finalBriefing.audio_url,
+          duration: finalBriefing.audio_duration_seconds,
+          scriptWords: finalBriefing.audio_script?.split(/\s+/).filter(Boolean).length ?? 0,
+        });
+      } else {
+        logger.warn("Audio brief task failed — shipping without audio");
+      }
+    } catch (err) {
+      logger.warn("Audio brief threw — shipping without audio", {
+        error: (err as Error).message,
+      });
+    }
 
     // ── Step 4: Publish (sequential) ──────────────────────────────────────
     await saveBriefingTask.triggerAndWait({ date, briefing: finalBriefing }).unwrap();
