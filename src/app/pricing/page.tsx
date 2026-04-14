@@ -10,6 +10,7 @@ import { getFoundingMemberStatus } from "@/lib/founding";
 import { createServerClient } from "@/lib/supabase/server";
 import { FEATURES } from "@/lib/constants";
 import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
+import { safeJsonLd } from "@/lib/json-ld";
 
 export const metadata: Metadata = {
   title: "Pricing | BTC Today",
@@ -138,7 +139,7 @@ export default async function PricingPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }}
       />
       <Header />
       <main className="pb-16">

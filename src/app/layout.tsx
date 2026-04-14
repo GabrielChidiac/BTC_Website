@@ -4,6 +4,7 @@ import { Space_Grotesk, Inter, Geist } from "next/font/google";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { SubscribeBanner } from "@/components/subscribe/SubscribeBanner";
 import { COOKIE_NAME } from "@/lib/session";
+import { safeJsonLd } from "@/lib/json-ld";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -68,7 +69,7 @@ export default async function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+            __html: safeJsonLd({
               "@context": "https://schema.org",
               "@graph": [
                 {

@@ -1,36 +1,38 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { setSessionCookie } from "@/lib/session";
-import { EMAIL_REGEX as EMAIL_RE } from "@/lib/constants";
 import { getFoundingMemberStatus } from "@/lib/founding";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
+import { parseJson, verifyCheckSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
-  let body: { email?: string; token?: string };
-
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 }
-    );
+  // ── Rate limit: 30 token checks per minute per IP ────────────────
+  // Magic tokens are 32 random bytes (2^256 search space) so brute
+  // force is not feasible, but rate limiting still prevents a bot from
+  // burning the DB with token lookups at full speed.
+  const ip = getClientIp(request);
+  const ipLimit = await checkRateLimit(`verify-check:ip:${ip}`, {
+    limit: 30,
+    windowSeconds: 60,
+  });
+  if (!ipLimit.ok) {
+    return rateLimitResponse(ipLimit.retryAfter);
   }
 
-  const email = body.email?.trim().toLowerCase();
-  const token = body.token?.trim();
+  // ── Input validation via zod ─────────────────────────────────────
+  const parsed = await parseJson(verifyCheckSchema, request);
+  if (!parsed.ok) return parsed.response;
 
-  if (!email || !EMAIL_RE.test(email)) {
-    return NextResponse.json(
-      { error: "Invalid email" },
-      { status: 400 }
-    );
-  }
+  const { email, token } = parsed.data;
 
-  if (!token || token.length < 32) {
-    return NextResponse.json(
-      { error: "Invalid token" },
-      { status: 400 }
-    );
+  // Per-email bucket for extra defence against brute force on a
+  // specific account (low risk given the 2^256 token space, but cheap).
+  const emailLimit = await checkRateLimit(`verify-check:email:${email}`, {
+    limit: 10,
+    windowSeconds: 15 * 60,
+  });
+  if (!emailLimit.ok) {
+    return rateLimitResponse(emailLimit.retryAfter);
   }
 
   const supabase = createServiceClient();

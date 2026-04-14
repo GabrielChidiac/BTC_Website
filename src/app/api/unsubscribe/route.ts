@@ -5,9 +5,20 @@ import { render } from "@react-email/render";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getBaseUrl } from "@/lib/url";
 import { COOKIE_NAME, clearSessionCookie } from "@/lib/session";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 import UnsubscribeConfirmationEmail from "../../../../emails/unsubscribe-confirmation";
 
-export async function POST() {
+export async function POST(request: Request) {
+  // ── Rate limit: 10 unsubscribe attempts per minute per IP ────────
+  const ip = getClientIp(request);
+  const ipLimit = await checkRateLimit(`unsubscribe:ip:${ip}`, {
+    limit: 10,
+    windowSeconds: 60,
+  });
+  if (!ipLimit.ok) {
+    return rateLimitResponse(ipLimit.retryAfter);
+  }
+
   const cookieStore = await cookies();
   const raw = cookieStore.get(COOKIE_NAME)?.value;
 

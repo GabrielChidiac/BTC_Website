@@ -3,10 +3,10 @@ import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { createServiceClient } from "@/lib/supabase/server";
 import { EMAIL_REGEX as EMAIL_RE } from "@/lib/constants";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
+import { parseJson, subscribeSchema } from "@/lib/validation";
 import VerificationEmail from "../../../../emails/verification";
 
-const NAME_MAX = 50;
-const EMAIL_MAX = 254;
 const CODE_EXPIRY_MINUTES = 10;
 const RATE_LIMIT_SECONDS = 60;
 
@@ -18,44 +18,38 @@ function generateCode(): string {
 }
 
 export async function POST(request: Request) {
-  let body: { email?: string; name?: string; website?: string };
-
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { success: false, error: "Invalid JSON body" },
-      { status: 400 }
-    );
+  // ── Rate limit: 5 signups per minute per IP ──────────────────────
+  // Protects against botnet signup spam that would drain Resend credits
+  // and pollute the subscribers table. Per-email limit (DB-based) still
+  // runs below as a second defence layer.
+  const ip = getClientIp(request);
+  const ipLimit = await checkRateLimit(`subscribe:ip:${ip}`, {
+    limit: 5,
+    windowSeconds: 60,
+  });
+  if (!ipLimit.ok) {
+    return rateLimitResponse(ipLimit.retryAfter);
   }
 
+  // ── Input validation via zod ─────────────────────────────────────
+  const parsed = await parseJson(subscribeSchema, request);
+  if (!parsed.ok) return parsed.response;
+
   // Honeypot: silently accept bots without processing
-  if (body.website) {
+  if (parsed.data.website) {
     return NextResponse.json(
       { success: true, step: "verify", message: "Check your email for a verification code" },
       { status: 200 }
     );
   }
 
-  const email = body.email?.trim().toLowerCase();
-  const rawName = body.name?.trim() || null;
-  const name = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase() : null;
+  const email = parsed.data.email;
+  const rawName = parsed.data.name;
+  const name = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
 
-  if (!name || name.length < 1) {
-    return NextResponse.json(
-      { success: false, error: "First name is required" },
-      { status: 400 }
-    );
-  }
-
-  if (name.length > NAME_MAX) {
-    return NextResponse.json(
-      { success: false, error: `Name must be ${NAME_MAX} characters or fewer` },
-      { status: 400 }
-    );
-  }
-
-  if (!email || email.length > EMAIL_MAX || !EMAIL_RE.test(email)) {
+  // Belt-and-suspenders: stricter email regex than zod's .email() built-in.
+  // The manual regex in constants.ts rejects some edge cases zod accepts.
+  if (!EMAIL_RE.test(email)) {
     return NextResponse.json(
       { success: false, error: "Please enter a valid email address" },
       { status: 400 }
@@ -100,7 +94,7 @@ export async function POST(request: Request) {
   const { error: upsertError } = await supabase
     .from("subscribers")
     .upsert(
-      { email, status: "pending", ...(name ? { name } : {}) },
+      { email, status: "pending", name },
       { onConflict: "email" }
     );
 
@@ -143,7 +137,7 @@ export async function POST(request: Request) {
   if (resendKey) {
     try {
       const resend = new Resend(resendKey);
-      const html = await render(VerificationEmail({ code, name: name ?? undefined }));
+      const html = await render(VerificationEmail({ code, name }));
 
       await resend.emails.send({
         from: "BTC Today <hello@btctoday.co>",

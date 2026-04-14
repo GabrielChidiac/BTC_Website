@@ -3,6 +3,9 @@ import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getBaseUrl } from "@/lib/url";
 import { EMAIL_REGEX as EMAIL_RE } from "@/lib/constants";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
+import { parseJson, verifySendSchema } from "@/lib/validation";
+
 const TOKEN_EXPIRY_MINUTES = 10;
 const RATE_LIMIT_MINUTES = 1;
 
@@ -15,20 +18,26 @@ function generateToken(): string {
 }
 
 export async function POST(request: Request) {
-  let body: { email?: string };
-
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 }
-    );
+  // ── Rate limit: 10 magic-link sends per minute per IP ────────────
+  // The per-email DB limit further down still runs. This IP limit
+  // catches bots that rotate emails to burn Resend credits.
+  const ip = getClientIp(request);
+  const ipLimit = await checkRateLimit(`verify-send:ip:${ip}`, {
+    limit: 10,
+    windowSeconds: 60,
+  });
+  if (!ipLimit.ok) {
+    return rateLimitResponse(ipLimit.retryAfter);
   }
 
-  const email = body.email?.trim().toLowerCase();
+  // ── Input validation via zod ─────────────────────────────────────
+  const parsed = await parseJson(verifySendSchema, request);
+  if (!parsed.ok) return parsed.response;
 
-  if (!email || !EMAIL_RE.test(email)) {
+  const email = parsed.data.email;
+
+  // Belt-and-suspenders: stricter email regex than zod's .email() built-in.
+  if (!EMAIL_RE.test(email)) {
     return NextResponse.json(
       { error: "Invalid email" },
       { status: 400 }

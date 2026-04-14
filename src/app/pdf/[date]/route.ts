@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/server";
 import { COOKIE_NAME } from "@/lib/session";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 
 const SIGNED_URL_EXPIRY = 60; // seconds
 
@@ -12,6 +13,17 @@ export async function GET(
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return new Response("Invalid date", { status: 400 });
+  }
+
+  // ── Rate limit: 30 PDF requests per minute per IP ───────────────
+  // Generous cap for legitimate download behaviour; blocks scraping.
+  const ip = getClientIp(req);
+  const ipLimit = await checkRateLimit(`pdf:ip:${ip}`, {
+    limit: 30,
+    windowSeconds: 60,
+  });
+  if (!ipLimit.ok) {
+    return rateLimitResponse(ipLimit.retryAfter);
   }
 
   const supabase = createServiceClient();

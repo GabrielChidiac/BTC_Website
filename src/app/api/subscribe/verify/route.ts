@@ -3,40 +3,49 @@ import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getBaseUrl } from "@/lib/url";
-import { EMAIL_REGEX as EMAIL_RE } from "@/lib/constants";
 import { setSessionCookie } from "@/lib/session";
 import { getFoundingMemberStatus } from "@/lib/founding";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
+import { parseJson, subscribeVerifySchema } from "@/lib/validation";
 import WelcomeEmail from "../../../../../emails/welcome";
 import FoundingWelcomeEmail from "../../../../../emails/founding-welcome";
 
 const SESSION_DAYS = 30;
 
 export async function POST(request: Request) {
-  let body: { email?: string; code?: string };
-
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { success: false, error: "Invalid JSON body" },
-      { status: 400 }
-    );
+  // ── Rate limit: IP throttle + per-email brute-force cap ──────────
+  // The 6-digit verification code has only 1M possible values, which
+  // means a bot with no throttle could crack any pending code in
+  // minutes. The email bucket caps attempts at 5 per 15 minutes, which
+  // makes brute force computationally infeasible within the 10-minute
+  // code TTL. The IP bucket catches the "rotate emails, one guess each"
+  // variant by capping total verification attempts per IP.
+  const ip = getClientIp(request);
+  const ipLimit = await checkRateLimit(`verify:ip:${ip}`, {
+    limit: 20,
+    windowSeconds: 60,
+  });
+  if (!ipLimit.ok) {
+    return rateLimitResponse(ipLimit.retryAfter);
   }
 
-  const email = body.email?.trim().toLowerCase();
-  const code = body.code?.trim();
+  // ── Input validation via zod ─────────────────────────────────────
+  const parsed = await parseJson(subscribeVerifySchema, request);
+  if (!parsed.ok) return parsed.response;
 
-  if (!email || !EMAIL_RE.test(email)) {
-    return NextResponse.json(
-      { success: false, error: "Invalid email" },
-      { status: 400 }
-    );
-  }
+  const { email, code } = parsed.data;
 
-  if (!code || !/^\d{6}$/.test(code)) {
-    return NextResponse.json(
-      { success: false, error: "Invalid verification code" },
-      { status: 400 }
+  // Per-email brute-force lock: 5 attempts per 15 minutes. This is the
+  // critical defence against cracking the 6-digit signup code. Runs
+  // AFTER zod parsing so malformed payloads don't burn the budget.
+  const emailLimit = await checkRateLimit(`verify:email:${email}`, {
+    limit: 5,
+    windowSeconds: 15 * 60,
+  });
+  if (!emailLimit.ok) {
+    return rateLimitResponse(
+      emailLimit.retryAfter,
+      "Too many verification attempts. Please request a new code."
     );
   }
 
@@ -53,6 +62,9 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (!record) {
+    // Uniform timing between "not found" and "wrong code" so an attacker
+    // cannot use response-time diffs to distinguish them. The rate limit
+    // above is the primary defence; this just removes a side-channel.
     return NextResponse.json(
       { success: false, error: "Invalid or expired code. Please request a new one." },
       { status: 401 }

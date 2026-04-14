@@ -4,6 +4,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { getSubscriberTier } from "@/lib/tier";
 import { getFoundingMemberStatus } from "@/lib/founding";
 import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
+import { safeJsonLd } from "@/lib/json-ld";
 
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -77,7 +78,7 @@ export default async function ArchivePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             itemListElement: [
