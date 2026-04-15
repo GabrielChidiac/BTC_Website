@@ -214,6 +214,7 @@ export default async function Home() {
               BRIEFING TABS — Two-page book layout
              ═══════════════════════════════════════════════════════════════ */}
           <BriefingTabs
+            locked={!isPro}
             tab1Content={
               <>
                 {/* 02 — MARKET EVIDENCE */}

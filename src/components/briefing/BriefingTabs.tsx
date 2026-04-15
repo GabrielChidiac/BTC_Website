@@ -11,6 +11,27 @@ gsap.registerPlugin(ScrollTrigger);
 interface BriefingTabsProps {
   tab1Content: ReactNode;
   tab2Content: ReactNode;
+  locked?: boolean;
+}
+
+function LockIcon() {
+  return (
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className="text-[var(--color-accent)] opacity-80"
+    >
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
 }
 
 function refreshAndScroll(hash?: string) {
@@ -32,7 +53,7 @@ function getTabForHash(hash: string): string | null {
   return SECTION_TAB_MAP[sectionId] ?? null;
 }
 
-export function BriefingTabs({ tab1Content, tab2Content }: BriefingTabsProps) {
+export function BriefingTabs({ tab1Content, tab2Content, locked = false }: BriefingTabsProps) {
   const [activeTab, setActiveTab] = useState<string>(TAB_BRIEFING);
   const tabsRef = useRef<HTMLDivElement>(null);
 
@@ -105,6 +126,7 @@ export function BriefingTabs({ tab1Content, tab2Content }: BriefingTabsProps) {
               className="relative flex items-center gap-2 rounded-none border-0 px-4 py-3 text-xs font-semibold uppercase tracking-[0.1em] font-[family-name:var(--font-heading)] text-[var(--color-text-muted)] data-active:text-[var(--color-text-primary)] hover:text-[var(--color-text-secondary)] transition-colors after:bottom-0 after:h-[2px] after:bg-[var(--color-accent)] data-active:after:opacity-100"
             >
               <span>Deep Dive</span>
+              {locked && <LockIcon />}
               <span className="text-[9px] font-medium tracking-[0.08em] text-[var(--color-text-muted)] opacity-50">
                 2/2
               </span>
