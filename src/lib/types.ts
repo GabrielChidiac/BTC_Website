@@ -132,13 +132,6 @@ export interface ETFFlows {
   total_net_assets_usd: number | null;  // Current total AUM
 }
 
-// ─── Fear & Greed (direct from Alternative.me API, no AI) ──────────────────
-
-export interface FearGreedIndex {
-  value: number;  // 0-100
-  label: string;  // "Extreme Fear" | "Fear" | "Neutral" | "Greed" | "Extreme Greed"
-}
-
 // ─── 3-Minute Contract hero (Pillar 1) ─────────────────────────────────────
 
 export interface HeroThreeLines {
@@ -190,7 +183,6 @@ export interface BriefingJSON {
   supply_dynamics: SupplyDynamics;
   expert_insights: ExpertInsight[];
   // Direct API data (no AI processing)
-  fear_greed: FearGreedIndex | null;
   etf_flows: ETFFlows | null;
 }
 
@@ -283,7 +275,6 @@ export interface MarketCollectorOutput {
   };
   btc_change_ytd_pct: number | null;
   btc_change_1y_pct: number | null;
-  fear_greed: FearGreedIndex | null;
   etf_flows: ETFFlows | null;
 }
 

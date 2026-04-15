@@ -132,7 +132,7 @@ export const dailyPipelineTask = schedules.task({
     // Build market summary for enrichment context
     const marketOutput = marketRun?.ok ? marketRun.output : null;
     const marketSummary = marketOutput
-      ? `Price: $${marketOutput.price.usd.toLocaleString()} | 24h: ${marketOutput.price.change_24h_pct >= 0 ? "+" : ""}${marketOutput.price.change_24h_pct.toFixed(2)}% | 7d: ${marketOutput.price.change_7d_pct >= 0 ? "+" : ""}${marketOutput.price.change_7d_pct.toFixed(2)}% | Dominance: ${marketOutput.dominance_pct.toFixed(1)}% | RSI: ${marketOutput.technical.rsi_14.toFixed(0)} | SMA-50: $${marketOutput.technical.sma_50.toLocaleString()} | SMA-200: $${marketOutput.technical.sma_200.toLocaleString()}${marketOutput.fear_greed ? ` | Fear & Greed: ${marketOutput.fear_greed.value} (${marketOutput.fear_greed.label})` : ""}`
+      ? `Price: $${marketOutput.price.usd.toLocaleString()} | 24h: ${marketOutput.price.change_24h_pct >= 0 ? "+" : ""}${marketOutput.price.change_24h_pct.toFixed(2)}% | 7d: ${marketOutput.price.change_7d_pct >= 0 ? "+" : ""}${marketOutput.price.change_7d_pct.toFixed(2)}% | Dominance: ${marketOutput.dominance_pct.toFixed(1)}% | RSI: ${marketOutput.technical.rsi_14.toFixed(0)} | SMA-50: $${marketOutput.technical.sma_50.toLocaleString()} | SMA-200: $${marketOutput.technical.sma_200.toLocaleString()}`
       : null;
 
     try {
@@ -167,7 +167,6 @@ export const dailyPipelineTask = schedules.task({
       institutional_flows: enrichment.institutional_flows,
       supply_dynamics: enrichment.supply_dynamics,
       expert_insights: enrichment.expert_insights,
-      fear_greed: marketRun?.ok ? marketRun.output.fear_greed : null,
       etf_flows: etfFlows,
     };
 

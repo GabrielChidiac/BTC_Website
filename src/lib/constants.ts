@@ -101,7 +101,6 @@ export const SEARCH_QUERIES = [
 
 export const COINGECKO_BASE = "https://api.coingecko.com/api/v3";
 export const MEMPOOL_BASE = "https://mempool.space/api";
-export const ALTERNATIVE_ME_FNG = "https://api.alternative.me/fng/";
 export const PERPLEXITY_BASE = "https://api.perplexity.ai/chat/completions";
 export const SOSOVALUE_ETF_HISTORY = "https://api.sosovalue.xyz/openapi/v2/etf/historicalInflowChart";
 

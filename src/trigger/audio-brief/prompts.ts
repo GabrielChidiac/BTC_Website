@@ -343,8 +343,7 @@ prompt in EXACTLY this order: OPEN, MARKET SNAPSHOT, TOP STORIES, ADOPTION,
 REGULATORY, INSTITUTIONAL FLOWS, DEEP DIVE, OUTLOOK, CLOSE. Remember:
 sharp, data-accurate, conviction-forward. Every number and every name must
 appear in the FACTS BLOCK above. Target 420 to 500 total words, HARD CEILING
-at 500. If you cross 500, cut explanation sentences before cutting facts.
-Never mention Fear and Greed in the script.`;
+at 500. If you cross 500, cut explanation sentences before cutting facts.`;
 }
 
 /**
@@ -442,8 +441,6 @@ function buildFactsBlock(b: BriefingJSON | undefined | null): string {
   } else {
     lines.push("(market snapshot unavailable)");
   }
-  // NOTE: Fear and Greed is intentionally NOT included in the FACTS BLOCK.
-  // Per product decision, the audio brief must never reference it.
   lines.push("");
 
   // ── INSTITUTIONAL FLOWS ────────────────────────────────

@@ -130,7 +130,7 @@ collectors (news + market, parallel via batch.triggerAndWait)
 **BriefingJSON composition** (see [src/lib/types.ts](src/lib/types.ts)):
 - AI Brain generates the base structure (stories, market, technical, narrative, macro, etc.) plus `looking_ahead_predictions` (2–3 testable directional claims).
 - Enrichment overwrites `looking_ahead`, `institutional_flows`, `expert_insights`, `supply_dynamics`. `institutional_flows` from Perplexity focuses on **non-ETF** activity (corporate treasury, whales, fund allocations, OTC, mining).
-- `fear_greed` and `etf_flows` come straight from the market collector (not AI Brain or enrichment).
+- `etf_flows` comes straight from the market collector (not AI Brain or enrichment).
 - `read_time_seconds` is computed by `computeReadTimeSeconds()` ([src/lib/utils.ts](src/lib/utils.ts)) after enrichment — powers the 3-minute contract display.
 - `hero_three_lines`, `audio_url`, `audio_duration_seconds`, `audio_script` are populated by the audio brief step.
 - `looking_ahead_predictions` is also persisted to the `predictions` table by [save-briefing.ts](src/trigger/publishers/save-briefing.ts) (try/catch wrapped — failure does not block the briefing save).

@@ -233,17 +233,6 @@ export default async function Home() {
                         value={`${market.dominance_pct.toFixed(1)}%`}
                         size="sm"
                       />
-                      {briefing.fear_greed != null && (
-                        <StatTile
-                          label="Fear & Greed"
-                          value={String(briefing.fear_greed.value)}
-                          delta={{
-                            value: briefing.fear_greed.label,
-                            positive: briefing.fear_greed.value >= 50,
-                          }}
-                          size="sm"
-                        />
-                      )}
                       {isPro && (() => {
                         const flow = briefing.etf_flows?.daily_net_flow_usd ?? null;
                         if (flow == null) return null;
@@ -274,13 +263,6 @@ export default async function Home() {
                   <p className="mt-3 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
                     <span className="font-semibold text-[var(--color-text-secondary)]">BTC Dominance:</span>{" "}
                     Bitcoin&rsquo;s share of total crypto market capitalisation. Rising dominance means capital is rotating into BTC from altcoins.
-                    {briefing.fear_greed != null && (
-                      <>
-                        {" "}
-                        <span className="font-semibold text-[var(--color-text-secondary)]">Fear &amp; Greed:</span>{" "}
-                        0 to 100 composite of volatility, momentum, and survey sentiment. Extreme fear historically coincides with local bottoms; extreme greed with local tops.
-                      </>
-                    )}
                   </p>
                 </div>
 

@@ -209,7 +209,6 @@ const previewBriefing: BriefingJSON = {
   institutional_flows: { summary: "Corporate treasuries led accumulation this week.", notable_moves: ["MicroStrategy purchased 12,000 BTC ($1.1B)", "Metaplanet added 150 BTC to treasury reserves"] },
   supply_dynamics: { exchange_reserve_trend: "Exchange reserves at 5-year low", long_term_holder_pct: 71.2, supply_narrative: "Only 3.125 BTC mined per block and 71% of supply hasn't moved in over a year - the tightest supply conditions since 2017." },
   expert_insights: [{ expert_name: "Lyn Alden", role: "Macro analyst", quote_or_summary: "Global liquidity expansion is the dominant driver right now. Bitcoin tends to perform well when M2 is expanding, and we're seeing that across all major economies.", source: "The Investors Podcast", date: "2026-03-22" }],
-  fear_greed: { value: 72, label: "Greed" },
   etf_flows: { daily_net_flow_usd: 420_000_000, mtd_net_flow_usd: 3_200_000_000, total_net_assets_usd: 115_000_000_000 },
   audio_url: "/api/audio/2026-03-24",
   audio_duration_seconds: 212,

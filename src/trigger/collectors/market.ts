@@ -16,7 +16,6 @@ import {
   fetchETH,
   fetchSOL,
 } from "@/trigger/lib/comparison";
-import { fetchFearGreedIndex } from "@/trigger/lib/alternativeme";
 import { fetchETFFlows } from "@/trigger/lib/sosovalue";
 
 export const marketCollector = task({
@@ -37,7 +36,6 @@ export const marketCollector = task({
       dxyResult,
       ethResult,
       solResult,
-      fearGreedResult,
       etfFlowsResult,
     ] = await Promise.allSettled([
       fetchBtcPrice(),
@@ -51,7 +49,6 @@ export const marketCollector = task({
       fetchDXY(),
       fetchETH(),
       fetchSOL(),
-      fetchFearGreedIndex(),
       fetchETFFlows(),
     ]);
 
@@ -88,7 +85,6 @@ export const marketCollector = task({
     const dxy = unwrap(dxyResult, "dxy");
     const eth = unwrap(ethResult, "eth");
     const sol = unwrap(solResult, "sol");
-    const fearGreed = unwrap(fearGreedResult, "fearGreed");
     const etfFlows = unwrap(etfFlowsResult, "etfFlows");
 
     // ── Step 3: Compute technical indicators ────────────────────────────────
@@ -186,7 +182,6 @@ export const marketCollector = task({
       ath_date: btcPrice?.ath_date ?? null,
       btc_change_ytd_pct: btcYtdPct,
       btc_change_1y_pct: btc1yPct,
-      fear_greed: fearGreed ? { value: fearGreed.value, label: fearGreed.label } : null,
       etf_flows: etfFlows ?? null,
     };
 
