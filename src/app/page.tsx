@@ -30,7 +30,6 @@ import { TechnicalSignals } from "@/components/briefing/TechnicalSignals";
 import { NetworkHealth } from "@/components/briefing/NetworkHealth";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
 import { BriefingTabs } from "@/components/briefing/BriefingTabs";
-import { ThreeMinuteHero } from "@/components/briefing/ThreeMinuteHero";
 import { BriefEndState } from "@/components/briefing/BriefEndState";
 import { getFoundingMemberStatus } from "@/lib/founding";
 
@@ -191,17 +190,6 @@ export default async function Home() {
       <Header date={briefing.date} />
       <main className="relative pb-10">
         <Container wide>
-
-          {/* ═══════════════════════════════════════════════════════════════
-              THE 3-MINUTE CONTRACT HERO
-              Move / Signal / Watch plus read time. Falls back to one_line
-              for briefings generated before the pivot.
-             ═══════════════════════════════════════════════════════════════ */}
-          <ThreeMinuteHero
-            heroLines={briefing.hero_three_lines}
-            readTimeSeconds={briefing.read_time_seconds}
-            fallbackInsight={briefing.one_line}
-          />
 
           {/* ═══════════════════════════════════════════════════════════════
               TIER 1: THE SNAPSHOT

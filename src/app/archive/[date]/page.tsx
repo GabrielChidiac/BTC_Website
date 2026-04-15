@@ -28,7 +28,6 @@ import { NetworkHealth } from "@/components/briefing/NetworkHealth";
 import { SupplyDynamics } from "@/components/briefing/SupplyDynamics";
 import { CountdownEvents } from "@/components/briefing/CountdownEvents";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
-import { ThreeMinuteHero } from "@/components/briefing/ThreeMinuteHero";
 import { BriefEndState } from "@/components/briefing/BriefEndState";
 import { ProGateCompact } from "@/components/premium/ProGate";
 import { getFoundingMemberStatus } from "@/lib/founding";
@@ -270,13 +269,6 @@ export default async function ArchiveDatePage({
 
           {canViewFull ? (
             <>
-              {/* 3-Minute Contract hero with read time and Move/Signal/Watch */}
-              <ThreeMinuteHero
-                heroLines={briefing.hero_three_lines}
-                readTimeSeconds={briefing.read_time_seconds}
-                fallbackInsight={briefing.one_line}
-              />
-
               <DailyDiffBanner dailyDiff={briefing.daily_diff} />
               <MarketSnapshot market={briefing.market_snapshot} />
 
