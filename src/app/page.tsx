@@ -31,7 +31,8 @@ import { NetworkHealth } from "@/components/briefing/NetworkHealth";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
 import { BriefingTabs } from "@/components/briefing/BriefingTabs";
 import { BriefEndState } from "@/components/briefing/BriefEndState";
-import { getFoundingMemberStatus } from "@/lib/founding";
+import { ProTeaser } from "@/components/premium/ProTeaser";
+import { getFoundingMemberStatus, type FoundingMemberStatus } from "@/lib/founding";
 
 
 export const revalidate = 3600;
@@ -132,10 +133,12 @@ export default async function Home() {
   let { tier, email: sessionEmail } = await getSubscriberTier();
   const isLoggedIn = !!sessionEmail;
 
-  // Auto-upgrade logged-in free-tier users when the founding offer is active
-  if (isLoggedIn && tier === "free") {
-    const f = await getFoundingMemberStatus();
-    if (f.isOfferActive) {
+  let foundingOffer: FoundingMemberStatus | null = null;
+  if (tier !== "pro") {
+    foundingOffer = await getFoundingMemberStatus();
+
+    // Auto-upgrade logged-in free-tier users when the founding offer is active
+    if (isLoggedIn && tier === "free" && foundingOffer.isOfferActive) {
       const svc = createServiceClient();
       await svc
         .from("subscribers")
@@ -304,6 +307,9 @@ export default async function Home() {
               </>
             }
             tab2Content={
+              !isPro ? (
+                <ProTeaser foundingOffer={foundingOffer} variant="tab" />
+              ) : (
               <>
                 {/* 05 — ADOPTION & REGULATORY */}
                 {(briefing.adoption.length > 0 || briefing.regulatory.length > 0) && (
@@ -414,6 +420,7 @@ export default async function Home() {
                   </div>
                 )}
               </>
+              )
             }
           />
 
