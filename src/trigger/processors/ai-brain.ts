@@ -58,6 +58,7 @@ interface TopStory {
   url: string;
   summary: string;             // 2-3 sentences. Each must go beyond a headline restatement to explain what the story MEANS for Bitcoin holders. Structure: one sentence of context (what happened), then one or two sentences of implications (the "so what" for capital flows, positioning, macro, or timeline pressure on catalysts). Assume financial literacy, not crypto-native knowledge. The reader should learn something they could not have guessed from the headline alone.
   sentiment: "bullish" | "bearish" | "neutral";
+  category: "market" | "regulatory" | "adoption" | "macro" | "technical";  // REQUIRED. Primary theme of the story. See category rules below.
   tags: string[];              // 1-3 topic tags, e.g. ["ETF", "macro"], ["regulation", "institutional"]
 }
 
@@ -194,6 +195,12 @@ Rules:
   Negative example (what NOT to do): "Japan's GPIF confirmed it will add Bitcoin ETFs to its allocation model. The pension fund holds over 1.5 trillion dollars in assets. The decision follows a multi-year review process." This is pure description, no interpretation, and teaches the reader nothing the headline did not already imply.
 
   Positive example: "Japan's GPIF, a 1.5 trillion dollar pension fund, confirmed Bitcoin ETF allocation. This is the first G7 sovereign pension to move from studying Bitcoin to committing capital, and the signaling effect on CalPERS and Norway's fund matters more than GPIF's initial position size. Watch for parallel moves from Canadian and Dutch pension boards over the next 90 days." This names the significance, identifies the second-order effect, and tells the reader what to watch next.
+- For top_stories.category (REQUIRED on every top story, exactly one of the five values): pick the single theme that best describes the story's primary subject. Do not hedge, do not combine. The reader uses this label to orient instantly, so it must be decisive.
+  - "market" — ETF flows and filings, price catalysts, derivatives and options positioning, liquidations, institutional fund moves, exchange activity. Default for most headlines about money flowing into or out of Bitcoin.
+  - "regulatory" — government, SEC, CFTC, central bank policy, legislation, enforcement, court rulings, tax changes, regulator or political personnel with direct authority over Bitcoin. Use this when the story is driven by a public-sector actor.
+  - "adoption" — corporate treasury BTC purchases, country-level adoption, merchant or payment integration, custody buildouts. Use this when the story is driven by a non-financial entity putting Bitcoin to use.
+  - "macro" — Fed rate decisions, CPI or PCE inflation prints, dollar index moves, jobs reports, fiscal or liquidity policy, broader risk-asset rotations. Use this when the story is macroeconomic rather than Bitcoin-specific but has direct BTC implications.
+  - "technical" — mining, hashrate, protocol upgrades, halving milestones, Lightning network metrics, on-chain signals. Use this when the story is about the Bitcoin network itself.
 - For regulatory: 1-3 genuine regulatory developments that directly affect Bitcoin. Each item MUST be sourced from a specific input article, with its exact URL and source. Do NOT generate regulatory items from your training data or general knowledge. If no input articles contain regulatory news, return an empty array. Never force non-regulatory or altcoin-specific regulation into this section.
 - For adoption: 1-3 genuine Bitcoin adoption stories (corporate BTC buys, sovereign Bitcoin adoption, Bitcoin payment adoption, Bitcoin infrastructure growth). Each item MUST be sourced from a specific input article, with its exact URL and source. Do NOT generate adoption items from your training data or general knowledge. If no input articles contain adoption news, return an empty array. Exclude general crypto or altcoin adoption.
 - For macro_context: synthesize how current macro conditions (monetary policy, liquidity, DXY, inflation) relate to Bitcoin's positioning. Use your knowledge of scheduled macro events.

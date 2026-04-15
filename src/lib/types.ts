@@ -6,12 +6,23 @@ export type Result<T> =
 
 // ─── Briefing sub-types ─────────────────────────────────────────────────────
 
+export type TopStoryCategory =
+  | "market"
+  | "regulatory"
+  | "adoption"
+  | "macro"
+  | "technical";
+
 export interface TopStory {
   headline: string;
   source: string;
   url: string;
   summary: string; // 2-3 sentences, written for sophisticated investors
   sentiment: "bullish" | "bearish" | "neutral";
+  // Thematic label so readers and listeners know what the story is about.
+  // Optional for backward compatibility with briefings saved before this
+  // field existed; new AI Brain outputs always populate it.
+  category?: TopStoryCategory;
   tags: string[];
 }
 

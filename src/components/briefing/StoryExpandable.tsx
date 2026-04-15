@@ -1,8 +1,16 @@
 "use client";
 
-import type { TopStory } from "@/lib/types";
+import type { TopStory, TopStoryCategory } from "@/lib/types";
 import { ExpandableCard } from "@/components/ui/ExpandableCard";
 import { Badge } from "@/components/ui/badge";
+
+const CATEGORY_LABELS: Record<TopStoryCategory, string> = {
+  market: "Market",
+  regulatory: "Regulatory",
+  adoption: "Adoption",
+  macro: "Macro",
+  technical: "Technical",
+};
 
 export function StoryExpandable({
   story,
@@ -16,7 +24,12 @@ export function StoryExpandable({
       defaultOpen={defaultOpen}
       preview={
         <div className="flex items-start gap-2.5">
-          <Badge variant={story.sentiment as "bullish" | "bearish" | "neutral"}>{story.sentiment}</Badge>
+          <div className="flex flex-col gap-1 shrink-0">
+            {story.category && (
+              <Badge variant="default">{CATEGORY_LABELS[story.category]}</Badge>
+            )}
+            <Badge variant={story.sentiment as "bullish" | "bearish" | "neutral"}>{story.sentiment}</Badge>
+          </div>
           <div className="min-w-0 flex-1">
             <p className="font-[family-name:var(--font-heading)] text-sm font-bold leading-snug text-[var(--color-text-primary)]">
               {story.headline}

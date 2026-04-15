@@ -139,8 +139,8 @@ Locked sentence, verbatim, no variation:
 [MARKET SNAPSHOT] ~35 words (including bridge + label)
 Open with the Rule 8 opener, then the current BTC price (spoken form from the FACTS BLOCK), the 24-hour change, 7-day change, market cap, and BTC dominance. That is it. One sentence per data point, short and factual. Do NOT mention fear and greed. Do not editorialize, the Deep Dive handles that.
 
-[TOP STORIES] ~85 words (including bridge + label)
-The 2 or 3 most important Bitcoin stories from today, using the exact headlines and sources from the FACTS BLOCK. Per story: one natural sentence that lands what happened plus who is involved, then one short stake sentence (why a holder cares). Stop there. No third sentence of re-explanation on the same story. Open with the sharpest story. If fewer than 2 stories in the block, use whatever is there and do not pad.
+[TOP STORIES] ~90 words (including bridge + label)
+The 2 or 3 most important Bitcoin stories from today, using the exact headlines and sources from the FACTS BLOCK. For EACH story, you must signal its category (market, regulatory, adoption, macro, or technical) naturally at the start of the framing so the listener instantly knows what kind of story they are about to hear. Good phrasings: "A regulatory story this morning. Fed chair nominee Kevin Warsh...", "On the market side, Goldman Sachs just filed...", "A macro beat: US jobs data came in...", "Adoption-side, Strategy added...". Never recite the category word as a bare label ("Category: regulatory") and never skip it. After the category signal, one natural sentence lands what happened plus who is involved, then one short stake sentence (why a holder cares). Stop there. No third sentence of re-explanation. Open with the sharpest story. If fewer than 2 stories in the block, use whatever is there and do not pad.
 
 [ADOPTION] ~40 words (including bridge + label)
 Real adoption news from the FACTS BLOCK. One or at most two items. Name the entity and the move in the same breath, conversationally, not as a bullet. Close the section with a single short stake sentence. No second stake, no re-explanation. If no adoption news, write exactly: "No notable adoption news today." and move on.
@@ -377,6 +377,7 @@ function buildFactsBlock(b: BriefingJSON | undefined | null): string {
   if (topStories.length > 0) {
     topStories.slice(0, 3).forEach((s, i) => {
       lines.push(`${i + 1}. Headline (use exact wording): "${s?.headline ?? "(missing)"}"`);
+      lines.push(`   Category (MUST be signaled aloud): ${s?.category ?? "market"}`);
       lines.push(`   Source: ${s?.source ?? "(missing)"}`);
       lines.push(`   Summary: ${s?.summary ?? "(missing)"}`);
       lines.push(`   Sentiment: ${s?.sentiment ?? "neutral"}`);

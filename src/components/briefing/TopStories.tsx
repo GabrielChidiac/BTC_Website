@@ -1,5 +1,13 @@
-import type { TopStory } from "@/lib/types";
+import type { TopStory, TopStoryCategory } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
+
+const CATEGORY_LABELS: Record<TopStoryCategory, string> = {
+  market: "Market",
+  regulatory: "Regulatory",
+  adoption: "Adoption",
+  macro: "Macro",
+  technical: "Technical",
+};
 
 export function TopStories({ stories }: { stories: TopStory[] }) {
   if (!stories || stories.length === 0) return null;
@@ -18,7 +26,10 @@ export function TopStories({ stories }: { stories: TopStory[] }) {
 
       {/* Featured story — large card */}
       <article className="card-interactive rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-5 sm:p-6 mb-3">
-        <div className="flex items-start gap-3 mb-2">
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          {featured.category && (
+            <Badge variant="default">{CATEGORY_LABELS[featured.category]}</Badge>
+          )}
           <Badge variant={featured.sentiment as "bullish" | "bearish" | "neutral"}>{featured.sentiment}</Badge>
           <span className="text-xs text-[var(--color-text-muted)]">
             {featured.source}
@@ -57,7 +68,12 @@ export function TopStories({ stories }: { stories: TopStory[] }) {
                 i > 0 ? "border-t border-[var(--color-border)]/50" : ""
               }`}
             >
-              <Badge variant={story.sentiment as "bullish" | "bearish" | "neutral"}>{story.sentiment}</Badge>
+              <div className="flex flex-col gap-1 shrink-0">
+                {story.category && (
+                  <Badge variant="default">{CATEGORY_LABELS[story.category]}</Badge>
+                )}
+                <Badge variant={story.sentiment as "bullish" | "bearish" | "neutral"}>{story.sentiment}</Badge>
+              </div>
 
               <div className="min-w-0 flex-1">
                 <a

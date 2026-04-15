@@ -14,8 +14,16 @@ import {
   Font,
   Img,
 } from "@react-email/components";
-import type { BriefingJSON } from "../src/lib/types";
+import type { BriefingJSON, TopStoryCategory } from "../src/lib/types";
 import { formatReadTime } from "../src/lib/utils";
+
+const CATEGORY_LABELS: Record<TopStoryCategory, string> = {
+  market: "Market",
+  regulatory: "Regulatory",
+  adoption: "Adoption",
+  macro: "Macro",
+  technical: "Technical",
+};
 
 // ─── Palette ─────────────────────────────────────────────────────────────────
 const c = {
@@ -335,6 +343,14 @@ export default function DailyDigest({
                       {sentimentDot(story.sentiment)}
                     </span>
                     {"  "}
+                    {story.category && (
+                      <>
+                        <span style={{ color: c.accent, fontWeight: "600" }}>
+                          {CATEGORY_LABELS[story.category]}
+                        </span>
+                        {" \u00B7 "}
+                      </>
+                    )}
                     <span style={{ color: c.textMuted }}>{story.source}</span>
                     {story.tags.length > 0 && (
                       <span style={{ color: c.textMuted }}> {"\u00B7"} {story.tags[0]}</span>

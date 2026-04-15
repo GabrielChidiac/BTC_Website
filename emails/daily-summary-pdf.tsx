@@ -7,7 +7,15 @@ import {
   Font,
   Image,
 } from "@react-pdf/renderer";
-import type { BriefingJSON } from "../src/lib/types";
+import type { BriefingJSON, TopStoryCategory } from "../src/lib/types";
+
+const CATEGORY_LABELS: Record<TopStoryCategory, string> = {
+  market: "MARKET",
+  regulatory: "REGULATORY",
+  adoption: "ADOPTION",
+  macro: "MACRO",
+  technical: "TECHNICAL",
+};
 
 // ─── Register fonts ──────────────────────────────────────────────────────────
 
@@ -174,6 +182,13 @@ const s = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: c.accent,
   },
+  storyCategory: {
+    fontSize: 7,
+    fontWeight: 700,
+    color: c.accent,
+    letterSpacing: 0.8,
+    marginBottom: 2,
+  },
   storyHeadline: {
     fontSize: 11,
     fontWeight: 700,
@@ -321,6 +336,9 @@ export function DailySummaryPDF({ briefing }: { briefing: BriefingJSON }) {
             <Text style={s.sectionHeading}>Top Stories</Text>
             {stories.map((story, i) => (
               <View key={i} style={s.storyCard}>
+                {story.category && (
+                  <Text style={s.storyCategory}>{CATEGORY_LABELS[story.category]}</Text>
+                )}
                 <Text style={s.storyHeadline}>{story.headline}</Text>
                 <Text style={s.storySummary}>{story.summary}</Text>
                 <Text style={s.storySource}>{story.source}</Text>
