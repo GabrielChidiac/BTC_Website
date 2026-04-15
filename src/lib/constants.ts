@@ -47,7 +47,7 @@ export const FEATURES: ProFeature[] = [
   { label: "Top stories with sentiment", desc: "AI-curated news through an institutional lens", freeIncluded: true },
   { label: "BTC vs Everything comparisons", desc: "SPX, Gold, DXY, ETH, SOL", freeIncluded: true },
   { label: "Weekly recap email", desc: "Sunday summary of the week", freeIncluded: true },
-  { label: "Regulatory & adoption signals", desc: "Policy shifts, corporate BTC moves", freeIncluded: false },
+  { label: "Regulatory signals", desc: "Policy shifts and enforcement moves", freeIncluded: false },
   { label: "Daily email briefing", desc: "Full briefing delivered to your inbox", freeIncluded: false },
   { label: "Institutional flows & ETF data", desc: "ETF net flows, notable moves", freeIncluded: false },
   { label: "Technical signals", desc: "RSI, SMAs, support & resistance", freeIncluded: false },

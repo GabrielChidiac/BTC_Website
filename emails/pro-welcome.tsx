@@ -85,7 +85,7 @@ export default function ProWelcomeEmail({
               </Text>
               <Text style={styles.benefitItem}>
                 <span style={styles.bullet}>02</span>
-                Adoption signals and regulatory developments
+                Regulatory moves and policy developments
               </Text>
               <Text style={styles.benefitItem}>
                 <span style={styles.bullet}>03</span>

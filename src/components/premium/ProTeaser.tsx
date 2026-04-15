@@ -80,8 +80,8 @@ export function ProTeaser({ foundingOffer, variant = "standalone" }: { foundingO
               {isFoundingActive ? "Get full Pro access, free" : "Unlock the full briefing"}
             </p>
             <p className="max-w-xs text-sm text-[var(--color-text-secondary)] leading-relaxed">
-              Daily email briefings, adoption signals, institutional flows,
-              technical analysis, expert insights, and what&rsquo;s next for BTC.
+              Daily email briefings, institutional flows, technical analysis,
+              expert insights, and what&rsquo;s next for BTC.
             </p>
             {isFoundingActive && (
               <div className="w-full max-w-[200px]">

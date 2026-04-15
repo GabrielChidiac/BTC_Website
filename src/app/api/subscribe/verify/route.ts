@@ -170,7 +170,7 @@ export async function POST(request: Request) {
           to: email,
           subject: "You're a Founding Member",
           html,
-          text: `You're a Founding Member.\n\nYou joined BTC Today early, and that means something. As one of our first 100 subscribers, you have full Pro access, on the house, permanently.\n\nEvery morning at 2 AM CET, you'll receive a comprehensive briefing in your inbox.\n\nWhat you get:\n- Daily briefing delivered to your inbox\n- Adoption signals and regulatory developments\n- ETF flows, institutional activity, and whale movements\n- Technical signals, network health, and on-chain data\n- Expert insights and forward outlook\n- PDF downloads and full archive access\n\nThis is yours to keep.\n\nRead today's briefing: ${siteUrl}\n\n- BTC Today`,
+          text: `You're a Founding Member.\n\nYou joined BTC Today early, and that means something. As one of our first 100 subscribers, you have full Pro access, on the house, permanently.\n\nEvery morning at 2 AM CET, you'll receive a comprehensive briefing in your inbox.\n\nWhat you get:\n- Daily briefing delivered to your inbox\n- Regulatory moves and policy developments\n- ETF flows, institutional activity, and whale movements\n- Technical signals, network health, and on-chain data\n- Expert insights and forward outlook\n- PDF downloads and full archive access\n\nThis is yours to keep.\n\nRead today's briefing: ${siteUrl}\n\n- BTC Today`,
         });
       } else {
         const html = await render(WelcomeEmail({ email, name: subscriberName, siteUrl }));
