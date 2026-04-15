@@ -6,6 +6,7 @@ import { createServerClient, createServiceClient } from "@/lib/supabase/server";
 import { getSubscriberTier } from "@/lib/tier";
 import { COOKIE_NAME } from "@/lib/session";
 import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
+import { dedupeBriefingStories } from "@/lib/dedupe-stories";
 import { formatDisplayDate } from "@/lib/utils";
 import { safeJsonLd } from "@/lib/json-ld";
 
@@ -128,7 +129,9 @@ export default async function ArchiveDatePage({
 
   if (!data) notFound();
 
-  const briefing: BriefingJSON = (data as DailyBriefingRow).content;
+  const briefing: BriefingJSON = dedupeBriefingStories(
+    (data as DailyBriefingRow).content
+  );
 
   const { tier } = await getSubscriberTier();
   const isPro = tier === "pro";

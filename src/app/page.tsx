@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createServerClient, createServiceClient } from "@/lib/supabase/server";
 import { getSubscriberTier } from "@/lib/tier";
 import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
+import { dedupeBriefingStories } from "@/lib/dedupe-stories";
 import { compactNumber } from "@/lib/utils";
 import { BLOCKED_EVENT_KEYWORDS } from "@/lib/constants";
 import { safeJsonLd } from "@/lib/json-ld";
@@ -128,7 +129,9 @@ export default async function Home() {
     );
   }
 
-  const briefing: BriefingJSON = (data as DailyBriefingRow).content;
+  const briefing: BriefingJSON = dedupeBriefingStories(
+    (data as DailyBriefingRow).content
+  );
   const market = briefing.market_snapshot;
   let { tier, email: sessionEmail } = await getSubscriberTier();
   const isLoggedIn = !!sessionEmail;

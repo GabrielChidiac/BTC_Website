@@ -128,6 +128,8 @@ TIGHT AND NATURAL (right — every sentence earns its place, warmth intact):
 
 Two sentences. One fact sentence with a number and a running total. One stake sentence. No third sentence of elaboration. Natural, warm, tight.
 
+**Non-repetition across sections.** Each headline, company, person, and event from the FACTS BLOCK may appear in the spoken script at most once. Once a story is spoken in TOP STORIES, ADOPTION, or REGULATORY, later sections, including DEEP DIVE, INSTITUTIONAL FLOWS, and OUTLOOK, must not re-summarize it. They may reference it by role in a single bridging phrase (for example, "with that filing aside") before pivoting to NEW information, but they must never re-explain or re-announce the story itself. This protects the listener's time and preserves the brief's sense of forward motion.
+
 Write exactly these 9 sections, in exactly this order, each with its label on its own line:
 
 [OPEN] ~10 words

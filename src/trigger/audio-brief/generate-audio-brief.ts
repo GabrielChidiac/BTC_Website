@@ -3,6 +3,7 @@ import { callClaudeJSON } from "@/trigger/lib/anthropic";
 import { generateSpeech, stripSectionMarkers, estimateAudioDurationSeconds } from "@/trigger/lib/openai-tts";
 import { withTimeout } from "@/trigger/lib/fetch-timeout";
 import { createServiceClient } from "@/lib/supabase/server";
+import { dedupeBriefingStories } from "@/lib/dedupe-stories";
 import { AUDIO_BRIEF_SYSTEM_PROMPT, buildAudioScriptUserPrompt } from "./prompts";
 import type { BriefingJSON } from "@/lib/types";
 
@@ -79,12 +80,31 @@ export const generateAudioBriefTask = task({
       };
     }
 
+    // Enforce the absolute no-duplicates guarantee on the briefing BEFORE it
+    // reaches the FACTS BLOCK builder. The pipeline already dedupes after AI
+    // Brain, so in the normal path this is a no-op. It matters when:
+    //  - someone triggers this task manually from the Trigger dashboard with
+    //    a flat briefing pasted from an older DB row (pre-dedup writes)
+    //  - a future pipeline refactor skips the AI Brain dedupe step
+    // Either way, the audio script must never recite the same story twice.
+    const cleaned = dedupeBriefingStories(briefing);
+    const dedupDropped =
+      (briefing.top_stories?.length ?? 0) - (cleaned.top_stories?.length ?? 0) +
+      (briefing.regulatory?.length ?? 0) - (cleaned.regulatory?.length ?? 0) +
+      (briefing.adoption?.length ?? 0) - (cleaned.adoption?.length ?? 0);
+    if (dedupDropped > 0) {
+      logger.warn("Audio brief dedupe removed duplicate stories before FACTS BLOCK", {
+        date,
+        dropped: dedupDropped,
+      });
+    }
+
     // Step 1: generate spoken-word script via Claude
     logger.info("Generating audio brief script", { date });
 
     const scriptResult = await callClaudeJSON<AudioScriptOutput>({
       system: AUDIO_BRIEF_SYSTEM_PROMPT,
-      prompt: buildAudioScriptUserPrompt(briefing, date),
+      prompt: buildAudioScriptUserPrompt(cleaned, date),
       maxTokens: 4000,
     });
 

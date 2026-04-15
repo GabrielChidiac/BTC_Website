@@ -2,6 +2,7 @@ import { task, logger } from "@trigger.dev/sdk/v3";
 import { callClaudeJSON } from "@/trigger/lib/anthropic";
 import { createServiceClient } from "@/lib/supabase/server";
 import { halvingProgress } from "@/lib/utils";
+import { dedupeBriefingStories } from "@/lib/dedupe-stories";
 import type {
   BriefingJSON,
   TopStory,
@@ -179,6 +180,11 @@ The root JSON object must have these exact keys:
 }
 
 Rules:
+- ABSOLUTE NO-DUPLICATES RULE: Each story (identified by URL or near-identical headline) may appear in EXACTLY ONE of top_stories, regulatory, or adoption. Never list the same story in two sections. Never list the same URL twice within top_stories. If a story could plausibly fit multiple sections, place it in the one where its primary angle is strongest:
+  - Place in regulatory when the primary angle is: government action, legislation, enforcement, SEC/CFTC/Fed moves, central bank policy, court rulings, tax changes, or regulator/political personnel with direct authority over Bitcoin.
+  - Place in adoption when the primary angle is: corporate treasury BTC purchases, country-level adoption, merchant/payment integration, or custody and infrastructure build-out.
+  - Place in top_stories when the primary angle is: market-moving ETF flows, price catalysts, institutional flows, macro developments, protocol or mining news, or any story with broad investor significance that does not clearly belong in regulatory or adoption.
+  If a story has BOTH a regulatory/adoption angle AND strong general importance, still pick ONE slot — top_stories if the general market impact is the main point, regulatory/adoption if the policy or adoption angle is the main point. Never compromise by listing it twice.
 - Tone: Authoritative, data-driven, and concise. Let the data speak for itself. Write as a peer to a busy professional who already owns Bitcoin. Never condescend, never hype, never use Crypto Twitter voice.
 - Target audience: Busy professionals who own Bitcoin and have jobs. Doctors, lawyers, founders, engineers, managers, wealth advisors. Not crypto-native. Not institutional HNW. They understand finance but may not follow crypto daily. They have 3 to 5 minutes, not 30.
 - For hero_three_lines: these three sentences are the single most important output of your day. The move, signal, and watch each stand alone as self-contained declarations. Each one strictly under 140 characters. No "read more" hooks, no cliffhangers, no hedging. Signal must be an INTERPRETATION of the data, not a restatement of the headline; go one level deeper than the surface. Watch must name exactly ONE upcoming catalyst with a specific date or day count.
@@ -539,12 +545,29 @@ export const aiBrainTask = task({
       briefing.btc_vs_everything = buildComparisons(market, btcChange);
     }
 
+    const deduped = dedupeBriefingStories(briefing);
+    const droppedCount =
+      (briefing.top_stories.length - deduped.top_stories.length) +
+      (briefing.regulatory.length - deduped.regulatory.length) +
+      (briefing.adoption.length - deduped.adoption.length);
+    if (droppedCount > 0) {
+      logger.warn("Dedup removed duplicate stories from AI Brain output", {
+        dropped: droppedCount,
+        topStoriesBefore: briefing.top_stories.length,
+        topStoriesAfter: deduped.top_stories.length,
+        regulatoryBefore: briefing.regulatory.length,
+        regulatoryAfter: deduped.regulatory.length,
+        adoptionBefore: briefing.adoption.length,
+        adoptionAfter: deduped.adoption.length,
+      });
+    }
+
     logger.info("AI Brain completed", {
-      storyCount: briefing.top_stories.length,
-      regulatoryCount: briefing.regulatory.length,
-      adoptionCount: briefing.adoption.length,
+      storyCount: deduped.top_stories.length,
+      regulatoryCount: deduped.regulatory.length,
+      adoptionCount: deduped.adoption.length,
     });
 
-    return briefing;
+    return deduped;
   },
 });
