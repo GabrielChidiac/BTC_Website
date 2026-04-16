@@ -29,7 +29,7 @@ export default function PrivacyPage() {
               <p>
                 When you subscribe to BTC Today, we collect your <strong>email address</strong> and
                 your <strong>first name</strong>. If you upgrade to Pro, payment is handled
-                entirely by <strong>Whop</strong> -- we never see or store your card details.
+                entirely by <strong>Stripe</strong> -- we never see or store your card details.
               </p>
             </Section>
 

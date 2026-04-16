@@ -64,8 +64,8 @@ export default async function PricingPage() {
   const sampleExpert = briefing?.expert_insights?.[0] ?? null;
   const sampleFlows = briefing?.institutional_flows?.summary ?? null;
 
-  const monthlyUrl = process.env.NEXT_PUBLIC_WHOP_MONTHLY_URL;
-  const annualUrl = process.env.NEXT_PUBLIC_WHOP_ANNUAL_URL;
+  const monthlyUrl = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_URL;
+  const annualUrl = process.env.NEXT_PUBLIC_STRIPE_ANNUAL_URL;
 
   // Check if user has a session (for prefilling email in checkout)
   let sessionEmail: string | null = email;
@@ -77,12 +77,12 @@ export default async function PricingPage() {
     } catch { /* no session */ }
   }
 
-  // Append email to Whop checkout URLs if available
+  // Append email to Stripe checkout URLs if available
   const monthlyCheckout = monthlyUrl
-    ? `${monthlyUrl}${monthlyUrl.includes("?") ? "&" : "?"}email=${encodeURIComponent(sessionEmail ?? "")}`
+    ? `${monthlyUrl}${monthlyUrl.includes("?") ? "&" : "?"}prefilled_email=${encodeURIComponent(sessionEmail ?? "")}`
     : null;
   const annualCheckout = annualUrl
-    ? `${annualUrl}${annualUrl.includes("?") ? "&" : "?"}email=${encodeURIComponent(sessionEmail ?? "")}`
+    ? `${annualUrl}${annualUrl.includes("?") ? "&" : "?"}prefilled_email=${encodeURIComponent(sessionEmail ?? "")}`
     : null;
 
   const faqJsonLd = {
@@ -273,6 +273,11 @@ export default async function PricingPage() {
                 </div>
               ) : annualCheckout ? (
                 <div className="mt-6 flex flex-col gap-2">
+                  <div className="rounded-lg bg-[var(--color-accent)]/5 border border-[var(--color-accent)]/20 px-3 py-2 text-center">
+                    <p className="text-xs font-medium text-[var(--color-accent)]">
+                      Use {sessionEmail} at checkout
+                    </p>
+                  </div>
                   <a
                     href={annualCheckout}
                     className="block rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]"

@@ -349,8 +349,8 @@ export interface SubscriberRow {
   status: SubscriberStatus;
   tier: SubscriberTier;
   is_founding_member: boolean;
-  whop_user_id: string | null;
-  whop_membership_id: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
   created_at: string;
   tier_updated_at: string | null;
 }

@@ -24,7 +24,7 @@ AI-curated daily Bitcoin intelligence for busy BTC holders who have jobs. A Trig
 | Database | Supabase (Postgres + RLS) | `@supabase/ssr@^0.9.0` |
 | Styling | Tailwind CSS v4 | CSS-only config via `@theme` |
 | AI | Claude Sonnet (briefing) + Perplexity sonar-pro (enrichment) + OpenAI `gpt-4o-mini-tts` (audio) | Kie.ai fallback for Claude |
-| Payments | Whop | $7/month or $59/year |
+| Payments | Stripe (Payment Links) | $7/month or $59/year |
 | Email | Resend + React Email | |
 | UI | shadcn/ui (base-nova), Framer Motion, GSAP | Animate only `transform`/`opacity` |
 | TA | trading-signals | RSI-14, SMA-50, SMA-200 |
@@ -82,7 +82,7 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 ### Subscription tiers (Free / Pro)
 - Stored in `subscribers.tier` (`'free'` | `'pro'`); status in `subscribers.status` (`'active'` | `'inactive'` | `'pending'`).
 - `getSubscriberTier()` ([src/lib/tier.ts](src/lib/tier.ts)) reads the session cookie → checks tier.
-- Whop handles payments via webhook at `/api/webhooks/whop`; `verifyWhopWebhook()` ([src/lib/whop.ts](src/lib/whop.ts)) validates HMAC-SHA256 signatures. Webhook handles `membership.went_valid` (→ pro) / `membership.went_invalid` (→ free) and auto-creates the subscriber if missing.
+- Stripe handles payments via webhook at `/api/webhooks/stripe`; `verifyStripeWebhook()` ([src/lib/stripe.ts](src/lib/stripe.ts)) validates Stripe webhook signatures. Webhook handles `checkout.session.completed` (→ pro) / `customer.subscription.deleted` (→ free) and auto-creates the subscriber if missing.
 - All existing active subscribers were gifted Pro tier at launch.
 - **Founding members:** `is_founding_member` boolean on `subscribers`; `FOUNDING_MEMBER_LIMIT` in [src/lib/constants.ts](src/lib/constants.ts); `getFoundingMemberStatus()` ([src/lib/founding.ts](src/lib/founding.ts)) checks remaining spots. Founding members get `founding-welcome.tsx`; other Pro subscribers get `pro-welcome.tsx`.
 
@@ -93,7 +93,7 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - **PDF + audio brief:** Pro only. `/listen/[date]` server-side gates via `getSubscriberTier()` and redirects non-Pro to `/pricing`. `/api/audio/[date]` re-checks tier per request.
 
 ## Environment Variables
-All keys live in `.env.example`. Services: Anthropic, Perplexity, Kie.ai (Claude fallback), OpenAI (TTS for the audio brief), CoinGecko, SearchAPI, Jina Reader, Trigger.dev, Resend, Supabase, Whop.
+All keys live in `.env.example`. Services: Anthropic, Perplexity, Kie.ai (Claude fallback), OpenAI (TTS for the audio brief), CoinGecko, SearchAPI, Jina Reader, Trigger.dev, Resend, Supabase, Stripe.
 
 ## Database (Supabase)
 5 tables in [supabase/migrations/](supabase/migrations/). RLS: briefings publicly readable, all others service-role only.
@@ -104,7 +104,7 @@ All keys live in `.env.example`. Services: Anthropic, Perplexity, Kie.ai (Claude
 - `rate_limits` — IP-bucketed counters for `src/lib/rate-limit.ts` (fail-open). Incremented via the `increment_rate_limit` Postgres RPC.
 
 ## API Routes
-Routes in [src/app/api/](src/app/api/): subscribe + subscribe/verify, unsubscribe, revalidate (ISR), auth/verify-send + auth/verify-check, logout, webhooks/whop, audio/[date] (Pro — returns a 1-hour signed Supabase Storage URL for the day's MP3; 404 if missing; redirects non-Pro to `/pricing`). `/pdf/[date]` is a **page** route at [src/app/pdf/[date]](src/app/pdf/[date]/) (renders via `@react-pdf/renderer`), not an API handler. Public routes go through `checkRateLimit()` + `getClientIp()` from [src/lib/rate-limit.ts](src/lib/rate-limit.ts) — the limiter fails **open** on errors, with HMAC/auth as a second layer.
+Routes in [src/app/api/](src/app/api/): subscribe + subscribe/verify, unsubscribe, revalidate (ISR), auth/verify-send + auth/verify-check, logout, webhooks/stripe, audio/[date] (Pro — returns a 1-hour signed Supabase Storage URL for the day's MP3; 404 if missing; redirects non-Pro to `/pricing`). `/pdf/[date]` is a **page** route at [src/app/pdf/[date]](src/app/pdf/[date]/) (renders via `@react-pdf/renderer`), not an API handler. Public routes go through `checkRateLimit()` + `getClientIp()` from [src/lib/rate-limit.ts](src/lib/rate-limit.ts) — the limiter fails **open** on errors, with HMAC/auth as a second layer.
 
 ## Pipeline Architecture
 2 AM CET cron in [daily-pipeline.ts](src/trigger/daily-pipeline.ts):
@@ -190,4 +190,4 @@ The user-facing Claude chat was intentionally removed (2026-04-12). `ANTHROPIC_A
 | `/sign-in`, `/pricing`, `/privacy`, `/terms` | Standard pages |
 
 ## Deployment
-See [docs/deployment.md](docs/deployment.md). Production TODOs: env vars in Vercel; Whop env vars (`WHOP_WEBHOOK_KEY`, `NEXT_PUBLIC_WHOP_MONTHLY_URL`, `NEXT_PUBLIC_WHOP_ANNUAL_URL`); webhook URL in Whop dashboard → `https://btctoday.co/api/webhooks/whop`.
+See [docs/deployment.md](docs/deployment.md). Production TODOs: env vars in Vercel; Stripe env vars (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_MONTHLY_URL`, `NEXT_PUBLIC_STRIPE_ANNUAL_URL`); webhook URL in Stripe dashboard → `https://btctoday.co/api/webhooks/stripe`.

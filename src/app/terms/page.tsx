@@ -46,8 +46,8 @@ export default function TermsPage() {
             <Section title="Subscriptions and payments">
               <p>
                 BTC Today offers a free tier and a paid Pro tier. Pro subscriptions are billed
-                monthly ($7/month) or annually ($59/year) through <strong>Whop</strong>. You can
-                cancel your Pro subscription at any time through Whop; access continues until
+                monthly ($7/month) or annually ($59/year) through <strong>Stripe</strong>. You can
+                cancel your Pro subscription at any time through Stripe; access continues until
                 the end of your billing period.
               </p>
             </Section>
