@@ -143,6 +143,39 @@ export interface ETFFlows {
   total_net_assets_usd: number | null;  // Current total AUM
 }
 
+// ─── Perpetual Futures Funding Rate (OI-weighted) ─────────────────────────
+
+export interface ExchangeFundingRate {
+  exchange: "binance" | "bybit" | "okx";
+  funding_rate: number;        // decimal e.g. 0.0001 = 0.01%
+  open_interest_usd: number;
+}
+
+export interface FundingRate {
+  weighted_rate: number;              // OI-weighted average across exchanges
+  annualized_rate_pct: number;        // weighted_rate * 3 * 365 * 100
+  total_open_interest_usd: number;
+  exchanges: ExchangeFundingRate[];
+}
+
+// ─── Fear & Greed Index ──────────────────────────────────────────────────
+
+export interface FearGreedIndex {
+  value: number;   // 0-100
+  label: string;   // "Extreme Fear" | "Fear" | "Neutral" | "Greed" | "Extreme Greed"
+}
+
+// ─── 90-Day Rolling Correlation Matrix ───────────────────────────────────
+
+export interface CorrelationMatrix {
+  btc_gold_90d: number | null;
+  btc_sp500_90d: number | null;
+  data_points_gold: number;
+  data_points_sp500: number;
+  period_start: string;   // ISO date
+  period_end: string;
+}
+
 // ─── 3-Minute Contract hero (Pillar 1) ─────────────────────────────────────
 
 export interface HeroThreeLines {
@@ -195,6 +228,9 @@ export interface BriefingJSON {
   expert_insights: ExpertInsight[];
   // Direct API data (no AI processing)
   etf_flows: ETFFlows | null;
+  funding_rate?: FundingRate | null;
+  fear_greed?: FearGreedIndex | null;
+  correlation_matrix?: CorrelationMatrix | null;
 }
 
 // ─── Triage types (two-pass news verification) ─────────────────────────────
@@ -287,6 +323,9 @@ export interface MarketCollectorOutput {
   btc_change_ytd_pct: number | null;
   btc_change_1y_pct: number | null;
   etf_flows: ETFFlows | null;
+  funding_rate: FundingRate | null;
+  fear_greed: FearGreedIndex | null;
+  correlation_matrix: CorrelationMatrix | null;
 }
 
 // ─── Subscriber tier ────────────────────────────────────────────────────────

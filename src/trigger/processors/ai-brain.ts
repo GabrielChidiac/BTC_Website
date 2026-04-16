@@ -423,6 +423,35 @@ function buildUserPrompt(
 - DXY: 24h ${fmt(market.comparisons.dxy_change_24h_pct)}, YTD ${fmt(market.comparisons.dxy_change_ytd_pct)}, 1Y ${fmt(market.comparisons.dxy_change_1y_pct)}
 - Ethereum: 24h ${fmt(market.comparisons.eth_change_24h_pct)}, YTD ${fmt(market.comparisons.eth_change_ytd_pct)}, 1Y ${fmt(market.comparisons.eth_change_1y_pct)}
 - Solana: 24h ${fmt(market.comparisons.sol_change_24h_pct)}, YTD ${fmt(market.comparisons.sol_change_ytd_pct)}, 1Y ${fmt(market.comparisons.sol_change_1y_pct)}`);
+
+    if (market.funding_rate) {
+      const fr = market.funding_rate;
+      const bps = (fr.weighted_rate * 10_000).toFixed(2);
+      const oiBillions = (fr.total_open_interest_usd / 1e9).toFixed(2);
+      const perExchange = fr.exchanges
+        .map((e) => `${e.exchange}: ${(e.funding_rate * 10_000).toFixed(2)}bps, OI $${(e.open_interest_usd / 1e9).toFixed(2)}B`)
+        .join("; ");
+      sections.push(`## BTC Perpetual Futures Funding Rate
+- OI-Weighted Average: ${bps} bps (${fr.annualized_rate_pct.toFixed(1)}% annualized)
+- Total Open Interest: $${oiBillions}B
+- Per-exchange: ${perExchange}`);
+    }
+
+    if (market.fear_greed) {
+      sections.push(`## Crypto Fear & Greed Index
+- Value: ${market.fear_greed.value}/100
+- Classification: ${market.fear_greed.label}`);
+    }
+
+    if (market.correlation_matrix) {
+      const cm = market.correlation_matrix;
+      const goldCorr = cm.btc_gold_90d != null ? cm.btc_gold_90d.toFixed(2) : "N/A";
+      const spCorr = cm.btc_sp500_90d != null ? cm.btc_sp500_90d.toFixed(2) : "N/A";
+      sections.push(`## 90-Day Rolling Correlations
+- BTC vs Gold: ${goldCorr} (${cm.data_points_gold} data points)
+- BTC vs S&P 500: ${spCorr} (${cm.data_points_sp500} data points)
+- Period: ${cm.period_start} to ${cm.period_end}`);
+    }
   } else {
     sections.push("## Market Data\nMarket data unavailable.");
   }

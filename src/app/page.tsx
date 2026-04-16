@@ -30,6 +30,9 @@ import { InstitutionalFlows } from "@/components/briefing/InstitutionalFlows";
 import { TechnicalSignals } from "@/components/briefing/TechnicalSignals";
 import { NetworkHealth } from "@/components/briefing/NetworkHealth";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
+import { FundingRate } from "@/components/briefing/FundingRate";
+import { FearGreed } from "@/components/briefing/FearGreed";
+import { CorrelationMatrix } from "@/components/briefing/CorrelationMatrix";
 import { BriefingTabs } from "@/components/briefing/BriefingTabs";
 import { BriefEndState } from "@/components/briefing/BriefEndState";
 import { ProTeaser } from "@/components/premium/ProTeaser";
@@ -367,6 +370,41 @@ export default async function Home() {
                       </MotionCard>
                     </div>
                   </ScrollReveal>
+
+                  {/* Pro data cards: Funding Rate, Fear & Greed, Correlations */}
+                  {(briefing.funding_rate || briefing.fear_greed || briefing.correlation_matrix) && (
+                    <ScrollReveal>
+                      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 items-start">
+                        {briefing.funding_rate && (
+                          <MotionCard>
+                            <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                              <CardContent className="p-4 sm:p-5">
+                                <FundingRate fundingRate={briefing.funding_rate} />
+                              </CardContent>
+                            </Card>
+                          </MotionCard>
+                        )}
+                        {briefing.fear_greed && (
+                          <MotionCard>
+                            <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                              <CardContent className="p-4 sm:p-5">
+                                <FearGreed fearGreed={briefing.fear_greed} />
+                              </CardContent>
+                            </Card>
+                          </MotionCard>
+                        )}
+                        {briefing.correlation_matrix && (
+                          <MotionCard>
+                            <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                              <CardContent className="p-4 sm:p-5">
+                                <CorrelationMatrix correlation={briefing.correlation_matrix} />
+                              </CardContent>
+                            </Card>
+                          </MotionCard>
+                        )}
+                      </div>
+                    </ScrollReveal>
+                  )}
 
                   {briefing.expert_insights && briefing.expert_insights.length > 0 && (
                     <ScrollReveal>

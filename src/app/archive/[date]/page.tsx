@@ -29,6 +29,9 @@ import { NetworkHealth } from "@/components/briefing/NetworkHealth";
 import { SupplyDynamics } from "@/components/briefing/SupplyDynamics";
 import { CountdownEvents } from "@/components/briefing/CountdownEvents";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
+import { FundingRate } from "@/components/briefing/FundingRate";
+import { FearGreed } from "@/components/briefing/FearGreed";
+import { CorrelationMatrix } from "@/components/briefing/CorrelationMatrix";
 import { BriefEndState } from "@/components/briefing/BriefEndState";
 import { ProGateCompact } from "@/components/premium/ProGate";
 import { getFoundingMemberStatus } from "@/lib/founding";
@@ -294,6 +297,9 @@ export default async function ArchiveDatePage({
               <InstitutionalFlows flows={briefing.institutional_flows} />
               <div className="mt-10"><TechnicalSignals signals={briefing.technical_signals} /></div>
               <div className="mt-10"><NetworkHealth network={briefing.network_health} /></div>
+              {briefing.funding_rate && <div className="mt-10"><FundingRate fundingRate={briefing.funding_rate} /></div>}
+              {briefing.fear_greed && <div className="mt-10"><FearGreed fearGreed={briefing.fear_greed} /></div>}
+              {briefing.correlation_matrix && <div className="mt-10"><CorrelationMatrix correlation={briefing.correlation_matrix} /></div>}
               <ExpertInsights insights={briefing.expert_insights} />
               <SupplyDynamics supply={briefing.supply_dynamics} />
               <CountdownEvents events={briefing.countdown_events} />

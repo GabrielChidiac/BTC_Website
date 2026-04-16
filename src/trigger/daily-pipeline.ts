@@ -158,16 +158,16 @@ export const dailyPipelineTask = schedules.task({
       });
     }
 
-    // ETF data from SoSoValue (market collector) only
-    const etfFlows = marketRun?.ok ? marketRun.output.etf_flows : null;
-
     const finalBriefing: BriefingJSON = {
       ...briefing,
       looking_ahead: enrichment.looking_ahead,
       institutional_flows: enrichment.institutional_flows,
       supply_dynamics: enrichment.supply_dynamics,
       expert_insights: enrichment.expert_insights,
-      etf_flows: etfFlows,
+      etf_flows: marketOutput?.etf_flows ?? null,
+      funding_rate: marketOutput?.funding_rate ?? null,
+      fear_greed: marketOutput?.fear_greed ?? null,
+      correlation_matrix: marketOutput?.correlation_matrix ?? null,
     };
 
     // Compute read time after all fields (including enrichment) are populated.

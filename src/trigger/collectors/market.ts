@@ -17,6 +17,9 @@ import {
   fetchSOL,
 } from "@/trigger/lib/comparison";
 import { fetchETFFlows } from "@/trigger/lib/sosovalue";
+import { fetchFundingRate } from "@/trigger/lib/funding-rate";
+import { fetchFearGreedIndex } from "@/trigger/lib/alternativeme";
+import { fetchCorrelationMatrix } from "@/trigger/lib/correlation";
 
 export const marketCollector = task({
   id: "market-collector",
@@ -37,6 +40,9 @@ export const marketCollector = task({
       ethResult,
       solResult,
       etfFlowsResult,
+      fundingRateResult,
+      fearGreedResult,
+      correlationResult,
     ] = await Promise.allSettled([
       fetchBtcPrice(),
       fetchGlobalData(),
@@ -50,6 +56,9 @@ export const marketCollector = task({
       fetchETH(),
       fetchSOL(),
       fetchETFFlows(),
+      fetchFundingRate(),
+      fetchFearGreedIndex(),
+      fetchCorrelationMatrix(),
     ]);
 
     // ── Step 2: Unwrap results ──────────────────────────────────────────────
@@ -86,6 +95,9 @@ export const marketCollector = task({
     const eth = unwrap(ethResult, "eth");
     const sol = unwrap(solResult, "sol");
     const etfFlows = unwrap(etfFlowsResult, "etfFlows");
+    const fundingRate = unwrap(fundingRateResult, "fundingRate");
+    const fearGreed = unwrap(fearGreedResult, "fearGreed");
+    const correlationMatrix = unwrap(correlationResult, "correlationMatrix");
 
     // ── Step 3: Compute technical indicators ────────────────────────────────
     let technical = { rsi_14: 0, sma_50: 0, sma_200: 0, support_level: 0, resistance_level: 0 };
@@ -183,6 +195,9 @@ export const marketCollector = task({
       btc_change_ytd_pct: btcYtdPct,
       btc_change_1y_pct: btc1yPct,
       etf_flows: etfFlows ?? null,
+      funding_rate: fundingRate ?? null,
+      fear_greed: fearGreed ?? null,
+      correlation_matrix: correlationMatrix ?? null,
     };
 
     // ── Step 6: Log summary and return ──────────────────────────────────────

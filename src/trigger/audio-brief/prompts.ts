@@ -137,7 +137,7 @@ Locked sentence, verbatim, no variation:
 "Good morning. Today is {weekday}, {month} {day}. Here is BTC Today."
 
 [MARKET SNAPSHOT] ~35 words (including bridge + label)
-Open with the Rule 8 opener, then the current BTC price (spoken form from the FACTS BLOCK), the 24-hour change, 7-day change, market cap, and BTC dominance. That is it. One sentence per data point, short and factual. Do NOT mention fear and greed. Do not editorialize, the Deep Dive handles that.
+Open with the Rule 8 opener, then the current BTC price (spoken form from the FACTS BLOCK), the 24-hour change, 7-day change, market cap, and BTC dominance. Include the funding rate and Fear and Greed reading if they appear in the FACTS BLOCK. One sentence per data point, short and factual. Do not editorialize, the Deep Dive handles that.
 
 [TOP STORIES] ~90 words (including bridge + label)
 The 2 or 3 most important Bitcoin stories from today, using the exact headlines and sources from the FACTS BLOCK. For EACH story, you must signal its category (market, regulatory, adoption, macro, or technical) naturally at the start of the framing so the listener instantly knows what kind of story they are about to hear. Good phrasings: "A regulatory story this morning. Fed chair nominee Kevin Warsh...", "On the market side, Goldman Sachs just filed...", "A macro beat: US jobs data came in...", "Adoption-side, Strategy added...". Never recite the category word as a bare label ("Category: regulatory") and never skip it. After the category signal, one natural sentence lands what happened plus who is involved, then one short stake sentence (why a holder cares). Stop there. No third sentence of re-explanation. Open with the sharpest story. If fewer than 2 stories in the block, use whatever is there and do not pad.
@@ -444,6 +444,26 @@ function buildFactsBlock(b: BriefingJSON | undefined | null): string {
   } else {
     lines.push("(market snapshot unavailable)");
   }
+
+  // Funding rate (for MARKET SNAPSHOT section)
+  const fr = b.funding_rate;
+  if (fr && typeof fr.weighted_rate === "number") {
+    const bps = (fr.weighted_rate * 10_000).toFixed(1);
+    const annualized = typeof fr.annualized_rate_pct === "number"
+      ? fr.annualized_rate_pct.toFixed(1)
+      : null;
+    lines.push(`- BTC perpetual funding rate: ${bps} basis points${annualized ? ` (${annualized}% annualized)` : ""}`);
+    if (typeof fr.total_open_interest_usd === "number") {
+      lines.push(`  Total open interest: $${compactUSD(fr.total_open_interest_usd)}`);
+    }
+  }
+
+  // Fear & Greed (for MARKET SNAPSHOT section)
+  const fg = b.fear_greed;
+  if (fg && typeof fg.value === "number") {
+    lines.push(`- Crypto Fear & Greed Index: ${fg.value} out of 100 (${fg.label ?? ""})`);
+  }
+
   lines.push("");
 
   // ── INSTITUTIONAL FLOWS ────────────────────────────────

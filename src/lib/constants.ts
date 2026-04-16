@@ -54,6 +54,9 @@ export const FEATURES: ProFeature[] = [
   { label: "Network health & halving", desc: "Hashrate, fees, halving countdown", freeIncluded: false },
   { label: "Expert insights", desc: "Lyn Alden, Dylan LeClair, and more", freeIncluded: false },
   { label: "Forward outlook", desc: "Macro, regulatory, technical analysis", freeIncluded: false },
+  { label: "Funding rate analysis", desc: "OI-weighted perp funding across top exchanges", freeIncluded: false },
+  { label: "Fear & Greed Index", desc: "Daily crypto market sentiment gauge", freeIncluded: false },
+  { label: "Correlation matrix", desc: "90-day BTC vs Gold and S&P 500", freeIncluded: false },
   { label: "PDF downloads", desc: "1-page daily summary", freeIncluded: false },
   { label: "Full archive access", desc: "Access all historical briefings", freeIncluded: false },
 ];
@@ -103,6 +106,7 @@ export const COINGECKO_BASE = "https://api.coingecko.com/api/v3";
 export const MEMPOOL_BASE = "https://mempool.space/api";
 export const PERPLEXITY_BASE = "https://api.perplexity.ai/chat/completions";
 export const SOSOVALUE_ETF_HISTORY = "https://api.sosovalue.xyz/openapi/v2/etf/historicalInflowChart";
+export const ALTERNATIVE_ME_FNG = "https://api.alternative.me/fng/?limit=1";
 
 // ─── Event Filtering ────────────────────────────────────────────────────────
 
