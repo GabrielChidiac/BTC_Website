@@ -9,6 +9,7 @@ import { saveBriefingTask } from "./publishers/save-briefing";
 import { revalidateSiteTask } from "./publishers/revalidate-site";
 import { sendDigestTask } from "./publishers/send-digest";
 import { generateAudioBriefTask } from "./audio-brief/generate-audio-brief";
+import { computeMarketSignals } from "./processors/market-signals";
 import { computeReadTimeSeconds } from "@/lib/utils";
 import type { BriefingJSON } from "@/lib/types";
 
@@ -169,6 +170,17 @@ export const dailyPipelineTask = schedules.task({
       fear_greed: marketOutput?.fear_greed ?? null,
       correlation_matrix: marketOutput?.correlation_matrix ?? null,
     };
+
+    // ── Step 3.25: Market Signals (non-fatal) ────────────────────────────
+    // Trigger-based editorial callouts. Silent on quiet days by design.
+    // Runs before audio brief so the script can reference fired signals.
+    // Never throws; failure returns [] and ships the brief without signals.
+    finalBriefing.market_signals = await computeMarketSignals({
+      date,
+      funding_rate: finalBriefing.funding_rate,
+      fear_greed: finalBriefing.fear_greed,
+      correlation_matrix: finalBriefing.correlation_matrix,
+    });
 
     // Compute read time after all fields (including enrichment) are populated.
     // Powers the 3-Minute Contract display on the homepage and email header.

@@ -218,6 +218,14 @@ const previewBriefing: BriefingJSON = {
   supply_dynamics: { exchange_reserve_trend: "Exchange reserves at 5-year low", long_term_holder_pct: 71.2, supply_narrative: "Only 3.125 BTC mined per block and 71% of supply hasn't moved in over a year - the tightest supply conditions since 2017." },
   expert_insights: [{ expert_name: "Lyn Alden", role: "Macro analyst", quote_or_summary: "Global liquidity expansion is the dominant driver right now. Bitcoin tends to perform well when M2 is expanding, and we're seeing that across all major economies.", source: "The Investors Podcast", date: "2026-03-22" }],
   etf_flows: { daily_net_flow_usd: 420_000_000, mtd_net_flow_usd: 3_200_000_000, total_net_assets_usd: 115_000_000_000 },
+  market_signals: [
+    {
+      type: "correlation_regime",
+      severity: "high",
+      headline: "BTC now trading as risk asset",
+      detail: "90-day S&P correlation at +0.54, up from +0.28 a week ago. Less safe-haven hedge, more leveraged equity beta.",
+    },
+  ],
   audio_url: "/api/audio/2026-03-24",
   audio_duration_seconds: 212,
   read_time_seconds: 165,
@@ -258,6 +266,7 @@ export default function DailyDigest({
   const greeting = name ? `Good morning, ${name}.` : "Good morning.";
   const oneLine = briefing.one_line ?? daily_diff.sentiment_shift;
   const expert = experts?.[0];
+  const marketSignals = Array.isArray(briefing.market_signals) ? briefing.market_signals : [];
 
   // Determine which sections have data
   const hasEtf = etf && (etf.daily_net_flow_usd != null || etf.mtd_net_flow_usd != null);
@@ -268,6 +277,7 @@ export default function DailyDigest({
   const hasReg = regulatory && regulatory.length > 0;
   const hasAdopt = adoption && adoption.length > 0;
   const hasSignals = hasReg || hasAdopt;
+  const hasMarketSignals = marketSignals.length > 0;
 
   return (
     <Html lang="en" dir="ltr">
@@ -331,6 +341,41 @@ export default function DailyDigest({
           </Section>
 
           <Hr style={s.hr} />
+
+          {/* ── Market Signals (trigger-based editorial callouts) ─
+              Appears ONLY when thresholds fire. Silent-by-default is part
+              of the time-respect promise: on quiet days this section is
+              absent entirely. Max 2 signals, ordered by priority in the
+              market-signals processor. */}
+          {hasMarketSignals && (
+            <>
+              <Section style={s.section}>
+                <Heading as="h2" style={s.sectionHeading}>
+                  Signals<ProBadge />
+                </Heading>
+                {marketSignals.map((sig, i) => (
+                  <Section
+                    key={`sig-${i}`}
+                    style={i < marketSignals.length - 1 ? s.signalCard : s.signalCardLast}
+                  >
+                    <Text style={s.signalHeadline}>
+                      <span
+                        style={{
+                          color: sig.severity === "high" ? c.accent : c.amber,
+                          marginRight: "6px",
+                        }}
+                      >
+                        {"\u25C6"}
+                      </span>
+                      {sig.headline}
+                    </Text>
+                    <Text style={s.signalDetail}>{sig.detail}</Text>
+                  </Section>
+                ))}
+              </Section>
+              <Hr style={s.hr} />
+            </>
+          )}
 
           {/* ── Stories ──────────────────────────────────────── */}
           {stories.length > 0 && (
@@ -797,6 +842,39 @@ const s = {
     color: c.textMuted,
     margin: "4px 0 0",
     lineHeight: "1.3",
+  } as React.CSSProperties,
+
+  // ── Signals ──────────────────────────────────
+  signalCard: {
+    backgroundColor: c.bgElevated,
+    border: `1px solid ${c.border}`,
+    borderRadius: "6px",
+    padding: "10px 12px",
+    marginBottom: "8px",
+  } as React.CSSProperties,
+
+  signalCardLast: {
+    backgroundColor: c.bgElevated,
+    border: `1px solid ${c.border}`,
+    borderRadius: "6px",
+    padding: "10px 12px",
+    marginBottom: "0",
+  } as React.CSSProperties,
+
+  signalHeadline: {
+    fontFamily: sans,
+    fontSize: "14px",
+    fontWeight: "700" as const,
+    color: c.textPrimary,
+    margin: "0 0 4px",
+    lineHeight: "1.3",
+  } as React.CSSProperties,
+
+  signalDetail: {
+    fontSize: "12px",
+    color: c.textSecondary,
+    margin: "0",
+    lineHeight: "1.5",
   } as React.CSSProperties,
 
   // ── Stories ──────────────────────────────────

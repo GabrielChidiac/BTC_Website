@@ -93,17 +93,9 @@ export function TechnicalSignals({
         </div>
       </div>
 
-      {/* Glossary footer — visible reference for readers new to the metrics.
-          Plain adult language, no ELI5 voice. */}
       <p className="mt-3 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
-        <span className="font-semibold text-[var(--color-text-secondary)]">RSI (Relative Strength Index):</span>{" "}
-        momentum gauge from 0 to 100. Above 70 is overheated, below 30 oversold.
-        {" "}
-        <span className="font-semibold text-[var(--color-text-secondary)]">50 and 200-day averages:</span>{" "}
-        average closing price over the last 50 or 200 days, used to judge trend direction. Price above both is a structural uptrend.
-        {" "}
-        <span className="font-semibold text-[var(--color-text-secondary)]">Support, Resistance:</span>{" "}
-        price levels where buyers or sellers have historically stepped in. Breaks of these levels often trigger larger moves.
+        <span className="font-semibold text-[var(--color-text-secondary)]">RSI</span>{" "}
+        gauges momentum 0-100; moving averages judge trend; support and resistance mark likely reaction levels.
       </p>
     </section>
   );

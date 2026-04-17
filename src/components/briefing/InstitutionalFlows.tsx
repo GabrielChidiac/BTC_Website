@@ -13,19 +13,19 @@ export function InstitutionalFlows({
   if (!hasNotableMoves && !hasSummary) return null;
 
   return (
-    <div>
-      <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-text-primary)] mb-4">
+    <section>
+      <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-text-primary)] mb-3">
         Institutional Activity
       </h2>
 
       {hasSummary && (
-        <p className="text-xs text-[var(--color-text-muted)] mb-4">
+        <p className="text-xs text-[var(--color-text-muted)] mb-3">
           {flows.summary.split(/[.!?]/)[0]?.trim()}.
         </p>
       )}
 
       {hasNotableMoves && (
-        <ul className="space-y-1.5">
+        <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
           {flows.notable_moves.map((move, i) => (
             <li
               key={i}
@@ -36,6 +36,6 @@ export function InstitutionalFlows({
           ))}
         </ul>
       )}
-    </div>
+    </section>
   );
 }

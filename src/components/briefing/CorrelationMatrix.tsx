@@ -18,7 +18,7 @@ function corrLabel(r: number | null): string {
   return "Near zero";
 }
 
-function CorrCard({
+export function CorrCard({
   label,
   ticker,
   value,
@@ -97,8 +97,8 @@ export function CorrelationMatrix({
       </div>
 
       <p className="mt-3 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
-        <span className="font-semibold text-[var(--color-text-secondary)]">Pearson correlation:</span>{" "}
-        measures how closely two assets move together over 90 trading days. +1 is perfect lockstep, -1 is perfect inverse, 0 is no relationship. High BTC-Gold correlation suggests safe-haven behavior; high BTC-S&amp;P suggests risk-asset behavior.
+        <span className="font-semibold text-[var(--color-text-secondary)]">Pearson r</span>{" "}
+        over 90 trading days: +1 lockstep, 0 no relationship, -1 inverse.
       </p>
     </section>
   );

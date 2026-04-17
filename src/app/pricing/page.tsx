@@ -9,7 +9,6 @@ import { getSubscriberTier } from "@/lib/tier";
 import { getFoundingMemberStatus } from "@/lib/founding";
 import { createServerClient } from "@/lib/supabase/server";
 import { FEATURES } from "@/lib/constants";
-import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
 import { safeJsonLd } from "@/lib/json-ld";
 
 export const metadata: Metadata = {
@@ -44,25 +43,12 @@ export default async function PricingPage() {
   const founding = await getFoundingMemberStatus();
   const isFoundingActive = founding.isOfferActive;
 
-  // Fetch subscriber count and latest briefing for social proof
+  // Fetch subscriber count for social proof
   const supabase = await createServerClient();
   const { count: subscriberCount } = await supabase
     .from("subscribers")
     .select("*", { count: "exact", head: true })
     .eq("status", "active");
-
-  const { data: latestBriefing } = await supabase
-    .from("daily_briefings")
-    .select("content")
-    .order("date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const briefing = latestBriefing
-    ? (latestBriefing as DailyBriefingRow).content
-    : null;
-  const sampleExpert = briefing?.expert_insights?.[0] ?? null;
-  const sampleFlows = briefing?.institutional_flows?.summary ?? null;
 
   const monthlyUrl = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_URL;
   const annualUrl = process.env.NEXT_PUBLIC_STRIPE_ANNUAL_URL;
@@ -300,43 +286,6 @@ export default async function PricingPage() {
               )}
             </div>
           </div>
-
-          {/* Pro content sample */}
-          {!isPro && (sampleExpert || sampleFlows) && (
-            <div className="mt-12 max-w-2xl mx-auto">
-              <p className="text-center font-[family-name:var(--font-heading)] text-xs font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-4">
-                What Pro looks like
-              </p>
-              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-5 space-y-4">
-                {sampleExpert && (
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-accent)] mb-1.5">
-                      Expert Insight
-                    </p>
-                    <blockquote className="text-sm text-[var(--color-text-primary)] leading-relaxed italic">
-                      &ldquo;{sampleExpert.quote_or_summary}&rdquo;
-                    </blockquote>
-                    <p className="mt-1.5 text-xs text-[var(--color-text-muted)]">
-                      {sampleExpert.expert_name}{sampleExpert.role ? `, ${sampleExpert.role}` : ""}
-                    </p>
-                  </div>
-                )}
-                {sampleExpert && sampleFlows && sampleFlows !== "Data unavailable" && (
-                  <div className="border-t border-[var(--color-border)] pt-4" />
-                )}
-                {sampleFlows && sampleFlows !== "Data unavailable" && (
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-accent)] mb-1.5">
-                      Institutional Activity
-                    </p>
-                    <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-                      {sampleFlows}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* FAQ */}
           <div className="mt-16 max-w-lg mx-auto">

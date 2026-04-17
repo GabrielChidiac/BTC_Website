@@ -466,6 +466,18 @@ function buildFactsBlock(b: BriefingJSON | undefined | null): string {
 
   lines.push("");
 
+  // ── MARKET SIGNALS (trigger-based editorial callouts) ─────
+  // Only present on days a threshold fired. When present, weave into MARKET
+  // SNAPSHOT or OUTLOOK naturally; do not label "Market Signal" in the script.
+  const signals = Array.isArray(b.market_signals) ? b.market_signals : [];
+  if (signals.length > 0) {
+    lines.push("### MARKET SIGNALS (editorial callouts that fired today — use the framing in MARKET SNAPSHOT or OUTLOOK; do not read the word \"signal\" aloud)");
+    signals.forEach((sig) => {
+      lines.push(`- ${sig.headline}: ${sig.detail}`);
+    });
+    lines.push("");
+  }
+
   // ── INSTITUTIONAL FLOWS ────────────────────────────────
   lines.push("### INSTITUTIONAL FLOWS");
   const etf = b.etf_flows;

@@ -176,6 +176,22 @@ export interface CorrelationMatrix {
   period_end: string;
 }
 
+// ─── Market Signals (trigger-based editorial callouts) ────────────────────
+// Surfaced in the daily digest email + audio brief only when a threshold +
+// cooldown check fires. Silent on quiet days. See processors/market-signals.ts.
+
+export type MarketSignalType =
+  | "correlation_regime"   // BTC-S&P or BTC-Gold 90d correlation crossed a regime threshold
+  | "funding_extreme"      // OI-weighted perp funding in top decile or sign flipped after a streak
+  | "sentiment_shift";     // Fear & Greed entered extreme zone or 7d delta >= 20 pts
+
+export interface MarketSignal {
+  type: MarketSignalType;
+  severity: "high" | "medium";
+  headline: string;  // <= 60 chars, peer-to-peer professional tone, no em dashes
+  detail: string;    // 1-2 sentences, plain language, institutional lens
+}
+
 // ─── 3-Minute Contract hero (Pillar 1) ─────────────────────────────────────
 
 export interface HeroThreeLines {
@@ -231,6 +247,9 @@ export interface BriefingJSON {
   funding_rate?: FundingRate | null;
   fear_greed?: FearGreedIndex | null;
   correlation_matrix?: CorrelationMatrix | null;
+  // Trigger-based editorial callouts. Empty/null on quiet days by design.
+  // Populated by processors/market-signals.ts after enrichment, before audio brief.
+  market_signals?: MarketSignal[] | null;
 }
 
 // ─── Triage types (two-pass news verification) ─────────────────────────────

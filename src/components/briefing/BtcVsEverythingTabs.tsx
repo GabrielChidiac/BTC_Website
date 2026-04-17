@@ -1,10 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import type { AssetComparison } from "@/lib/types";
-import { formatPctChange } from "@/lib/utils";
+import type { AssetComparison, CorrelationMatrix } from "@/lib/types";
+import { formatPctChange, cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
+import { CorrCard } from "@/components/briefing/CorrelationMatrix";
 
 function getValues(asset: AssetComparison, period: string) {
   switch (period) {
@@ -147,9 +153,13 @@ function ComparisonTable({
 
 export function BtcVsEverythingTabs({
   comparisons,
+  correlation,
 }: {
   comparisons: AssetComparison[];
+  correlation?: CorrelationMatrix | null;
 }) {
+  const [corrOpen, setCorrOpen] = useState(false);
+
   if (!comparisons || comparisons.length === 0) return null;
 
   return (
@@ -192,6 +202,60 @@ export function BtcVsEverythingTabs({
             <ComparisonTable comparisons={comparisons} period="1y" />
           </TabsContent>
         </Tabs>
+
+        {/* Pro-only: 90-day correlations collapsible reveal. Hidden for free
+            users (who receive correlation={null}). */}
+        {correlation && (
+          <Collapsible
+            open={corrOpen}
+            onOpenChange={setCorrOpen}
+            className="mt-4 border-t border-[var(--color-border)] pt-3"
+          >
+            <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left cursor-pointer group">
+              <span className="font-[family-name:var(--font-heading)] text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-accent)] group-hover:text-[var(--color-accent-hover)] transition-colors">
+                90-day correlations
+              </span>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 16 16"
+                fill="none"
+                className={cn(
+                  "text-[var(--color-accent)] transition-transform duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]",
+                  corrOpen && "rotate-180"
+                )}
+              >
+                <path
+                  d="M4 6L8 10L12 6"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="overflow-hidden transition-[height,opacity] data-[ending-style]:h-0 data-[starting-style]:h-0">
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <CorrCard
+                  label="Safe-haven signal"
+                  ticker="Gold"
+                  value={correlation.btc_gold_90d}
+                  dataPoints={correlation.data_points_gold}
+                />
+                <CorrCard
+                  label="Risk-asset signal"
+                  ticker="S&P 500"
+                  value={correlation.btc_sp500_90d}
+                  dataPoints={correlation.data_points_sp500}
+                />
+              </div>
+              <p className="mt-3 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
+                <span className="font-semibold text-[var(--color-text-secondary)]">Pearson r</span>{" "}
+                over 90 trading days: +1 lockstep, 0 no relationship, -1 inverse.
+              </p>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
       </CardContent>
     </Card>
   );

@@ -17,6 +17,7 @@ import { MotionCard } from "@/components/ui/MotionCard";
 import { BentoGrid } from "@/components/ui/BentoGrid";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { StatTile } from "@/components/ui/StatTile";
+import { SentimentTile } from "@/components/ui/SentimentTile";
 import { Card, CardContent } from "@/components/ui/card";
 
 import { BitcoinHero } from "@/components/hero/BitcoinHero";
@@ -31,8 +32,6 @@ import { TechnicalSignals } from "@/components/briefing/TechnicalSignals";
 import { NetworkHealth } from "@/components/briefing/NetworkHealth";
 import { LookingAhead } from "@/components/briefing/LookingAhead";
 import { FundingRate } from "@/components/briefing/FundingRate";
-import { FearGreed } from "@/components/briefing/FearGreed";
-import { CorrelationMatrix } from "@/components/briefing/CorrelationMatrix";
 import { BriefingTabs } from "@/components/briefing/BriefingTabs";
 import { BriefEndState } from "@/components/briefing/BriefEndState";
 import { ProTeaser } from "@/components/premium/ProTeaser";
@@ -243,6 +242,13 @@ export default async function Home() {
                         value={`${market.dominance_pct.toFixed(1)}%`}
                         size="sm"
                       />
+                      {briefing.fear_greed && (
+                        <SentimentTile
+                          label="Fear & Greed"
+                          value={briefing.fear_greed.value}
+                          sublabel={briefing.fear_greed.label}
+                        />
+                      )}
                       {isPro && (() => {
                         const flow = briefing.etf_flows?.daily_net_flow_usd ?? null;
                         if (flow == null) return null;
@@ -273,6 +279,13 @@ export default async function Home() {
                   <p className="mt-3 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
                     <span className="font-semibold text-[var(--color-text-secondary)]">BTC Dominance:</span>{" "}
                     Bitcoin&rsquo;s share of total crypto market capitalisation. Rising dominance means capital is rotating into BTC from altcoins.
+                    {briefing.fear_greed && (
+                      <>
+                        {" "}
+                        <span className="font-semibold text-[var(--color-text-secondary)]">Fear &amp; Greed:</span>{" "}
+                        aggregates volatility, momentum, social media, and dominance into a 0-100 sentiment score. Below 25 is historically a buying signal; above 75 a caution signal.
+                      </>
+                    )}
                   </p>
                 </div>
 
@@ -288,7 +301,10 @@ export default async function Home() {
                         />
                       </div>
                       <div className="lg:col-span-2">
-                        <BtcVsEverythingTabs comparisons={briefing.btc_vs_everything} />
+                        <BtcVsEverythingTabs
+                          comparisons={briefing.btc_vs_everything}
+                          correlation={isPro ? briefing.correlation_matrix : null}
+                        />
                       </div>
                     </div>
                   </ScrollReveal>
@@ -334,77 +350,59 @@ export default async function Home() {
                 {/* 06 — DEEP DIVE */}
                 <div id="deep-dive" className="mt-10 scroll-mt-28">
                   <SectionLabel number="06" title="Deep Dive" className="mb-4" />
-                  <ScrollReveal>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 items-start">
-                      {(() => {
-                        const flows = briefing.institutional_flows;
-                        const hasFlowsContent =
-                          (flows?.notable_moves && flows.notable_moves.length > 0) ||
-                          (flows?.summary && flows.summary !== "Data unavailable");
-                        if (!hasFlowsContent) return null;
-                        return (
-                          <MotionCard>
-                            <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
-                              <CardContent className="p-4 sm:p-5">
-                                <InstitutionalFlows flows={flows} />
-                              </CardContent>
-                            </Card>
-                          </MotionCard>
-                        );
-                      })()}
 
-                      <MotionCard>
-                        <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                  {(() => {
+                    const flows = briefing.institutional_flows;
+                    const hasFlowsContent =
+                      (flows?.notable_moves && flows.notable_moves.length > 0) ||
+                      (flows?.summary && flows.summary !== "Data unavailable");
+                    if (!hasFlowsContent) return null;
+                    return (
+                      <ScrollReveal>
+                        <MotionCard className="block">
+                          <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                            <CardContent className="p-4 sm:p-5">
+                              <InstitutionalFlows flows={flows} />
+                            </CardContent>
+                          </Card>
+                        </MotionCard>
+                      </ScrollReveal>
+                    );
+                  })()}
+
+                  <ScrollReveal>
+                    <div
+                      className={`mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 ${
+                        briefing.funding_rate ? "lg:grid-cols-3" : "lg:grid-cols-2"
+                      }`}
+                    >
+                      <MotionCard className="h-full">
+                        <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
                           <CardContent className="p-4 sm:p-5">
                             <TechnicalSignals signals={briefing.technical_signals} />
                           </CardContent>
                         </Card>
                       </MotionCard>
 
-                      <MotionCard>
-                        <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                      <MotionCard className="h-full">
+                        <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
                           <CardContent className="p-4 sm:p-5">
                             <NetworkHealth network={briefing.network_health} />
                           </CardContent>
                         </Card>
                       </MotionCard>
+
+                      {briefing.funding_rate && (
+                        <MotionCard className="h-full">
+                          <Card className="card-interactive h-full gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
+                            <CardContent className="p-4 sm:p-5">
+                              <FundingRate fundingRate={briefing.funding_rate} />
+                            </CardContent>
+                          </Card>
+                        </MotionCard>
+                      )}
                     </div>
                   </ScrollReveal>
-
-                  {/* Pro data cards: Funding Rate, Fear & Greed, Correlations */}
-                  {(briefing.funding_rate || briefing.fear_greed || briefing.correlation_matrix) && (
-                    <ScrollReveal>
-                      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 items-start">
-                        {briefing.funding_rate && (
-                          <MotionCard>
-                            <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
-                              <CardContent className="p-4 sm:p-5">
-                                <FundingRate fundingRate={briefing.funding_rate} />
-                              </CardContent>
-                            </Card>
-                          </MotionCard>
-                        )}
-                        {briefing.fear_greed && (
-                          <MotionCard>
-                            <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
-                              <CardContent className="p-4 sm:p-5">
-                                <FearGreed fearGreed={briefing.fear_greed} />
-                              </CardContent>
-                            </Card>
-                          </MotionCard>
-                        )}
-                        {briefing.correlation_matrix && (
-                          <MotionCard>
-                            <Card className="card-interactive gap-0 py-0 ring-1 ring-[var(--color-border)] ring-foreground/0">
-                              <CardContent className="p-4 sm:p-5">
-                                <CorrelationMatrix correlation={briefing.correlation_matrix} />
-                              </CardContent>
-                            </Card>
-                          </MotionCard>
-                        )}
-                      </div>
-                    </ScrollReveal>
-                  )}
 
                   {briefing.expert_insights && briefing.expert_insights.length > 0 && (
                     <ScrollReveal>

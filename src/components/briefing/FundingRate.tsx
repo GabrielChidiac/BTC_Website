@@ -104,7 +104,7 @@ export function FundingRate({
 
       <p className="mt-3 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
         <span className="font-semibold text-[var(--color-text-secondary)]">Funding rate:</span>{" "}
-        periodic payment between long and short perpetual futures traders. Positive means longs pay shorts (bullish crowding); negative means shorts pay longs (bearish crowding). Weighted by open interest across Binance, Bybit, and OKX.
+        positive means longs pay shorts (bullish crowding); weighted by open interest across Binance, Bybit, and OKX.
       </p>
     </section>
   );
