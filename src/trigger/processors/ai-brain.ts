@@ -3,6 +3,7 @@ import { callClaudeJSON } from "@/trigger/lib/anthropic";
 import { createServiceClient } from "@/lib/supabase/server";
 import { halvingProgress } from "@/lib/utils";
 import { dedupeBriefingStories } from "@/lib/dedupe-stories";
+import { EXPERT_CONTEXT } from "@/trigger/processors/expert-context";
 import type {
   BriefingJSON,
   TopStory,
@@ -11,6 +12,8 @@ import type {
   MarketCollectorOutput,
   DailyBriefingRow,
 } from "@/lib/types";
+
+const EXPERT_CONTEXT_ENABLED = process.env.EXPERT_CONTEXT_ENABLED !== "false";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -210,6 +213,24 @@ Rules:
 - Pass through numerical market/network data exactly as provided. Do not round or alter.
 - For technical_signals: rsi_14, sma_50, sma_200, support_level, and resistance_level are PRE-CALCULATED from real market data. Copy them exactly as provided in the input. Only generate the signal_summary text.
 - Never use em dashes or en dashes. Use commas, periods, or semicolons instead.
+
+PRIORITY OVERRIDE RULES (these supersede any conflicting rule above)
+
+EARNED SIGNIFICANCE — analytical framing must be earned by the data, never manufactured. The rules above that ask for a "so what" or interpretive depth apply ONLY when the story genuinely fits an analytical lens (institutional-positioning, macro-regime, historical-rhyme, or long-term-holder-conviction implication) at roughly 90% relevance. When a story does NOT genuinely fit a lens:
+- Write a clean 1-2 sentence factual summary and stop. Do not stretch. Do not invent relevance. Do not reach for a lens because the schema suggests one.
+- Flat stories should read flat. Concentrate analytical depth on the 1-2 stories per day that genuinely warrant it. A briefing with 2 deep stories and 3 plain summaries is sharper than a briefing where all 5 force analytical framing.
+- This rule overrides the positive example above. The positive example demonstrates what depth looks like when it is earned, not a template to apply to every story.
+
+FLAT-DAY PERMISSION — when the day's data genuinely lacks signal, report that honestly instead of manufacturing one:
+- narrative_consensus: if no clear smart-money consensus exists today, set score to 0 and label to "Mixed / No Clear Signal" with rationale "Positioning is mixed today with no dominant institutional lean." Do NOT force a score toward the extremes to create apparent conviction.
+- macro_context.btc_correlation_note: if BTC is not meaningfully correlating with or decoupling from macro forces today in a way worth flagging, keep this field to a short factual note (e.g., "BTC tracking risk assets in line with recent regime, no notable decoupling today"). Do NOT fabricate a correlation story.
+- daily_diff.key_changes: on a quiet day, 3 genuine bullet points are better than 5 padded ones. The minimum of 3 in the schema is the floor only when 3 real changes exist; if fewer are genuine, stretch minimally and clearly.
+
+FRAMING WITHOUT ADVICE — never prescribe action. The briefing reports and frames; the reader decides.
+- Forbidden words in any analytical field: "buy", "sell", "hold", "should", "recommend", "consider buying", "consider selling", "good opportunity", "don't miss", "time to".
+- Use historical-pattern framing instead: "Historically, X preceded Y in past cycles"; "This reinforces/undermines the thesis that Z"; "Long-term holders remain at N%, unchanged across the drawdown"; "Positioning has shifted toward X while spot flows stayed Y, a divergence that has historically resolved in favor of spot."
+- The goal: a sophisticated reader walks away with a clear framing from which they can draw their own conclusion. Never do the concluding for them.
+
 - Return ONLY the JSON object.`;
 
 // ─── Comparison builder (shared by fallback and AI paths) ──────────────────
@@ -372,6 +393,13 @@ function buildUserPrompt(
   const sections: string[] = [];
 
   sections.push(`## Briefing Date\n${date}`);
+
+  if (EXPERT_CONTEXT_ENABLED) {
+    sections.push(`## EXPERT REFERENCE FRAMEWORK
+The framing below encodes canonical Bitcoin analytical lenses. Use it to inform the "why it matters" framing ONLY WHERE A LENS GENUINELY FITS the day's story (~90% relevance). Do NOT apply a lens to every story. Do NOT quote the framework verbatim. Do NOT restate it. Use it as the analytical prior the briefing is written from. Refer back to the PRIORITY OVERRIDE RULES in the system prompt for the earned-significance rule that governs when to reach for these lenses.
+
+${EXPERT_CONTEXT}`);
+  }
 
   // News articles
   const articlesText = news.articles
@@ -552,6 +580,7 @@ export const aiBrainTask = task({
 
     logger.info("Calling Claude for briefing generation", {
       articleCount: payload.news.articles.length,
+      expertContextEnabled: EXPERT_CONTEXT_ENABLED,
     });
 
     const result = await callClaudeJSON<AiBrainOutput>({

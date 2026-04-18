@@ -2,6 +2,7 @@ import { task, logger } from "@trigger.dev/sdk/v3";
 import { queryPerplexity } from "@/trigger/lib/perplexity";
 import { fetchForwardLookingContext } from "@/trigger/lib/searchapi";
 import { getExpertPhotoUrls } from "@/lib/expert-photos";
+import { EXPERT_CONTEXT_DIGEST } from "@/trigger/processors/expert-context";
 import type {
   TopStory,
   RawArticle,
@@ -9,6 +10,8 @@ import type {
   SupplyDynamics,
   ExpertInsight,
 } from "@/lib/types";
+
+const EXPERT_CONTEXT_ENABLED = process.env.EXPERT_CONTEXT_ENABLED !== "false";
 
 // ─── Looking Ahead ──────────────────────────────────────────────────────────
 
@@ -27,7 +30,8 @@ Guidelines:
 - Do NOT include citation markers like [1], [2], [3] or any bracketed references
 - Never use em dashes or en dashes. Use commas, periods, or semicolons instead
 - No bullet points. Write in flowing editorial prose like the Financial Times
-- Close on a constructive note grounded in verifiable Bitcoin-specific data (institutional inflows, network fundamentals, supply scarcity). Never fabricate.`;
+- Close on a constructive note grounded in verifiable Bitcoin-specific data (institutional inflows, network fundamentals, supply scarcity). Never fabricate.
+- FRAMING WITHOUT ADVICE: never use "buy", "sell", "hold", "should", "recommend", "consider buying", "consider selling", "good opportunity", "time to". Use historical-pattern framing instead: "historically X preceded Y", "this reinforces/undermines the thesis that Z", "positioning has shifted toward X while flows remained Y". The reader decides; you report and frame.`;
 
 interface LookingAheadContext {
   top_stories: TopStory[];
@@ -39,6 +43,13 @@ interface LookingAheadContext {
 
 function buildLookingAheadPrompt(ctx: LookingAheadContext): string {
   const parts: string[] = [];
+
+  if (EXPERT_CONTEXT_ENABLED) {
+    parts.push(`## ANALYTICAL PRIORS
+Use the priors below to inform framing, but only where a prior genuinely fits today's data. Do not reach for a lens mechanically.
+
+${EXPERT_CONTEXT_DIGEST}\n`);
+  }
 
   parts.push("TODAY'S COMPLETE BITCOIN INTELLIGENCE:\n");
 
@@ -110,7 +121,7 @@ Search for the latest institutional Bitcoin activity and return the data in this
 
 Rules:
 - summary: one short sentence that frames the moves below. E.g. "Corporate treasuries led accumulation this week." or "Quiet week for institutional activity outside ETFs."
-- notable_moves: 3-5 notable moves from the categories below. Each should include entity name, action, and specific numbers where available.
+- notable_moves: 1-5 notable moves from the categories below. Each should include entity name, action, and specific numbers where available. EARNED SIGNIFICANCE: a quiet week should return 1-2 genuine moves, not 5 padded ones. Never fabricate or inflate to hit a count.
   Categories to cover:
   * Corporate treasury purchases/sales (MicroStrategy, Tesla, Block, Metaplanet, etc.)
   * Whale wallet movements (large on-chain transfers to/from exchanges, dormant wallet activity)
@@ -125,9 +136,9 @@ Rules:
 
 const EXPERTS_SYSTEM = `You are a financial media analyst. Return ONLY valid JSON, no markdown fences or extra text. Do NOT include any preamble, meta-commentary, or remarks about your instructions.
 
-Search for the most recent notable commentary on Bitcoin from 3 well-known public figures. Search across ALL media formats: YouTube interviews, podcasts, X/Twitter posts, Bloomberg/CNBC TV appearances, conference talks, Substack newsletters, and written commentary. Substack is a HIGH-PRIORITY source; many top analysts publish their best research there (Lyn Alden, Dylan LeClair, Luke Gromen, Jeff Park, etc.). Cast a wide net.
+Search for the most recent notable commentary on Bitcoin from well-known public figures. Search across ALL media formats: YouTube interviews, podcasts, X/Twitter posts, Bloomberg/CNBC TV appearances, conference talks, Substack newsletters, and written commentary. Substack is a HIGH-PRIORITY source; many top analysts publish their best research there (Lyn Alden, Dylan LeClair, Luke Gromen, Jeff Park, etc.). Cast a wide net.
 
-Return an array of EXACTLY 3 experts in this JSON format:
+Return an array of 1 to 3 experts in this JSON format:
 [
   {
     "expert_name": "<full name>",
@@ -140,7 +151,7 @@ Return an array of EXACTLY 3 experts in this JSON format:
 ]
 
 Rules:
-- Return EXACTLY 3 experts. No more, no fewer.
+- Return 1 to 3 experts. EARNED SIGNIFICANCE: 2 genuinely substantive voices are better than 3 where one is padding. If only 1 or 2 experts have said something substantive in the last 7 days, return 1 or 2. Never pad to hit a count. Never include a weak or generic quote just to reach 3.
 - Every expert MUST be someone deeply in the Bitcoin space with real skin in the game: builders, fund managers, on-chain analysts, miners, protocol developers, macro strategists who actively cover BTC, or executives running Bitcoin-focused companies. They do NOT need to be household names or TV personalities. What matters is domain expertise and that their insight is substantive and impactful.
 - WELL-KNOWN figures (Michael Saylor, Cathie Wood, Larry Fink, Raoul Pal, Lyn Alden, Stanley Druckenmiller, Jeff Park, Luke Gromen, Matt Hougan, Jan van Eck) are great when they have recent commentary, but do NOT default to them if a lesser-known expert said something more insightful this week.
 - ALSO CONSIDER deep Bitcoin analysts and researchers who publish on Substack, podcasts, or X: Dylan LeClair, Willy Woo, James Check (Checkmate), Will Clemente, Sam Callahan, Joe Burnett, Pierre Rochard, Tuur Demeester, Adam Back, Jameson Lopp, Nic Carter, Preston Pysh, Greg Foss, Alex Gladstein, and similar Bitcoin-native voices.
