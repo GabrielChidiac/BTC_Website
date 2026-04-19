@@ -26,15 +26,17 @@ const DEFAULT_MODEL = "gpt-4o-mini-tts";
  * host tone, varied pacing, emphasis on stakes and numbers, spoken section
  * transitions lifted slightly as verbal signposts).
  */
-const VOICE_INSTRUCTIONS = `Voice: Warm, confident morning news host. Imagine telling a smart, busy friend what they need to know before their first meeting.
+const VOICE_INSTRUCTIONS = `Voice: Warm, confident morning news host. Imagine telling a smart, busy friend what they need to know before their first meeting. Unhurried. The listener trusts you, so you do not need to rush.
 
-Delivery: Conversational but precise. Forward-leaning energy, engaged, interested, alive to what the numbers mean. Never monotone, never hyped. Treat short spoken section transitions like "Top stories this morning." or "Institutional flows." as verbal signposts, lift the voice slightly, take a small beat before and after so the listener feels the brief move from one part to the next.
+NORTH STAR: The listener must be able to follow and absorb every sentence on first hearing. Comprehension is more important than brevity. If you are ever unsure whether to speed up or slow down, slow down. A listener who feels rushed is a listener who tunes out. Going slightly longer is fine, feeling rushed is not.
 
-Pacing: Vary deliberately. Slow down on numbers, names, and stakes so they land. Speed up slightly through connective tissue. Take a micro-beat before punchlines and one-sentence paragraphs.
+Delivery: Conversational but precise. Measured, grounded, unhurried energy. Engaged and alive to what the numbers mean, never monotone, never hyped, never rushed. Treat short spoken section transitions like "Top stories this morning." or "Institutional flows." as verbal signposts, lift the voice slightly, and take a clear beat before and after so the listener feels the brief move from one part to the next.
 
-Emphasis: Put weight on verbs and stakes, not adjectives. Let short sentences breathe. Let long sentences flow.
+Pacing: Noticeably slower than a typical news read. Target a relaxed, reflective cadence around 120 words per minute — closer to a thoughtful audiobook narrator than a wire-service reader. Land firmly on numbers, names, and stakes so they settle before moving on. Let commas breathe. Take a real pause at every period, a longer pause at paragraph breaks, and a clear beat before punchlines and one-sentence paragraphs. Never sprint through connective tissue, only gently ease through it. If a sentence contains a big number or an unfamiliar name, give the listener a fraction of a second extra to catch it.
 
-Tone: Authoritative calm with warmth underneath. Confident, not theatrical. This listener pays for brevity and respect, give them both.`;
+Emphasis: Put weight on verbs and stakes, not adjectives. Let short sentences breathe. Let long sentences flow without hurrying. Never rush to the next sentence just to stay on a timeline.
+
+Tone: Authoritative calm with warmth underneath. Lower register, steady, unforced. Confident, not theatrical. This listener pays for respect and clarity, give them both by slowing down rather than speeding up.`;
 
 const TTS_TIMEOUT_MS = 120_000;
 
@@ -94,12 +96,14 @@ export function stripSectionMarkers(script: string): string {
 }
 
 /**
- * Estimate audio duration in seconds from a spoken-word script at the
- * approximate natural cadence of OpenAI TTS voices (150 words per minute).
- * Used as a fallback when the actual MP3 duration is not known.
+ * Estimate audio duration in seconds from a spoken-word script.
+ *
+ * Uses 120 WPM to match the instructed pacing in VOICE_INSTRUCTIONS (relaxed,
+ * audiobook-style cadence). Faster estimates would make the UI understate the
+ * actual runtime and erode trust in the displayed length.
  */
 export function estimateAudioDurationSeconds(scriptText: string): number {
-  const wordsPerMinute = 150;
+  const wordsPerMinute = 120;
   const wordCount = scriptText.split(/\s+/).filter(Boolean).length;
   return Math.round((wordCount / wordsPerMinute) * 60);
 }

@@ -37,6 +37,10 @@ export function Footer() {
             <span className="h-3 w-px bg-[var(--color-border)]" />
             <Link href="/terms" className="hover:text-[var(--color-accent)] transition-colors">Terms of Service</Link>
           </div>
+          <p className="max-w-xl text-[11px] leading-relaxed text-[var(--color-text-muted)]">
+            <span className="font-semibold text-[var(--color-text-secondary)]">Disclaimer:</span>{" "}
+            BTC Today is for informational purposes only and does not constitute financial, investment, tax, or legal advice. Always do your own research and consult a qualified advisor before making investment decisions.
+          </p>
           <p className="text-[11px] text-[var(--color-text-muted)]">
             &copy; {new Date().getFullYear()} BTC Today. All rights reserved.
           </p>
