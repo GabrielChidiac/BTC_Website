@@ -22,7 +22,7 @@ RULE 1: DATA ACCURACY (HIGHEST PRIORITY)
 
 You will receive a FACTS BLOCK in the user prompt. This is your ONLY source of truth for today's briefing. It contains every price, percentage, headline, company name, event, and number you are allowed to say.
 
-- Every number in your script MUST come from the FACTS BLOCK. Never invent a price. Never approximate. If the FACTS BLOCK says BTC is at seventy four thousand dollars, you say seventy four thousand dollars. Not ninety thousand. Not seventy five. The exact number.
+- Every number in your script MUST come from the FACTS BLOCK. Never invent a price. Never approximate. Never round. If the FACTS BLOCK's spoken form says "seventy four thousand three hundred sixteen dollars", you say exactly that, not "seventy four thousand" and not "roughly seventy four thousand". The listener sees the exact figure on the site and email; the audio must match it digit for digit.
 - Every company, person, event, or institution name in your script MUST come from the FACTS BLOCK. Never invent a headline. Never fabricate a company buying Bitcoin. Never cite an expert who is not in the block.
 - Do not use your training data to fill in gaps. Your training data is old. The listener needs TODAY, not a stale prior.
 - If a fact is missing from the FACTS BLOCK, say "no notable [x] today" and move on. Do not fabricate to fill space. Brief silence is better than invented content.
@@ -38,9 +38,9 @@ WAFFLING (never write like this):
 "Bitcoin has been experiencing some interesting movement today, with various factors contributing to the price action we are seeing in the market. There are several things worth noting about the current situation."
 
 SHARP (always write like this):
-"Bitcoin is at seventy four thousand dollars, down two point eight percent in the last 24 hours, pressured by a stronger dollar and softer E T F flows."
+"Bitcoin is at seventy four thousand three hundred sixteen dollars, down two point eight percent in the last 24 hours, pressured by a stronger dollar and softer E T F flows."
 
-The sharp version has three real facts (price, percent, two causes), one sentence, zero filler. Write every sentence like the sharp example.
+The sharp version has three real facts (exact price, percent, two causes), one sentence, zero filler. Write every sentence like the sharp example.
 
 FORBIDDEN filler phrases (never use any of these):
 - "It is worth noting"
@@ -201,7 +201,7 @@ Every acronym must be phonetically spelled with spaces or spelled out:
 - 25bps -> "twenty five basis points"
 
 Numbers and percentages as spoken words (the FACTS BLOCK provides pre-computed spoken forms for the main ones, use them verbatim):
-- $74,132 -> "seventy four thousand dollars"
+- $74,316 -> "seventy four thousand three hundred sixteen dollars" (exact — never round to "seventy four thousand")
 - 2.84% -> "two point eight percent"
 - $1.2B -> "one point two billion dollars"
 - $245M -> "two hundred forty five million dollars"
@@ -625,14 +625,66 @@ function buildFactsBlock(b: BriefingJSON | undefined | null): string {
 
 // ─── Formatting helpers ──────────────────────────────────────────────────
 
-/** Convert a USD price to a spoken form rounded to the nearest thousand. */
+/**
+ * Convert a USD price to a spoken form that matches the exact on-site number.
+ * E.g. 74316 -> "seventy four thousand three hundred sixteen dollars".
+ * The listener sees "$74,316" on the site and must hear the same figure,
+ * not a rounded approximation.
+ */
 function spokenPrice(price: number): string {
-  if (price >= 1_000_000) {
-    const millions = (price / 1_000_000).toFixed(2);
-    return `${millions} million dollars`;
+  const rounded = Math.round(price);
+  if (rounded >= 1_000_000) {
+    const millions = Math.floor(rounded / 1_000_000);
+    const remainder = rounded % 1_000_000;
+    const parts = [`${numberToWords(millions)} million`];
+    if (remainder > 0) {
+      parts.push(numberToWords(remainder));
+    }
+    return `${parts.join(" ")} dollars`;
   }
-  const thousands = Math.round(price / 1000);
-  return `${thousands} thousand dollars`;
+  return `${numberToWords(rounded)} dollars`;
+}
+
+/** Spell an integer 0-999,999 as English words (no "and" connectors). */
+function numberToWords(n: number): string {
+  if (n === 0) return "zero";
+  const thousands = Math.floor(n / 1000);
+  const rest = n % 1000;
+  const parts: string[] = [];
+  if (thousands > 0) {
+    parts.push(`${underThousandToWords(thousands)} thousand`);
+  }
+  if (rest > 0) {
+    parts.push(underThousandToWords(rest));
+  }
+  return parts.join(" ");
+}
+
+function underThousandToWords(n: number): string {
+  const ones = [
+    "", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+    "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+    "seventeen", "eighteen", "nineteen",
+  ];
+  const tens = [
+    "", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
+  ];
+  const hundreds = Math.floor(n / 100);
+  const rest = n % 100;
+  const parts: string[] = [];
+  if (hundreds > 0) {
+    parts.push(`${ones[hundreds]} hundred`);
+  }
+  if (rest > 0) {
+    if (rest < 20) {
+      parts.push(ones[rest]);
+    } else {
+      const t = Math.floor(rest / 10);
+      const o = rest % 10;
+      parts.push(o > 0 ? `${tens[t]} ${ones[o]}` : tens[t]);
+    }
+  }
+  return parts.join(" ");
 }
 
 /** Convert a percentage change to a spoken form like "down two point eight percent". */

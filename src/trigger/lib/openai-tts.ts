@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { parseBuffer } from "music-metadata";
 import type { Result } from "@/lib/types";
 
 /**
@@ -96,14 +97,27 @@ export function stripSectionMarkers(script: string): string {
 }
 
 /**
- * Estimate audio duration in seconds from a spoken-word script.
+ * Measure the real audio duration in seconds by parsing the MP3 buffer.
  *
- * Uses 120 WPM to match the instructed pacing in VOICE_INSTRUCTIONS (relaxed,
- * audiobook-style cadence). Faster estimates would make the UI understate the
- * actual runtime and erode trust in the displayed length.
+ * Word-count × WPM estimates drift by ~60s against actual TTS output, which
+ * erodes trust in the displayed runtime. Parsing the MP3 frames gives the
+ * true duration so the listen button and player never lie.
  */
-export function estimateAudioDurationSeconds(scriptText: string): number {
-  const wordsPerMinute = 120;
-  const wordCount = scriptText.split(/\s+/).filter(Boolean).length;
-  return Math.round((wordCount / wordsPerMinute) * 60);
+export async function measureAudioDurationSeconds(
+  audioBuffer: ArrayBuffer
+): Promise<Result<number>> {
+  try {
+    const metadata = await parseBuffer(
+      new Uint8Array(audioBuffer),
+      { mimeType: "audio/mpeg" },
+      { duration: true }
+    );
+    const duration = metadata.format.duration;
+    if (typeof duration !== "number" || !Number.isFinite(duration) || duration <= 0) {
+      return { data: null, error: "[mp3-parse] duration missing from metadata" };
+    }
+    return { data: Math.round(duration), error: null };
+  } catch (err) {
+    return { data: null, error: `[mp3-parse] ${(err as Error).message}` };
+  }
 }

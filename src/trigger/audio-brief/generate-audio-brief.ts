@@ -1,6 +1,6 @@
 import { task, logger } from "@trigger.dev/sdk/v3";
 import { callClaudeJSON } from "@/trigger/lib/anthropic";
-import { generateSpeech, stripSectionMarkers, estimateAudioDurationSeconds } from "@/trigger/lib/openai-tts";
+import { generateSpeech, stripSectionMarkers, measureAudioDurationSeconds } from "@/trigger/lib/openai-tts";
 import { withTimeout } from "@/trigger/lib/fetch-timeout";
 import { createServiceClient } from "@/lib/supabase/server";
 import { dedupeBriefingStories } from "@/lib/dedupe-stories";
@@ -139,7 +139,6 @@ export const generateAudioBriefTask = task({
     }
 
     const spokenScript = stripSectionMarkers(rawScript);
-    const estimatedDuration = estimateAudioDurationSeconds(spokenScript);
 
     // Step 2: synthesize audio via OpenAI gpt-4o-mini-tts (coral voice).
     logger.info("Calling OpenAI TTS", {
@@ -169,7 +168,19 @@ export const generateAudioBriefTask = task({
       };
     }
 
-    // Step 3: upload MP3 to Supabase Storage
+    // Step 3: measure real duration from the MP3 buffer. Falls back to null
+    // on parse failure so the audio still ships, just without a displayed
+    // runtime — better than lying about it.
+    const durationResult = await measureAudioDurationSeconds(ttsResult.data);
+    if (durationResult.error) {
+      logger.warn("MP3 duration parse failed, audio will ship without a displayed runtime", {
+        date,
+        error: durationResult.error,
+      });
+    }
+    const measuredDuration = durationResult.data;
+
+    // Step 4: upload MP3 to Supabase Storage
     const supabase = createServiceClient();
     const filename = `${date}.mp3`;
     const buffer = Buffer.from(ttsResult.data);
@@ -195,7 +206,7 @@ export const generateAudioBriefTask = task({
 
     return {
       audio_url: `/api/audio/${date}`,
-      audio_duration_seconds: estimatedDuration,
+      audio_duration_seconds: measuredDuration,
       audio_script: rawScript,
     };
   },
