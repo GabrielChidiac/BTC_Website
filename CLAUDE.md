@@ -34,9 +34,10 @@ AI-curated daily Bitcoin intelligence for busy BTC holders who have jobs. A Trig
 ```bash
 npm run dev                   # Next.js at http://localhost:3000
 npm run build                 # Production build (verifies all types)
+npm run start                 # Serve the production build
 npx trigger.dev@latest dev    # Trigger.dev local runner
 ```
-Path alias `@/*` → `./src/*`. CI in `.github/workflows/trigger-deploy.yml` deploys Trigger.dev tasks on push to `main`.
+Path alias `@/*` → `./src/*`. CI in `.github/workflows/trigger-deploy.yml` deploys Trigger.dev tasks on push to `main`. Project-local Claude skills live in `Skills/` (each subdir has a `SKILL.md`).
 
 ## Documentation
 [docs/plan.md](docs/plan.md), [docs/architecture.md](docs/architecture.md), [docs/decisions.md](docs/decisions.md), [docs/orchestrator.md](docs/orchestrator.md), [docs/deployment.md](docs/deployment.md), [docs/design-brief.md](docs/design-brief.md).
