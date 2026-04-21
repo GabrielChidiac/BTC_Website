@@ -68,8 +68,10 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - Custom CSS variables defined in `@theme`: `--color-bg-base`, `--color-accent`, `--font-heading`, etc.
 
 ### Claude API
-- Used only inside the Trigger.dev pipeline (AI Brain). No user-facing chat endpoint.
-- `callClaudeJSON<T>()` ([src/trigger/lib/anthropic.ts](src/trigger/lib/anthropic.ts)) auto-retries once with a "fix your JSON" prompt on parse failure. Fallback chain: Anthropic SDK → Kie.ai (OpenAI-compatible) on 429/5xx. All wrappers return `Result<T>`.
+- Used only inside the Trigger.dev pipeline. No user-facing chat endpoint.
+- `callClaudeJSON<T>()` ([src/trigger/lib/anthropic.ts](src/trigger/lib/anthropic.ts)) chain: Anthropic SDK → Kie.ai on 429/5xx → parse → optional `schema` (zod) validation → optional `retryOnSchemaError` correction retry. All return `Result<T>`.
+- Zod schemas for every Claude output live in [src/lib/schemas.ts](src/lib/schemas.ts). Keep in sync with types.ts. Pass `retryOnSchemaError: true` on fatal tasks (AI brain) only; non-fatal tasks save the retry tokens.
+- **Task payload guards:** every Trigger task that receives structured payloads normalizes `payload?.field ?? default` at entry. Never assume the dashboard test payload is well-formed.
 - All HTTP uses native `fetch` — no axios.
 
 ### Authentication
@@ -101,7 +103,7 @@ All keys live in `.env.example`. Services: Anthropic, Perplexity, Kie.ai (Claude
 - `daily_briefings` — date PK + JSONB content
 - `subscribers` — email, tier, status, founding flag
 - `verification_codes` — magic-link tokens + session tokens
-- `predictions` — silent data collection for the day-60 accuracy scorecard. Stores 2–3 directional claims per briefing (`claim_text`, `direction`, `metric`, `target_date`, `resolution_status`). **No user-facing UI yet.**
+- `predictions` — silent data collection for the day-60 accuracy scorecard. 2–3 directional claims per briefing. Auto-resolved daily at 03:00 UTC by [resolve-predictions.ts](src/trigger/publishers/resolve-predictions.ts): BTC-price metrics scored via CoinGecko historical close, ±2% flat band; other metrics marked `inconclusive` with a reason. No user-facing UI yet.
 - `rate_limits` — IP-bucketed counters for `src/lib/rate-limit.ts` (fail-open). Incremented via the `increment_rate_limit` Postgres RPC.
 
 ## API Routes
@@ -112,6 +114,7 @@ Routes in [src/app/api/](src/app/api/): subscribe + subscribe/verify, unsubscrib
 ```
 collectors (news + market, parallel via batch.triggerAndWait)
   → triage + perplexityCrossRef (parallel) → mergeTriageWithCrossRef → Jina scrape
+  → day-classifier (precursor signal, non-fatal)
   → AI Brain (Claude → BriefingJSON)
   → enrichment (Perplexity ×4: looking_ahead, institutional_flows, expert_insights, supply_dynamics)
   → computeReadTimeSeconds()
@@ -122,7 +125,9 @@ collectors (news + market, parallel via batch.triggerAndWait)
 ```
 - Collectors run **parallel**. Everything after runs **sequential**.
 - [src/trigger/lib/fetch-timeout.ts](src/trigger/lib/fetch-timeout.ts) provides `fetchWithTimeout()` / `withTimeout()`.
-- Triage rankings ([src/trigger/processors/triage.ts](src/trigger/processors/triage.ts)) are passed to AI Brain via `triageContext` as a *signal*, not a hard filter — Claude is free to override.
+- Triage rankings ([triage.ts](src/trigger/processors/triage.ts)) are passed to AI Brain via `triageContext` as a *signal*, not a hard filter — Claude is free to override.
+- Day classifier ([day-classifier.ts](src/trigger/processors/day-classifier.ts)) produces `DayClassification` {label, depth_weight, day_tone_line} used as `dayContext` for AI brain and inlined into audio OPEN. Reads last 7 days from Supabase for historical smoothing.
+- Separate cron: `resolve-predictions` at 03:00 UTC (2h after pipeline) auto-scores due predictions.
 
 **Fault tolerance:**
 - Collectors / triage / enrichment / audio brief: **non-fatal** — failures default to fallback values; pipeline ships without the missing piece.
@@ -180,6 +185,13 @@ The user-facing Claude chat was intentionally removed (2026-04-12). `ANTHROPIC_A
 - **Institutional lens** — frame everything through where money flows, macro implications, long-term value.
 - **Anti-skeptic by data** — let BTC vs Everything (24h, YTD, 1Y) speak for itself.
 - **Expert voices** — Perplexity-sourced from recognized analysts (Lyn Alden, Saylor), not YouTube influencers.
+
+## Briefing Rules (hard, enforced in AI brain system prompt)
+- **5-item combined cap:** `top_stories.length + regulatory.length + adoption.length <= 5`. Allocate by importance across all three, not by per-section quota.
+- **Two-question reader contract:** `daily_diff.sentiment_shift` and `hero_three_lines.signal` must plainly answer (1) is today mostly noise? (2) did anything change near-term risk? Ban soft hedging ("various developments", "markets are watching").
+- **Earned significance:** analytical framing must match the data. Noise days read short and flat; thesis-shift days go deep. The day classifier's `depth_weight` is the signal.
+- **Comparative anchoring:** `market.comparative` provides 30-day baselines (realized vol, price vs 30d avg, funding percentile, F&G delta, ETF flow z-score). When Claude characterizes any quantitative claim, it must reference a baseline — no vague intensifiers without anchors.
+- **Audio OPEN:** the locked "Good morning..." sentence now optionally appends `day_classification.day_tone_line` when the classifier succeeded. Handled in [prompts.ts buildAudioScriptUserPrompt](src/trigger/audio-brief/prompts.ts).
 
 ## Pages
 | Route | Purpose |
