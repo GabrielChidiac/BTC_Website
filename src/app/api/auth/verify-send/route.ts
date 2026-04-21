@@ -18,12 +18,14 @@ function generateToken(): string {
 }
 
 export async function POST(request: Request) {
-  // ── Rate limit: 10 magic-link sends per minute per IP ────────────
+  // ── Rate limit: 5 magic-link sends per minute per IP ─────────────
   // The per-email DB limit further down still runs. This IP limit
-  // catches bots that rotate emails to burn Resend credits.
+  // catches bots that rotate emails to burn Resend credits or
+  // enumerate the subscriber list via the distinct 404 response
+  // below.
   const ip = getClientIp(request);
   const ipLimit = await checkRateLimit(`verify-send:ip:${ip}`, {
-    limit: 10,
+    limit: 5,
     windowSeconds: 60,
   });
   if (!ipLimit.ok) {
@@ -59,10 +61,33 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!subscriber || subscriber.status !== "active") {
+  if (!subscriber) {
     return NextResponse.json(
-      { success: true, message: "Magic link sent" },
-      { status: 200 }
+      {
+        error: "No account found for this email. Subscribe on the homepage to create one.",
+        code: "no_account",
+      },
+      { status: 404 }
+    );
+  }
+
+  if (subscriber.status === "pending") {
+    return NextResponse.json(
+      {
+        error: "Your subscription isn't confirmed yet. Check your inbox for the confirmation email.",
+        code: "pending",
+      },
+      { status: 403 }
+    );
+  }
+
+  if (subscriber.status !== "active") {
+    return NextResponse.json(
+      {
+        error: "This account is inactive. Subscribe on the homepage to reactivate it.",
+        code: "inactive",
+      },
+      { status: 403 }
     );
   }
 

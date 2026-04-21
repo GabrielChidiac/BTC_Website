@@ -72,13 +72,7 @@ function SignInInner() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(
-          res.status === 403
-            ? "This email is not subscribed. Subscribe on the homepage first."
-            : res.status === 429
-              ? data.error
-              : data.error || "Something went wrong."
-        );
+        setError(data.error || "Something went wrong.");
         setLoading(false);
         return;
       }
