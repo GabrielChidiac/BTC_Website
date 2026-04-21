@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { z } from "zod";
 import type { Result } from "@/lib/types";
 import { fetchWithTimeout } from "./fetch-timeout";
 
@@ -69,23 +70,97 @@ export async function callClaude(params: {
   }
 }
 
+// Extract a short, actionable summary of zod validation failures so the
+// correction-retry prompt can quote them back to Claude.
+function summarizeZodIssues(error: z.ZodError): string {
+  return error.issues
+    .slice(0, 10)
+    .map((issue) => `- ${issue.path.join(".") || "(root)"}: ${issue.message}`)
+    .join("\n");
+}
+
 export async function callClaudeJSON<T>(params: {
   system: string;
   prompt: string;
   maxTokens?: number;
+  // Any zod schema. The caller asserts T matches the schema's output type.
+  schema?: z.ZodTypeAny;
+  // Set true for fatal tasks (AI brain) so a schema-correction retry fires
+  // before erroring. Non-fatal tasks leave this false to save tokens.
+  retryOnSchemaError?: boolean;
 }): Promise<Result<T>> {
+  const { schema, retryOnSchemaError = false } = params;
+
+  // ── Step 1: initial call + JSON.parse (with existing fix-your-JSON retry)
+  const firstText = await callClaudeWithJsonRetry(params);
+  if (firstText.error) return { data: null, error: firstText.error };
+
+  const parsed = firstText.data!;
+
+  // ── Step 2: schema validation (if schema provided)
+  if (!schema) {
+    return { data: parsed as T, error: null };
+  }
+
+  const firstValidation = schema.safeParse(parsed);
+  if (firstValidation.success) {
+    return { data: firstValidation.data as T, error: null };
+  }
+
+  // ── Step 3: optional schema-correction retry (fatal tasks only)
+  if (!retryOnSchemaError) {
+    return {
+      data: null,
+      error: `[anthropic] schema validation failed: ${summarizeZodIssues(firstValidation.error)}`,
+    };
+  }
+
+  const issues = summarizeZodIssues(firstValidation.error);
+  const correctionRetry = await callClaude({
+    system: params.system,
+    prompt: `${params.prompt}\n\n---\n\nYour previous response parsed as JSON but failed schema validation. Issues found:\n${issues}\n\nReturn ONLY corrected JSON matching the exact shape. No markdown fences, no extra text.`,
+    maxTokens: params.maxTokens,
+  });
+
+  if (correctionRetry.error) return { data: null, error: correctionRetry.error };
+
+  let retryParsed: unknown;
+  try {
+    retryParsed = JSON.parse(correctionRetry.data!);
+  } catch (e) {
+    return {
+      data: null,
+      error: `[anthropic] schema-correction retry returned invalid JSON: ${(e as Error).message}`,
+    };
+  }
+
+  const secondValidation = schema.safeParse(retryParsed);
+  if (secondValidation.success) {
+    return { data: secondValidation.data as T, error: null };
+  }
+
+  return {
+    data: null,
+    error: `[anthropic] schema validation failed after correction retry: ${summarizeZodIssues(secondValidation.error)}`,
+  };
+}
+
+// Helper that wraps the existing callClaude + JSON.parse + fix-your-JSON retry
+// flow, returning the parsed object (not yet schema-validated).
+async function callClaudeWithJsonRetry(params: {
+  system: string;
+  prompt: string;
+  maxTokens?: number;
+}): Promise<Result<unknown>> {
   const result = await callClaude(params);
   if (result.error) return { data: null, error: result.error };
 
-  // ── First parse attempt ─────────────────────────────────────────────────
   try {
-    const parsed = JSON.parse(result.data!) as T;
-    return { data: parsed, error: null };
+    return { data: JSON.parse(result.data!), error: null };
   } catch {
     // Fall through to retry
   }
 
-  // ── Retry with "fix your JSON" prompt ───────────────────────────────────
   const retryResult = await callClaude({
     system: params.system,
     prompt: `${result.data}\n\nYour previous response was not valid JSON. Please return ONLY valid JSON, no markdown fences or extra text.`,
@@ -95,8 +170,7 @@ export async function callClaudeJSON<T>(params: {
   if (retryResult.error) return { data: null, error: retryResult.error };
 
   try {
-    const parsed = JSON.parse(retryResult.data!) as T;
-    return { data: parsed, error: null };
+    return { data: JSON.parse(retryResult.data!), error: null };
   } catch (e) {
     return { data: null, error: `[anthropic] Failed to parse JSON after retry: ${(e as Error).message}` };
   }

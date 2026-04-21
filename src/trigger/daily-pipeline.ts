@@ -4,6 +4,7 @@ import { marketCollector } from "./collectors/market";
 import { aiBrainTask } from "./processors/ai-brain";
 import { enrichmentTask } from "./processors/enrichment";
 import { triageTask, perplexityCrossRefTask, mergeTriageWithCrossRef } from "./processors/triage";
+import { dayClassifierTask } from "./processors/day-classifier";
 import { scrapeArticles } from "./lib/jina";
 import { saveBriefingTask } from "./publishers/save-briefing";
 import { revalidateSiteTask } from "./publishers/revalidate-site";
@@ -11,7 +12,7 @@ import { sendDigestTask } from "./publishers/send-digest";
 import { generateAudioBriefTask } from "./audio-brief/generate-audio-brief";
 import { computeMarketSignals } from "./processors/market-signals";
 import { computeReadTimeSeconds } from "@/lib/utils";
-import type { BriefingJSON } from "@/lib/types";
+import type { BriefingJSON, DayClassification } from "@/lib/types";
 
 export const dailyPipelineTask = schedules.task({
   id: "daily-pipeline",
@@ -103,6 +104,30 @@ export const dailyPipelineTask = schedules.task({
       articlesWithContent: newsOutput.articles.filter((a) => a.content).length,
     });
 
+    // ── Step 1.8: Day classifier (non-fatal, precursor signal to AI brain)
+    // Lightweight Claude call that labels today as thesis_shift / risk_change /
+    // mostly_noise / mixed with historical smoothing. Steers AI brain depth
+    // and provides the OPEN calibrating line for the audio brief.
+    let dayClassification: DayClassification | null = null;
+    try {
+      const classifierRun = await dayClassifierTask.triggerAndWait({
+        date,
+        news: newsOutput,
+        market: marketRun?.ok ? marketRun.output : null,
+        triageRankings,
+      });
+      if (classifierRun.ok) {
+        dayClassification = classifierRun.output;
+      }
+      logger.info("Day classifier complete", {
+        label: dayClassification?.label ?? "(failed)",
+      });
+    } catch (err) {
+      logger.warn("Day classifier threw, proceeding without classification", {
+        error: (err as Error).message,
+      });
+    }
+
     // ── Step 2: AI Brain (fatal) ──────────────────────────────────────────
     const briefing = await aiBrainTask
       .triggerAndWait({
@@ -110,6 +135,7 @@ export const dailyPipelineTask = schedules.task({
         news: newsOutput,
         market: marketRun?.ok ? marketRun.output : null,
         triageContext: triageRankings.length > 0 ? triageRankings : undefined,
+        dayContext: dayClassification ?? undefined,
       })
       .unwrap();
 
@@ -169,6 +195,8 @@ export const dailyPipelineTask = schedules.task({
       funding_rate: marketOutput?.funding_rate ?? null,
       fear_greed: marketOutput?.fear_greed ?? null,
       correlation_matrix: marketOutput?.correlation_matrix ?? null,
+      day_classification: dayClassification,
+      comparative: marketOutput?.comparative ?? null,
     };
 
     // ── Step 3.25: Market Signals (non-fatal) ────────────────────────────

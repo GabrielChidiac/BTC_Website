@@ -63,3 +63,55 @@ export async function fetchETFFlows(): Promise<Result<ETFFlows>> {
     return { data: null, error: `[sosovalue] ${(e as Error).message}` };
   }
 }
+
+// ─── Historical series (used for comparative baselines) ───────────────────
+// SoSoValue's history endpoint returns the full daily net-flow series in the
+// same payload. This helper pulls the last `days` days of daily net inflows
+// (most recent first) so the collector can compute a 30-day average and
+// z-score. Weekend/holiday zero-flow entries are included, which is correct
+// for the mean but dampens the z-score slightly. Acceptable for v1.
+
+export async function fetchETFFlowsSeries(
+  days: number = 30
+): Promise<Result<number[]>> {
+  try {
+    const res = await fetchWithTimeout(
+      SOSOVALUE_ETF_HISTORY,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "us-btc-spot" }),
+      },
+      30_000,
+    );
+
+    if (!res.ok) {
+      return {
+        data: null,
+        error: `[sosovalue] fetchETFFlowsSeries failed with status ${res.status}`,
+      };
+    }
+
+    const json = await res.json();
+    const entries: SoSoValueEntry[] = json.data;
+
+    if (!entries || entries.length === 0) {
+      return { data: null, error: "[sosovalue] No data in ETF flows history response" };
+    }
+
+    // Entries come newest first. Take the first `days` entries and return
+    // their net inflows in the same order (newest first).
+    const series = entries
+      .slice(0, days)
+      .map((e) => e.totalNetInflow)
+      .filter((v) => typeof v === "number" && !isNaN(v));
+
+    if (series.length === 0) {
+      return { data: null, error: "[sosovalue] No valid flow values in history" };
+    }
+
+    return { data: series, error: null };
+  } catch (e) {
+    return { data: null, error: `[sosovalue] ${(e as Error).message}` };
+  }
+}

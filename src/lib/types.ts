@@ -209,6 +209,28 @@ export interface LookingAheadPrediction {
   target_date: string; // ISO date (YYYY-MM-DD)
 }
 
+// ─── Day classification (precursor signal to AI brain) ─────────────────────
+// Lightweight Claude call that classifies each day before the AI brain runs.
+// Feeds into buildUserPrompt as a depth-weighting signal and into the audio
+// brief's OPEN section as a calibrating line. Persisted on the briefing so
+// the distribution over time becomes internal telemetry.
+
+export type DayClassificationLabel =
+  | "thesis_shift"
+  | "risk_change"
+  | "mostly_noise"
+  | "mixed";
+
+export type DayClassificationDepthWeight = "heavy" | "standard" | "light";
+
+export interface DayClassification {
+  label: DayClassificationLabel;
+  confidence: number; // 0-1
+  depth_weight: DayClassificationDepthWeight;
+  reasoning: string; // internal only, not shown to user
+  day_tone_line: string; // one sentence in Claude's natural voice
+}
+
 // ─── Master Briefing type ───────────────────────────────────────────────────
 
 export interface BriefingJSON {
@@ -250,6 +272,15 @@ export interface BriefingJSON {
   // Trigger-based editorial callouts. Empty/null on quiet days by design.
   // Populated by processors/market-signals.ts after enrichment, before audio brief.
   market_signals?: MarketSignal[] | null;
+  // Internal signal from the day classifier (runs before AI brain). Steers
+  // brief depth and drives the audio OPEN calibrating sentence. Not exposed
+  // in the UI; stored for internal telemetry (noise vs signal distribution).
+  day_classification?: DayClassification | null;
+  // Comparative baselines from the market collector (realized vol, 30d avg,
+  // flow z-scores, percentile ranks). Merged onto the briefing so the audio
+  // FACTS BLOCK can render them and so they're persisted for diagnostics.
+  // Not rendered in the UI.
+  comparative?: ComparativeBaselines | null;
 }
 
 // ─── Triage types (two-pass news verification) ─────────────────────────────
@@ -345,6 +376,25 @@ export interface MarketCollectorOutput {
   funding_rate: FundingRate | null;
   fear_greed: FearGreedIndex | null;
   correlation_matrix: CorrelationMatrix | null;
+  // Comparative baselines used to anchor Claude's prose in quantitative
+  // reality instead of vague intensifiers ("elevated", "significant"). Any
+  // individual field may be null if the source series is unavailable; prompts
+  // degrade gracefully and only render fields that are non-null.
+  comparative: ComparativeBaselines | null;
+}
+
+export interface ComparativeBaselines {
+  realized_vol_30d_pct: number | null;        // annualized, from existing price series
+  realized_vol_90d_pct: number | null;
+  price_vs_30d_avg_pct: number | null;        // (today - 30d mean) / 30d mean * 100
+  price_30d_high: number | null;
+  price_30d_low: number | null;
+  funding_rate_30d_avg_pct: number | null;    // annualized %, averaged over 30d
+  funding_rate_30d_percentile: number | null; // 0-100, today's place in 30d distribution
+  fear_greed_30d_avg: number | null;          // 0-100
+  fear_greed_30d_change: number | null;       // today - 30d avg
+  etf_flows_30d_avg_usd: number | null;       // 30-day mean of daily net flow
+  etf_flows_30d_z_score: number | null;       // today's z-score; null if no history
 }
 
 // ─── Subscriber tier ────────────────────────────────────────────────────────

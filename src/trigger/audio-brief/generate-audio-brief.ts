@@ -4,6 +4,7 @@ import { generateSpeech, stripSectionMarkers, measureAudioDurationSeconds } from
 import { withTimeout } from "@/trigger/lib/fetch-timeout";
 import { createServiceClient } from "@/lib/supabase/server";
 import { dedupeBriefingStories } from "@/lib/dedupe-stories";
+import { AudioScriptSchema } from "@/lib/schemas";
 import { AUDIO_BRIEF_SYSTEM_PROMPT, buildAudioScriptUserPrompt } from "./prompts";
 import type { BriefingJSON } from "@/lib/types";
 
@@ -106,6 +107,7 @@ export const generateAudioBriefTask = task({
       system: AUDIO_BRIEF_SYSTEM_PROMPT,
       prompt: buildAudioScriptUserPrompt(cleaned, date),
       maxTokens: 4000,
+      schema: AudioScriptSchema,
     });
 
     if (scriptResult.error || !scriptResult.data?.script) {

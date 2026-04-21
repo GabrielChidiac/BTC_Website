@@ -121,6 +121,52 @@ async function fetchOkxFunding(): Promise<ExchangeFundingRate | null> {
   }
 }
 
+// ─── Historical series (used for comparative baselines) ─────────────────
+// Binance's /fapi/v1/fundingRate endpoint returns funding settlements. With
+// 3 settlements per day (every 8h), limit=90 covers ~30 days. Returns
+// annualized % values for consistency with FundingRate.annualized_rate_pct.
+
+export async function fetchBinanceFundingRateHistory(
+  snapshots: number = 90
+): Promise<Result<number[]>> {
+  try {
+    const res = await fetchWithTimeout(
+      `https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=${snapshots}`,
+      undefined,
+      TIMEOUT,
+    );
+
+    if (!res.ok) {
+      return {
+        data: null,
+        error: `[funding-rate-history] Binance returned status ${res.status}`,
+      };
+    }
+
+    const json = await res.json();
+    if (!Array.isArray(json) || json.length === 0) {
+      return { data: null, error: "[funding-rate-history] Empty response" };
+    }
+
+    const annualized: number[] = [];
+    for (const entry of json) {
+      const rate = parseFloat(entry.fundingRate);
+      if (!isNaN(rate)) {
+        // Same conversion as live FundingRate: per-settlement rate × 3 × 365 × 100
+        annualized.push(rate * 3 * 365 * 100);
+      }
+    }
+
+    if (annualized.length === 0) {
+      return { data: null, error: "[funding-rate-history] No valid rates parsed" };
+    }
+
+    return { data: annualized, error: null };
+  } catch (e) {
+    return { data: null, error: `[funding-rate-history] ${(e as Error).message}` };
+  }
+}
+
 // ─── Aggregator ──────────────────────────────────────────────────────────
 
 export async function fetchFundingRate(): Promise<Result<FundingRate>> {

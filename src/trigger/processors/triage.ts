@@ -1,6 +1,10 @@
 import { task, logger } from "@trigger.dev/sdk/v3";
 import { callClaudeJSON } from "@/trigger/lib/anthropic";
 import { queryPerplexity } from "@/trigger/lib/perplexity";
+import {
+  TriageOutputSchema,
+  PerplexityCrossRefOutputSchema,
+} from "@/lib/schemas";
 import type {
   RawArticle,
   TriageItem,
@@ -30,14 +34,100 @@ Each item:
   "reasoning": "<one sentence explaining why this matters for Bitcoin investors>"
 }
 
-Scoring guidance:
-- 9-10: Market-moving (ETF approval, major sovereign adoption, Fed pivot, >5% price move)
-- 7-8: Significant institutional signal (large treasury purchase, regulatory shift, mining policy)
-- 5-6: Notable but not urgent (smaller adoption stories, technical developments)
-- 3-4: Marginally relevant (general macro, tangential crypto stories)
-- 1-2: Low relevance (altcoin-focused, minor events)
+═══════════════════════════════════════════════════════════════════════════
+SCORING RUBRIC (anchored to real historical events, not opinion)
+═══════════════════════════════════════════════════════════════════════════
 
-BITCOIN ONLY: Apply strict Bitcoin-relevance filtering. Do not rank altcoin-only stories. If a story is about general crypto and Bitcoin is not the primary subject, score it 3 or below.
+Baseline expectation across a typical week: roughly 0-1 stories reach 9-10,
+2-4 stories reach 7-8, 5-8 stories reach 5-6, the rest 1-4. If you are
+producing 5 stories at score 9+ on an ordinary day, you are inflating.
+
+────────────────────────────────────────────────────────────
+SCORE 9-10 — Market-moving, rare, structural
+────────────────────────────────────────────────────────────
+Must have PROVEN or HIGHLY LIKELY direct impact on BTC price or the thesis.
+
+Anchor examples (historical):
+- Spot Bitcoin ETF approval by SEC (Jan 2024) = 10
+- China bans Bitcoin mining (May 2021) = 10
+- El Salvador adopts BTC as legal tender (Sep 2021) = 10
+- A sitting G7 or G20 central bank announces BTC as reserve asset = 10
+- Fed emergency rate cut or hike = 9
+- >7% BTC intraday move with identified catalyst = 9
+- US executive order with direct BTC implications (e.g. strategic reserve) = 9
+
+NOT 9-10 (common errors):
+- A company of any size announcing "crypto curious" interest
+- "Analyst predicts $X price" (prediction is not event)
+- Altcoin-focused news even if it mentions BTC
+- Regulatory MOVES that are proposed but not enacted unless the move itself is a market event
+
+────────────────────────────────────────────────────────────
+SCORE 7-8 — Significant institutional or regulatory signal
+────────────────────────────────────────────────────────────
+Must have IDENTIFIABLE IMPACT on institutional flows, positioning, or policy.
+
+Anchor examples:
+- Public company adds $500M+ in BTC to treasury = 8
+- Public company adds $100M-$500M = 7
+- Major ETF daily net flow >$500M in one direction = 7
+- SEC enforcement action against a major actor (not routine) = 7-8
+- Passage (not proposal) of Bitcoin-related legislation in a major jurisdiction = 8
+- Pension fund or sovereign wealth fund first BTC allocation = 8
+- Mining hash rate collapse or surge >15% month-over-month = 7
+- Lightning Network TPS milestone or major fee market shift = 7
+
+NOT 7-8:
+- "Company considering" or "company to evaluate" BTC (not an event)
+- Small treasury additions <$50M
+- Routine 13F filings showing existing positions
+- Individual wealth-manager opinions or newsletter predictions
+
+────────────────────────────────────────────────────────────
+SCORE 5-6 — Notable, developmental, worth reading
+────────────────────────────────────────────────────────────
+Real information, not urgent, does not move positioning by itself.
+
+Anchor examples:
+- Small corporate treasury addition ($10M-$50M) = 5-6
+- Merchant adoption milestone in a secondary market = 5
+- Technical development (BIP progress, Core release, Lightning feature) = 5-6
+- Smaller-market national central bank study or position paper = 6
+- Secondary ETF filing (not first-of-kind) = 5
+- Hashrate all-time high = 5-6
+- Well-known analyst or institution publishing a substantive report on BTC = 5-6
+
+NOT 5-6:
+- Hype pieces without data
+- Price-prediction articles
+- "Top 10 reasons Bitcoin is..." list content
+
+────────────────────────────────────────────────────────────
+SCORE 3-4 — Marginal, probably skip in the brief
+────────────────────────────────────────────────────────────
+- General macro news without direct Bitcoin mechanism
+- Tangential crypto industry stories (mixed-asset context)
+- Minor network stats, routine difficulty adjustments
+- Speculation or opinion without new information
+
+────────────────────────────────────────────────────────────
+SCORE 1-2 — Near-zero Bitcoin relevance
+────────────────────────────────────────────────────────────
+- Altcoin-focused stories with only incidental BTC mention
+- Clickbait, scams, recycled content
+- Crypto stories where Bitcoin is not the subject
+
+═══════════════════════════════════════════════════════════════════════════
+
+BITCOIN ONLY: Apply strict Bitcoin-relevance filtering. If a story is about
+general crypto and Bitcoin is not the primary subject, score it 3 or below.
+A story about "crypto regulation" that names only stablecoins and altcoins
+is a 1-2 even if it mentions BTC in passing.
+
+CALIBRATION TEST before you finalize: on a typical weekday, how many stories
+SHOULD score 9-10? Answer: 0 or 1. If you're about to submit 3+ stories at
+9-10, re-read them and ask "is this really on par with the 2024 ETF approval
+or China's mining ban?" If not, downgrade.
 
 If fewer than 15 articles pass a minimum score of 3, return only those that do.
 Never use em dashes or en dashes. Use commas, periods, or semicolons instead.`;
@@ -66,11 +156,11 @@ Never use em dashes or en dashes. Use commas, periods, or semicolons instead.`;
 
 export const triageTask = task({
   id: "news-triage",
-  run: async (payload: { articles: RawArticle[] }): Promise<TriageOutput> => {
-    const { articles } = payload;
+  run: async (payload: { articles?: RawArticle[] }): Promise<TriageOutput> => {
+    const articles = payload?.articles ?? [];
 
     if (articles.length === 0) {
-      logger.warn("No articles to triage");
+      logger.warn("No articles to triage (empty or missing articles payload)");
       return { ranked: [] };
     }
 
@@ -92,6 +182,7 @@ export const triageTask = task({
       system: TRIAGE_SYSTEM,
       prompt: userPrompt,
       maxTokens: 2048,
+      schema: TriageOutputSchema,
     });
 
     if (result.error) {
@@ -139,11 +230,19 @@ export const perplexityCrossRefTask = task({
         .replace(/```json\n?/g, "")
         .replace(/```\n?/g, "")
         .trim();
-      const parsed = JSON.parse(cleaned) as PerplexityCrossRefOutput;
+      const parsedUnknown: unknown = JSON.parse(cleaned);
 
-      if (!Array.isArray(parsed.stories)) {
-        throw new Error("Expected stories array");
+      const validation = PerplexityCrossRefOutputSchema.safeParse(parsedUnknown);
+      if (!validation.success) {
+        throw new Error(
+          `Perplexity cross-ref schema validation failed: ${validation.error.issues
+            .slice(0, 5)
+            .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
+            .join("; ")}`
+        );
       }
+
+      const parsed: PerplexityCrossRefOutput = validation.data;
 
       logger.info("Perplexity cross-ref complete", {
         storyCount: parsed.stories.length,

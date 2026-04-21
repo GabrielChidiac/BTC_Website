@@ -4,10 +4,12 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { halvingProgress } from "@/lib/utils";
 import { dedupeBriefingStories } from "@/lib/dedupe-stories";
 import { EXPERT_CONTEXT } from "@/trigger/processors/expert-context";
+import { AiBrainOutputSchema } from "@/lib/schemas";
 import type {
   BriefingJSON,
   TopStory,
   TriageItem,
+  DayClassification,
   NewsCollectorOutput,
   MarketCollectorOutput,
   DailyBriefingRow,
@@ -27,6 +29,7 @@ interface AiBrainPayload {
   news: NewsCollectorOutput;
   market: MarketCollectorOutput | null;
   triageContext?: TriageItem[];
+  dayContext?: DayClassification;
 }
 
 // ─── System prompt ─────────────────────────────────────────────────────────
@@ -36,6 +39,50 @@ const SYSTEM_PROMPT = `You are a senior Bitcoin intelligence analyst producing a
 CRITICAL: Return ONLY valid JSON. No markdown fences, no extra text, no comments. Just the raw JSON object.
 
 CRITICAL: All text fields in the JSON must contain only the requested analysis content. NEVER include meta-commentary, remarks about your instructions, disclaimers about your role, or self-referential statements like "I appreciate the data" or "my instructions say." You are invisible; only the analysis exists. Write every text field as if it will be published directly to institutional investors.
+
+═══════════════════════════════════════════════════════════════════════════
+NON-NEGOTIABLE READER CONTRACT (most important rule in this prompt)
+═══════════════════════════════════════════════════════════════════════════
+
+Every briefing you produce must make these two questions answerable within the first 20 seconds of reading. If the reader cannot answer both after reading hero_three_lines and daily_diff, the briefing has failed.
+
+QUESTION 1: "Is today mostly noise?"
+QUESTION 2: "Did anything happen that changes near-term risk?"
+
+How to answer them in the writing:
+
+- daily_diff.sentiment_shift MUST contain an explicit answer in plain English. Examples that pass: "A quiet day. Price drifted inside its 30-day range and no institutional moves cleared the bar." / "Not noise. ETF outflows hit their biggest single day in six weeks, tightening near-term risk." / "Mostly noise with one exception: an SEC enforcement hint worth watching."
+
+- hero_three_lines.signal MUST name whether today mattered or not. "What matters under the noise" is your framing for a quiet day ("Under the surface: nothing structural changed"). On a material day, name the shift directly ("Near-term risk rose today: funding in the 92nd percentile").
+
+- narrative_consensus.rationale should reinforce the verdict, not soften it. Do not write "markets are uncertain" or "mixed signals" as a hedge. If today is noise, say so. If risk is rising, say so.
+
+Soft language that evades the two questions ("there were various developments", "sentiment remained mixed", "the market is watching") is a FAILURE. Be direct about whether the reader should care today.
+
+The DAY CONTEXT block in the user prompt (when present) tells you which answer applies. Align your writing to that classification:
+- mostly_noise → both answers are variations of "no" / "nothing structural" / "quiet"
+- risk_change → Q2 answer is "yes, here's the risk vector in one sentence"
+- thesis_shift → Q1 answer is "no, today was not noise" and Q2 answer explains the structural shift
+- mixed → both questions get nuanced answers but still concrete
+
+═══════════════════════════════════════════════════════════════════════════
+COMBINED SECTION CAP (hard rule, no exceptions)
+═══════════════════════════════════════════════════════════════════════════
+
+top_stories + regulatory + adoption combined must be 5 items MAXIMUM across the entire briefing. Not five per section. Five total.
+
+Allocate based on importance, not section quotas. Valid distributions:
+- 5 stories, 0 regulatory, 0 adoption (pure market day)
+- 3 stories, 1 regulatory, 1 adoption (balanced)
+- 2 stories, 2 regulatory, 1 adoption (regulation-heavy)
+- 1 story, 0 regulatory, 0 adoption (extremely quiet day)
+- 4 stories, 0 regulatory, 1 adoption (mostly market, one treasury move)
+
+Never exceed 5 combined. On quiet days it is correct to drop well below 5. Every item in these three sections must clear the score-5 bar from the triage rubric. If only 2 items clear the bar today, the briefing has 2 items. Less is more.
+
+The absolute-no-duplicates rule still applies: each story appears in EXACTLY ONE of the three sections. Never list the same URL or near-identical headline twice.
+
+When deciding which 5 items to keep, rank ALL qualifying items across the three categories together by importance (the triage scores in the user prompt are your primary signal). Take the top 5. Whatever categories they fall into is whatever categories they fall into.
 
 CRITICAL CONTENT FILTER — BITCOIN ONLY:
 This briefing is EXCLUSIVELY about Bitcoin (BTC). Apply these rules with zero tolerance:
@@ -169,15 +216,15 @@ The root JSON object must have these exact keys:
   "date": string,
   "one_line": string,                   // A single sentence (max 25 words) that captures THE most important conclusion for a sophisticated BTC holder today. Not a headline, an insight. Write as if texting a billionaire friend who holds BTC. No hype, no hedging.
   "hero_three_lines": HeroThreeLines,  // THE 3-MINUTE CONTRACT HERO. Three self-contained sentences that convey today's entire essence. A reader who ONLY reads these three must walk away with a complete understanding of today.
-  "top_stories": TopStory[],           // 3-5 most significant stories for investors, ordered by importance (most important first)
+  "top_stories": TopStory[],           // Subset of the 5-item combined cap across top_stories + regulatory + adoption. Ordered by importance (most important first). Can be 0 on rare all-regulatory or all-adoption days.
   "market_snapshot": MarketSnapshot,
   "technical_signals": TechnicalSignals,
   "btc_vs_everything": AssetComparison[], // Exactly 6: S&P 500, NASDAQ-100, Gold, DXY, Ethereum, Solana
   "network_health": NetworkHealth,
   "daily_diff": DailyDiff,
   "countdown_events": CountdownEvent[], // 3-5 upcoming events relevant to Bitcoin investors. ONLY include: halving, FOMC meetings, ETF deadlines, protocol upgrades, options expiry dates, macro events (CPI, jobs report, GDP). NEVER include conferences, summits, or industry events. Always calculate days_away from the briefing date. Use real scheduled dates only. If you are not 100% certain of a date, do not include the event.
-  "regulatory": RegulatoryUpdate[],    // 1-3 regulatory developments, ordered by impact (highest impact first). ONLY from the input articles. If no input article covers a regulatory development, return an empty array.
-  "adoption": AdoptionUpdate[],        // 1-3 adoption stories, ordered by significance (most significant first). ONLY from the input articles. If no input article covers an adoption story, return an empty array.
+  "regulatory": RegulatoryUpdate[],    // Subset of the 5-item combined cap. 0-5 regulatory developments by impact. ONLY from the input articles. Often 0 on pure market days.
+  "adoption": AdoptionUpdate[],        // Subset of the 5-item combined cap. 0-5 adoption stories by significance. ONLY from the input articles. Often 0 on pure market days.
   "narrative_consensus": NarrativeConsensus,
   "macro_context": MacroContext,
   "looking_ahead_predictions": LookingAheadPrediction[] // 2-3 testable directional predictions drawn from countdown_events and macro_context. Each must have a specific metric and a target_date within 30 days. Not publicly displayed; feeds an internal accuracy tracking system.
@@ -193,7 +240,7 @@ Rules:
 - Target audience: Busy professionals who own Bitcoin and have jobs. Doctors, lawyers, founders, engineers, managers, wealth advisors. Not crypto-native. Not institutional HNW. They understand finance but may not follow crypto daily. They have 3 to 5 minutes, not 30.
 - For hero_three_lines: these three sentences are the single most important output of your day. The move, signal, and watch each stand alone as self-contained declarations. Each one strictly under 140 characters. No "read more" hooks, no cliffhangers, no hedging. Signal must be an INTERPRETATION of the data, not a restatement of the headline; go one level deeper than the surface. Watch must name exactly ONE upcoming catalyst with a specific date or day count.
 - For looking_ahead_predictions: generate 2 to 3 testable directional predictions drawn from your countdown_events and macro_context. Each prediction must commit to a direction (up, down, or flat) for a specific metric with a specific target_date within the next 30 days. These feed an internal accuracy tracking system and are never publicly shown. Be honest and commit; do not hedge into useless predictions. If an event's target_date is ambiguous, pick the most likely date.
-- For top_stories: select 3-5 most significant BITCOIN stories through a professional investor lens. Each summary must do two things: (1) state what happened in ONE sentence of context, (2) tell the reader what it MEANS for Bitcoin holders in one or two sentences, covering capital flows, positioning shifts, macro implications, or timeline pressure on upcoming catalysts. Do NOT write headline restatements. Do NOT stop at describing the news. The reader should learn something they could not have guessed from the headline alone. Skip stories that only matter to retail traders. Exclude any story where Bitcoin is not the primary subject.
+- For top_stories: select up to 5 most significant BITCOIN stories through a professional investor lens, BUT remember the combined cap: top_stories + regulatory + adoption = 5 items maximum total. If 2 items belong in regulatory and 1 in adoption today, top_stories can only be 2. Each summary must do two things: (1) state what happened in ONE sentence of context, (2) tell the reader what it MEANS for Bitcoin holders in one or two sentences, covering capital flows, positioning shifts, macro implications, or timeline pressure on upcoming catalysts. Do NOT write headline restatements. Do NOT stop at describing the news. The reader should learn something they could not have guessed from the headline alone. Skip stories that only matter to retail traders. Exclude any story where Bitcoin is not the primary subject.
 
   Negative example (what NOT to do): "Japan's GPIF confirmed it will add Bitcoin ETFs to its allocation model. The pension fund holds over 1.5 trillion dollars in assets. The decision follows a multi-year review process." This is pure description, no interpretation, and teaches the reader nothing the headline did not already imply.
 
@@ -204,8 +251,8 @@ Rules:
   - "adoption" — corporate treasury BTC purchases, country-level adoption, merchant or payment integration, custody buildouts. Use this when the story is driven by a non-financial entity putting Bitcoin to use.
   - "macro" — Fed rate decisions, CPI or PCE inflation prints, dollar index moves, jobs reports, fiscal or liquidity policy, broader risk-asset rotations. Use this when the story is macroeconomic rather than Bitcoin-specific but has direct BTC implications.
   - "technical" — mining, hashrate, protocol upgrades, halving milestones, Lightning network metrics, on-chain signals. Use this when the story is about the Bitcoin network itself.
-- For regulatory: 1-3 genuine regulatory developments that directly affect Bitcoin. Each item MUST be sourced from a specific input article, with its exact URL and source. Do NOT generate regulatory items from your training data or general knowledge. If no input articles contain regulatory news, return an empty array. Never force non-regulatory or altcoin-specific regulation into this section.
-- For adoption: 1-3 genuine Bitcoin adoption stories (corporate BTC buys, sovereign Bitcoin adoption, Bitcoin payment adoption, Bitcoin infrastructure growth). Each item MUST be sourced from a specific input article, with its exact URL and source. Do NOT generate adoption items from your training data or general knowledge. If no input articles contain adoption news, return an empty array. Exclude general crypto or altcoin adoption.
+- For regulatory: 0 to 5 genuine regulatory developments that directly affect Bitcoin, constrained by the combined 5-item cap. Each item MUST be sourced from a specific input article, with its exact URL and source. Do NOT generate regulatory items from your training data or general knowledge. If no input articles contain regulatory news, return an empty array (this is the norm on most days). Never force non-regulatory or altcoin-specific regulation into this section.
+- For adoption: 0 to 5 genuine Bitcoin adoption stories (corporate BTC buys, sovereign Bitcoin adoption, Bitcoin payment adoption, Bitcoin infrastructure growth), constrained by the combined 5-item cap. Each item MUST be sourced from a specific input article, with its exact URL and source. Do NOT generate adoption items from your training data or general knowledge. If no input articles contain adoption news, return an empty array. Exclude general crypto or altcoin adoption.
 - For macro_context: synthesize how current macro conditions (monetary policy, liquidity, DXY, inflation) relate to Bitcoin's positioning. Use your knowledge of scheduled macro events.
 - For narrative_consensus: assess the overall smart money sentiment. Score reflects institutional positioning, not retail mood.
 - For btc_vs_everything: compute btc_relative_24h_pct as (BTC 24h change) minus (asset 24h change). Same for btc_relative_ytd_pct and btc_relative_1y_pct. Use null if data unavailable.
@@ -402,13 +449,14 @@ ${EXPERT_CONTEXT}`);
   }
 
   // News articles
-  const articlesText = news.articles
+  const articles = Array.isArray(news?.articles) ? news.articles : [];
+  const articlesText = articles
     .map(
       (a, i) =>
         `${i + 1}. **${a.title}**\n   Source: ${a.source}\n   URL: ${a.url}\n   Published: ${a.published_at}\n   Description: ${a.description ?? "N/A"}${a.content ? `\n   Full article: ${a.content}` : ""}`
     )
     .join("\n\n");
-  sections.push(`## News Articles (${news.articles.length} total)\n${articlesText || "No articles available."}`);
+  sections.push(`## News Articles (${articles.length} total)\n${articlesText || "No articles available."}`);
 
   if (market) {
     sections.push(`## Market Data
@@ -480,6 +528,57 @@ ${EXPERT_CONTEXT}`);
 - BTC vs S&P 500: ${spCorr} (${cm.data_points_sp500} data points)
 - Period: ${cm.period_start} to ${cm.period_end}`);
     }
+
+    // Comparative baselines — gives Claude quantitative anchors so prose
+    // cannot vague-handwave. Only non-null fields are rendered.
+    if (market.comparative) {
+      const c = market.comparative;
+      const lines: string[] = [];
+      if (c.realized_vol_30d_pct != null) {
+        lines.push(
+          `- Realized volatility 30d: ${c.realized_vol_30d_pct.toFixed(1)}% annualized${
+            c.realized_vol_90d_pct != null
+              ? ` (90d: ${c.realized_vol_90d_pct.toFixed(1)}%)`
+              : ""
+          }`
+        );
+      }
+      if (c.price_vs_30d_avg_pct != null) {
+        lines.push(
+          `- Price vs 30d average: ${c.price_vs_30d_avg_pct >= 0 ? "+" : ""}${c.price_vs_30d_avg_pct.toFixed(2)}%`
+        );
+      }
+      if (c.price_30d_high != null && c.price_30d_low != null) {
+        lines.push(
+          `- 30-day range: $${c.price_30d_low.toLocaleString()} low to $${c.price_30d_high.toLocaleString()} high`
+        );
+      }
+      if (c.funding_rate_30d_avg_pct != null && c.funding_rate_30d_percentile != null) {
+        lines.push(
+          `- Funding rate 30d avg: ${c.funding_rate_30d_avg_pct.toFixed(2)}% annualized. Today sits in the ${c.funding_rate_30d_percentile.toFixed(0)}th percentile of the last 30 days.`
+        );
+      }
+      if (c.fear_greed_30d_avg != null && c.fear_greed_30d_change != null) {
+        lines.push(
+          `- Fear & Greed 30d avg: ${c.fear_greed_30d_avg.toFixed(0)}. Today is ${c.fear_greed_30d_change >= 0 ? "+" : ""}${c.fear_greed_30d_change.toFixed(0)} vs that mean.`
+        );
+      }
+      if (c.etf_flows_30d_avg_usd != null) {
+        const avgM = (c.etf_flows_30d_avg_usd / 1e6).toFixed(1);
+        const zPart =
+          c.etf_flows_30d_z_score != null
+            ? ` Today's flow is ${c.etf_flows_30d_z_score >= 0 ? "+" : ""}${c.etf_flows_30d_z_score.toFixed(2)}σ vs that mean.`
+            : "";
+        lines.push(`- ETF flows 30d avg: $${avgM}M per day.${zPart}`);
+      }
+
+      if (lines.length > 0) {
+        sections.push(`## Comparative Baselines (use these to anchor prose, never vague-handwave)
+When you characterize any quantitative claim, reference the comparative baseline if one exists. Do NOT use intensifiers like "significant", "major", "elevated" without a quantitative anchor from below. If a baseline is missing, state the raw number plainly and do not imply context you don't have.
+
+${lines.join("\n")}`);
+      }
+    }
   } else {
     sections.push("## Market Data\nMarket data unavailable.");
   }
@@ -497,6 +596,27 @@ ${EXPERT_CONTEXT}`);
 The following articles were identified as most important by a preliminary triage pass. Use this as a signal but apply your own judgment. Articles with full text below were scraped based on this ranking.
 
 ${triageText}`);
+  }
+
+  // Day classification (internal signal, steers depth and tone)
+  if (payload.dayContext) {
+    const c = payload.dayContext;
+    const depthGuidance = {
+      heavy: "Use the full 7 top_stories and develop deeper framing. Earned significance has been met.",
+      standard: "Use 5-6 top_stories with standard framing. Do not manufacture depth beyond what the data supports.",
+      light: "Use 5 top_stories maximum. Keep narrative_consensus.rationale terse. No manufactured tension. Let flat stories read flat.",
+    }[c.depth_weight];
+
+    sections.push(`## DAY CONTEXT (internal signal, overrideable)
+Classification: ${c.label}
+Depth weight: ${c.depth_weight}
+Confidence: ${c.confidence.toFixed(2)}
+Reasoning: ${c.reasoning}
+Suggested opening tone: "${c.day_tone_line}"
+
+${depthGuidance}
+
+You may override this classification if today's data clearly contradicts it (priority-override rules in the system prompt still apply). Otherwise treat it as a depth-weighting signal.`);
   }
 
   if (yesterday) {
@@ -524,7 +644,20 @@ No previous briefing available. Set daily_diff.price_change to "N/A (first brief
 
 export const aiBrainTask = task({
   id: "ai-brain",
-  run: async (payload: AiBrainPayload): Promise<AiBrainOutput> => {
+  run: async (rawPayload: Partial<AiBrainPayload>): Promise<AiBrainOutput> => {
+    // Defensive payload normalization so dashboard manual tests or partial
+    // payloads do not crash inside buildUserPrompt.
+    const payload: AiBrainPayload = {
+      date: rawPayload?.date ?? new Date().toISOString().split("T")[0],
+      news: {
+        articles: Array.isArray(rawPayload?.news?.articles)
+          ? rawPayload.news!.articles
+          : [],
+      },
+      market: rawPayload?.market ?? null,
+      triageContext: rawPayload?.triageContext,
+      dayContext: rawPayload?.dayContext,
+    };
     const { date, market } = payload;
 
     const halving = market
@@ -579,7 +712,7 @@ export const aiBrainTask = task({
     const userPrompt = buildUserPrompt(payload, halving, yesterday);
 
     logger.info("Calling Claude for briefing generation", {
-      articleCount: payload.news.articles.length,
+      articleCount: Array.isArray(payload?.news?.articles) ? payload.news.articles.length : 0,
       expertContextEnabled: EXPERT_CONTEXT_ENABLED,
     });
 
@@ -587,6 +720,8 @@ export const aiBrainTask = task({
       system: SYSTEM_PROMPT,
       prompt: userPrompt,
       maxTokens: 8192,
+      schema: AiBrainOutputSchema,
+      retryOnSchemaError: true,
     });
 
     if (result.error) {

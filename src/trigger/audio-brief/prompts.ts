@@ -17,6 +17,25 @@ export const AUDIO_BRIEF_SYSTEM_PROMPT = `You are the script writer for BTC Toda
 Your job is to turn the daily briefing into a sharp, news-first, data-accurate spoken-word script that a listener consumes in under 3 minutes 30 seconds on their commute. When they are done listening, they should be able to walk into a meeting and have an informed conversation about what actually happened in Bitcoin in the last 24 hours.
 
 =====================================================================
+RULE 0: THE LISTENER CONTRACT (non-negotiable)
+=====================================================================
+
+By the end of OPEN + MARKET SNAPSHOT + TOP STORIES (the first ~90 seconds of audio), the listener must be able to answer these two questions in their head without going back to re-listen:
+
+QUESTION 1: "Is today mostly noise?"
+QUESTION 2: "Did anything happen that changes near-term risk?"
+
+The OPEN's calibrating tone line (supplied in the user prompt) does half the work for Question 1. Your script must reinforce both answers plainly in MARKET SNAPSHOT and TOP STORIES. Examples:
+
+- Quiet day: OPEN says "A quiet day for Bitcoin." MARKET SNAPSHOT reinforces with "Price inside its 30-day range, flows below the monthly average, no regulatory triggers fired today." TOP STORIES opens with "No single story moved the needle, but here are the two worth tracking."
+
+- Risk-change day: OPEN says "Risk is rising." MARKET SNAPSHOT names the vector: "Funding hit the 92nd percentile of the last 30 days, the first time since January." TOP STORIES leads with the story driving the shift.
+
+- Thesis-shift day: OPEN says "Today mattered." MARKET SNAPSHOT sets the stake: "Price moved six percent on a named catalyst, and here is why it is structural, not noise."
+
+Soft evasive language that avoids the verdict ("markets are watching", "sentiment is mixed", "there was activity today") is FAILURE. Be direct about whether the listener should care today. A confident "nothing happened, here are the flows" is better than a hedged "various developments".
+
+=====================================================================
 RULE 1: DATA ACCURACY (HIGHEST PRIORITY)
 =====================================================================
 
@@ -132,9 +151,8 @@ Two sentences. One fact sentence with a number and a running total. One stake se
 
 Write exactly these 9 sections, in exactly this order, each with its label on its own line:
 
-[OPEN] ~10 words
-Locked sentence, verbatim, no variation:
-"Good morning. Today is {weekday}, {month} {day}. Here is BTC Today."
+[OPEN] ~10-20 words
+Locked sentence, verbatim exactly as supplied in the user prompt's "opening line of the script must be EXACTLY" directive. On quiet or heavy days the opener may include a one-sentence calibrating tone line appended by the system ("A quiet day for Bitcoin." / "Today mattered." / "Risk is rising."). Reproduce the opener character-for-character; never rewrite, never drop the tone line if it is present, never invent a tone line if it is absent.
 
 [MARKET SNAPSHOT] ~35 words (including bridge + label)
 Open with the Rule 8 opener, then the current BTC price (spoken form from the FACTS BLOCK), the 24-hour change, 7-day change, market cap, and BTC dominance. Include the funding rate and Fear and Greed reading if they appear in the FACTS BLOCK. One sentence per data point, short and factual. Do not editorialize, the Deep Dive handles that.
@@ -319,13 +337,22 @@ export function buildAudioScriptUserPrompt(briefing: BriefingJSON, isoDate: stri
 
   const facts = buildFactsBlock(briefing);
 
+  // If the day classifier produced a calibrating tone line, append it to the
+  // locked opener so the listener hears a one-sentence orientation of today
+  // ("A quiet day for Bitcoin." / "Today mattered." / "Risk is rising.")
+  // right after the date. Falls back to the unmodified locked opener.
+  const toneLine = briefing.day_classification?.day_tone_line?.trim();
+  const lockedOpener = toneLine
+    ? `"Good morning. Today is ${weekday}, ${month} ${daySpoken}. Here is BTC Today. ${toneLine}"`
+    : `"Good morning. Today is ${weekday}, ${month} ${daySpoken}. Here is BTC Today."`;
+
   return `TODAY'S DATE FIELDS
 Weekday: ${weekday}
 Month: ${month}
 Day spoken: ${daySpoken}
 
 The opening line of the script must be EXACTLY:
-"Good morning. Today is ${weekday}, ${month} ${daySpoken}. Here is BTC Today."
+${lockedOpener}
 
 =====================================================================
 FACTS BLOCK (this is your ONLY source of truth for today's briefing)
@@ -465,6 +492,66 @@ function buildFactsBlock(b: BriefingJSON | undefined | null): string {
   }
 
   lines.push("");
+
+  // ── COMPARATIVE BASELINES ────────────────────────────────
+  // Anchors quantitative prose in 30-day context so the script can say
+  // "flows roughly tripled the monthly average" instead of raw numbers only.
+  // Rendered only when at least one baseline is non-null.
+  const comp = b.comparative;
+  if (comp && typeof comp === "object") {
+    const compLines: string[] = [];
+    if (typeof comp.realized_vol_30d_pct === "number") {
+      compLines.push(
+        `- 30-day realized volatility: ${comp.realized_vol_30d_pct.toFixed(1)}% annualized${
+          typeof comp.realized_vol_90d_pct === "number"
+            ? ` (90-day: ${comp.realized_vol_90d_pct.toFixed(1)}%)`
+            : ""
+        }`
+      );
+    }
+    if (typeof comp.price_vs_30d_avg_pct === "number") {
+      compLines.push(
+        `- Price vs 30-day average: ${comp.price_vs_30d_avg_pct >= 0 ? "+" : ""}${comp.price_vs_30d_avg_pct.toFixed(2)}%`
+      );
+    }
+    if (typeof comp.price_30d_high === "number" && typeof comp.price_30d_low === "number") {
+      compLines.push(
+        `- 30-day range: $${Math.round(comp.price_30d_low).toLocaleString("en-US")} to $${Math.round(comp.price_30d_high).toLocaleString("en-US")}`
+      );
+    }
+    if (
+      typeof comp.funding_rate_30d_avg_pct === "number" &&
+      typeof comp.funding_rate_30d_percentile === "number"
+    ) {
+      compLines.push(
+        `- Funding 30-day average: ${comp.funding_rate_30d_avg_pct.toFixed(2)}% annualized. Today sits in the ${Math.round(comp.funding_rate_30d_percentile)}th percentile of the last 30 days.`
+      );
+    }
+    if (
+      typeof comp.fear_greed_30d_avg === "number" &&
+      typeof comp.fear_greed_30d_change === "number"
+    ) {
+      compLines.push(
+        `- Fear & Greed 30-day average: ${Math.round(comp.fear_greed_30d_avg)}. Today is ${comp.fear_greed_30d_change >= 0 ? "+" : ""}${Math.round(comp.fear_greed_30d_change)} versus that mean.`
+      );
+    }
+    if (typeof comp.etf_flows_30d_avg_usd === "number") {
+      const avgLine = `ETF flow 30-day average: $${compactUSD(Math.abs(comp.etf_flows_30d_avg_usd))} per day${comp.etf_flows_30d_avg_usd < 0 ? " net outflow" : " net inflow"}`;
+      const zLine =
+        typeof comp.etf_flows_30d_z_score === "number"
+          ? `. Today's flow is ${comp.etf_flows_30d_z_score >= 0 ? "+" : ""}${comp.etf_flows_30d_z_score.toFixed(2)} standard deviations versus the 30-day mean`
+          : "";
+      compLines.push(`- ${avgLine}${zLine}.`);
+    }
+
+    if (compLines.length > 0) {
+      lines.push(
+        "### COMPARATIVE BASELINES (when you state any number in the script, reference the baseline here if one exists; say things like \"roughly double the monthly average\" or \"inside normal range\", never vague intensifiers like \"elevated\" or \"significant\" without the baseline)"
+      );
+      compLines.forEach((l) => lines.push(l));
+      lines.push("");
+    }
+  }
 
   // ── MARKET SIGNALS (trigger-based editorial callouts) ─────
   // Only present on days a threshold fired. When present, weave into MARKET

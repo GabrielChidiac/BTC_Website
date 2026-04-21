@@ -92,6 +92,44 @@ export async function fetchHistoricalPrices(days: number): Promise<Result<number
   }
 }
 
+// Fetch BTC USD closing price at a specific UTC calendar date. Used by the
+// prediction resolver to score up/down/flat calls against the actual price
+// that existed on the briefing date and target date. CoinGecko's /history
+// endpoint wants DD-MM-YYYY (not ISO); we convert here.
+export async function fetchBtcCloseAtDate(
+  isoDate: string
+): Promise<Result<number>> {
+  try {
+    const [yyyy, mm, dd] = isoDate.split("-");
+    if (!yyyy || !mm || !dd) {
+      return { data: null, error: `[coingecko] invalid ISO date: ${isoDate}` };
+    }
+
+    const res = await cgFetch(
+      `/coins/bitcoin/history?date=${dd}-${mm}-${yyyy}&localization=false`
+    );
+    if (!res.ok) {
+      return {
+        data: null,
+        error: `[coingecko] fetchBtcCloseAtDate(${isoDate}) failed with status ${res.status}`,
+      };
+    }
+
+    const json = await res.json();
+    const usd = json?.market_data?.current_price?.usd;
+    if (typeof usd !== "number" || !isFinite(usd) || usd <= 0) {
+      return {
+        data: null,
+        error: `[coingecko] fetchBtcCloseAtDate(${isoDate}) returned no usable price`,
+      };
+    }
+
+    return { data: usd, error: null };
+  } catch (e) {
+    return { data: null, error: `[coingecko] ${(e as Error).message}` };
+  }
+}
+
 export async function fetchOHLC(days: number): Promise<Result<{ highs: number[]; lows: number[] }>> {
   try {
     const res = await cgFetch(
