@@ -66,6 +66,35 @@ The DAY CONTEXT block in the user prompt (when present) tells you which answer a
 - mixed → both questions get nuanced answers but still concrete
 
 ═══════════════════════════════════════════════════════════════════════════
+IMPACT MECHANISM TEST (gate for every item in top_stories + regulatory + adoption)
+═══════════════════════════════════════════════════════════════════════════
+
+Before including any item in these three sections, it must pass all three:
+1. Direct mechanism — name in one sentence how this story moves BTC price, ETF flows, institutional positioning, Bitcoin network fundamentals, or regulatory authority over BTC. If you cannot, drop it.
+2. Historical precedent — would similar events historically have moved BTC >=2% within 7 days, shifted ETF flows >=1σ, or changed positioning (funding, OI, long-term holder supply)? If the honest answer is "no, these usually do nothing," drop it.
+3. Bitcoin-primary — is Bitcoin the subject, not an incidental mention? Stories about prediction markets, altcoin exploits, or generic crypto policy that happen to mention BTC should NOT pass this gate.
+
+Specific failures to reject even if they look like big news:
+- "X company now holds more BTC than Y" — symbolic rank change without new flow.
+- "Nominee supports crypto" in a confirmation hearing — testimony is not action.
+- "Analyst predicts $X" or "resistance at $Y" — predictions are not events.
+- Lawsuits about prediction markets or altcoin products where BTC is not the regulated subject.
+- "Considering" / "evaluating" / "studying" stories.
+- Survey results showing future intention to allocate.
+
+A SMALLER set of stories with real mechanisms is always better than a padded set. 2 impact-gated items beat 5 attention-gated items every time. If only 2 items today have a real mechanism, top_stories + regulatory + adoption total 2, not 5.
+
+NUMERIC FLOOR: every included item should normally have been ranked by triage at importance >= 6. Items ranked 5 or below should not appear in top_stories, regulatory, or adoption unless an exception below applies.
+
+EXCEPTIONS (use SPARINGLY, hard cap of 1 per brief total):
+You may include a story that fails the mechanism test OR falls below the triage-6 floor ONLY if ONE of these is true AND you explicitly name the exception reason in the story's summary:
+1. First-of-kind: no prior comparable event exists. State "first-of-kind" explicitly in the summary.
+2. Narrative compound: this story is the 3rd or later item in a weekly pattern pointing the same direction. Name the other 2+ items in the summary.
+3. Heavy-day relaxation: if dayContext.depth_weight === "heavy" AND dayContext.confidence >= 0.75, the historical-precedent threshold relaxes from ">=2% in 7 days" to "moved measurably in 30 days". Cite the dayContext in the summary.
+
+HARD CAP: exactly ONE exception per brief. If you want to invoke exceptions on two or more items today, you are padding — today is quieter than you think, and those items don't belong.
+
+═══════════════════════════════════════════════════════════════════════════
 COMBINED SECTION CAP (hard rule, no exceptions)
 ═══════════════════════════════════════════════════════════════════════════
 
@@ -240,7 +269,7 @@ Rules:
 - Target audience: Busy professionals who own Bitcoin and have jobs. Doctors, lawyers, founders, engineers, managers, wealth advisors. Not crypto-native. Not institutional HNW. They understand finance but may not follow crypto daily. They have 3 to 5 minutes, not 30.
 - For hero_three_lines: these three sentences are the single most important output of your day. The move, signal, and watch each stand alone as self-contained declarations. Each one strictly under 140 characters. No "read more" hooks, no cliffhangers, no hedging. Signal must be an INTERPRETATION of the data, not a restatement of the headline; go one level deeper than the surface. Watch must name exactly ONE upcoming catalyst with a specific date or day count.
 - For looking_ahead_predictions: generate 2 to 3 testable directional predictions drawn from your countdown_events and macro_context. Each prediction must commit to a direction (up, down, or flat) for a specific metric with a specific target_date within the next 30 days. These feed an internal accuracy tracking system and are never publicly shown. Be honest and commit; do not hedge into useless predictions. If an event's target_date is ambiguous, pick the most likely date.
-- For top_stories: select up to 5 most significant BITCOIN stories through a professional investor lens, BUT remember the combined cap: top_stories + regulatory + adoption = 5 items maximum total. If 2 items belong in regulatory and 1 in adoption today, top_stories can only be 2. Each summary must do two things: (1) state what happened in ONE sentence of context, (2) tell the reader what it MEANS for Bitcoin holders in one or two sentences, covering capital flows, positioning shifts, macro implications, or timeline pressure on upcoming catalysts. Do NOT write headline restatements. Do NOT stop at describing the news. The reader should learn something they could not have guessed from the headline alone. Skip stories that only matter to retail traders. Exclude any story where Bitcoin is not the primary subject.
+- For top_stories: select up to 5 most significant BITCOIN stories through a professional investor lens, BUT: (a) remember the combined cap: top_stories + regulatory + adoption = 5 items maximum total. If 2 items belong in regulatory and 1 in adoption today, top_stories can only be 2. (b) Every item must pass the IMPACT MECHANISM TEST above. (c) Cross-check against today's actual market data: if today's BTC price barely moved (<1.5% on the day AND inside the 30-day range per market.comparative) AND ETF flows are inside normal range (z-score between -1 and +1), the "market-moving" bar is higher — only include items that you'd flag as market-moving even in hindsight. On such days, fewer stories is correct. Each summary must do two things: (1) state what happened in ONE sentence of context, (2) tell the reader what it MEANS for Bitcoin holders in one or two sentences, covering capital flows, positioning shifts, macro implications, or timeline pressure on upcoming catalysts. Do NOT write headline restatements. Do NOT stop at describing the news. The reader should learn something they could not have guessed from the headline alone. Skip stories that only matter to retail traders. Exclude any story where Bitcoin is not the primary subject.
 
   Negative example (what NOT to do): "Japan's GPIF confirmed it will add Bitcoin ETFs to its allocation model. The pension fund holds over 1.5 trillion dollars in assets. The decision follows a multi-year review process." This is pure description, no interpretation, and teaches the reader nothing the headline did not already imply.
 
@@ -762,10 +791,36 @@ export const aiBrainTask = task({
       });
     }
 
+    // Observability: emit a compact calibration log so rubric tightness can
+    // be tuned over time. Columns worth watching across 2-3 weeks of runs:
+    //   triageCandidates6Plus vs totalItemsIncluded (how aggressively the
+    //   impact-mechanism filter is dropping ranked stories).
+    const triageRankings = payload?.triageContext ?? [];
+    const totalItems =
+      deduped.top_stories.length +
+      deduped.regulatory.length +
+      deduped.adoption.length;
+
     logger.info("AI Brain completed", {
       storyCount: deduped.top_stories.length,
       regulatoryCount: deduped.regulatory.length,
       adoptionCount: deduped.adoption.length,
+      totalItemsIncluded: totalItems,
+      triageCandidatesTotal: triageRankings.length,
+      triageCandidates6Plus: triageRankings.filter((t) => t.importance >= 6).length,
+      triageCandidates7Plus: triageRankings.filter((t) => t.importance >= 7).length,
+      dropRate6Plus:
+        triageRankings.filter((t) => t.importance >= 6).length > 0
+          ? `${(
+              (1 -
+                totalItems /
+                  triageRankings.filter((t) => t.importance >= 6).length) *
+              100
+            ).toFixed(0)}%`
+          : "n/a",
+      dayClassification: payload?.dayContext?.label ?? null,
+      depthWeight: payload?.dayContext?.depth_weight ?? null,
+      classificationConfidence: payload?.dayContext?.confidence ?? null,
     });
 
     return deduped;

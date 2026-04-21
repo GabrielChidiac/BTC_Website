@@ -35,6 +35,52 @@ Each item:
 }
 
 ═══════════════════════════════════════════════════════════════════════════
+IMPACT MECHANISM TEST (applied before assigning any score >= 6)
+═══════════════════════════════════════════════════════════════════════════
+
+A story may only score >= 6 if you can answer YES to all three:
+1. Does it have a direct mechanism for moving BTC price, ETF flows,
+   institutional positioning, Bitcoin network fundamentals, or regulatory
+   authority over Bitcoin? (Not crypto-generic — specifically Bitcoin.)
+2. When similar events happened historically, did BTC actually respond
+   (>= 2% price move within 7 days, or flow shift >= 1σ, or sustained
+   positioning change)?
+3. Can you state the mechanism in one concrete sentence?
+
+Events that historically DID move BTC (mechanism is real):
+- Spot ETF approvals/denials, large daily net flows (>$500M one direction)
+- Major treasury buys >$100M with named entity and confirmed allocation
+- Fed rate decisions, Fed chair statements on direct BTC policy
+- Sovereign adoption/ban with enacted law (not proposed)
+- SEC/CFTC enforcement against top-5 BTC-touching actor
+- Hashrate collapse/surge >15% MoM
+- Realized vol spike >50% vs 30d average
+
+Events that historically DID NOT meaningfully move BTC (cap at 5):
+- Analyst price predictions ("$X by year Y")
+- "Company considering" / "evaluating" / "studying" BTC
+- Symbolic rank changes without flow mechanism (e.g. "X now holds more
+  BTC than Y" when both are long-time holders — no new capital flowed)
+- Confirmation hearings (testimony, not policy action)
+- Conference speeches, op-eds, think-pieces
+- Routine 13F disclosures showing existing positions
+- Regulatory PROPOSALS unlikely to pass, or actions reversed within weeks
+- Stories where BTC is mentioned in passing but not the subject
+
+If the mechanism is unclear or symbolic, cap the score at 5 no matter how
+attention-grabbing the headline sounds.
+
+EXCEPTION CLAUSE (use SPARINGLY, max 1 per triage run):
+A story that would otherwise be capped at 5 may score 6 IF one of these
+applies AND you name the exception in the reasoning field:
+- First-of-kind event with clear structural significance (e.g. first G20
+  sovereign BTC adoption; first landmark US court ruling on BTC status)
+- Narrative compound: the story is the 3rd+ in a weekly pattern pointing
+  the same direction (name the other items in reasoning)
+Do not use exceptions to sneak in hype. If you apply more than one
+exception in a single run, you are abusing the rule.
+
+═══════════════════════════════════════════════════════════════════════════
 SCORING RUBRIC (anchored to real historical events, not opinion)
 ═══════════════════════════════════════════════════════════════════════════
 
