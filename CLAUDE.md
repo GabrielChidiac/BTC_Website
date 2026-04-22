@@ -37,7 +37,7 @@ npm run build                 # Production build (verifies all types)
 npm run start                 # Serve the production build
 npx trigger.dev@latest dev    # Trigger.dev local runner
 ```
-Path alias `@/*` → `./src/*`. CI in `.github/workflows/trigger-deploy.yml` deploys Trigger.dev tasks on push to `main`. Project-local Claude skills live in `Skills/` (each subdir has a `SKILL.md`).
+Path alias `@/*` → `./src/*`. No test runner, linter, or formatter is configured — `npm run build` is the only type-safety gate. CI in `.github/workflows/trigger-deploy.yml` deploys Trigger.dev tasks on push to `main`. Project-local Claude skills in `Skills/`. Seed a test briefing locally via `scripts/seed-test-briefing.sql`.
 
 ## Documentation
 [docs/plan.md](docs/plan.md), [docs/architecture.md](docs/architecture.md), [docs/decisions.md](docs/decisions.md), [docs/orchestrator.md](docs/orchestrator.md), [docs/deployment.md](docs/deployment.md), [docs/design-brief.md](docs/design-brief.md).
@@ -45,6 +45,7 @@ Path alias `@/*` → `./src/*`. CI in `.github/workflows/trigger-deploy.yml` dep
 ## Working Rules
 - **Always verify before writing.** Read schemas, types, and existing code before writing any new code. Never assume a field, type, or pattern exists — confirm it first.
 - **This file must stay ≤230 lines.** When editing CLAUDE.md, run `wc -l CLAUDE.md` afterwards. If it exceeds 230, compress before finishing — collapse repetition, drop discoverable details, never split into a second doc.
+- **Read [Marketing.md](Marketing.md) before any marketing move.** Applies to copy, channel choices, positioning, launch plans, growth tactics, audience messaging, partnership outreach — anything reader-facing or distribution-related. Read it first; don't propose from priors.
 
 ## Critical Patterns
 
@@ -109,30 +110,34 @@ All keys live in `.env.example`. Services: Anthropic, Perplexity, Kie.ai (Claude
 ## API Routes
 Routes in [src/app/api/](src/app/api/): subscribe + subscribe/verify, unsubscribe, revalidate (ISR), auth/verify-send + auth/verify-check, logout, webhooks/stripe, audio/[date] (Pro — returns a 1-hour signed Supabase Storage URL for the day's MP3; 404 if missing; redirects non-Pro to `/pricing`). `/pdf/[date]` is a **page** route at [src/app/pdf/[date]](src/app/pdf/[date]/) (renders via `@react-pdf/renderer`), not an API handler. Public routes go through `checkRateLimit()` + `getClientIp()` from [src/lib/rate-limit.ts](src/lib/rate-limit.ts) — the limiter fails **open** on errors, with HMAC/auth as a second layer.
 
+**Middleware:** [src/proxy.ts](src/proxy.ts) (Next.js 16 renamed `middleware.ts` → `proxy.ts`) sets `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, and HSTS on every non-static response. Edit here, not per-route, for global security headers.
+
 ## Pipeline Architecture
 2 AM CET cron in [daily-pipeline.ts](src/trigger/daily-pipeline.ts):
 ```
 collectors (news + market, parallel via batch.triggerAndWait)
   → triage + perplexityCrossRef (parallel) → mergeTriageWithCrossRef → Jina scrape
   → day-classifier (precursor signal, non-fatal)
-  → AI Brain (Claude → BriefingJSON)
+  → AI Brain (Claude → BriefingJSON; data-derived fallback if Claude fails)
   → enrichment (Perplexity ×4: looking_ahead, institutional_flows, expert_insights, supply_dynamics)
+  → market-signals (Postgres-backed regime + funding callouts, max 2 shown)
   → computeReadTimeSeconds()
   → audio brief (Claude script + OpenAI TTS → briefing-audio bucket)
-  → save (briefing + predictions)
-  → revalidate Next.js (ISR)
-  → send digest (Resend)
+  → health gate (non-blocking)
+  → save (briefing + predictions) → revalidate (ISR) → send digest (Resend)
 ```
 - Collectors run **parallel**. Everything after runs **sequential**.
 - [src/trigger/lib/fetch-timeout.ts](src/trigger/lib/fetch-timeout.ts) provides `fetchWithTimeout()` / `withTimeout()`.
 - Triage rankings ([triage.ts](src/trigger/processors/triage.ts)) are passed to AI Brain via `triageContext` as a *signal*, not a hard filter — Claude is free to override.
 - Day classifier ([day-classifier.ts](src/trigger/processors/day-classifier.ts)) produces `DayClassification` {label, depth_weight, day_tone_line} used as `dayContext` for AI brain and inlined into audio OPEN. Reads last 7 days from Supabase for historical smoothing.
+- Expert framework ([expert-context.ts](src/trigger/processors/expert-context.ts), `EXPERT_CONTEXT`) is a ~2500-word analytical prior fed to AI Brain as user-prompt reference. Edit this to shift the briefing's analytical lens. Never quoted verbatim.
+- Market signals ([market-signals.ts](src/trigger/processors/market-signals.ts)) reads 30-day history from Supabase, applies cooldowns, and emits at most 2 callouts (correlation regime flips, funding extremes, F&G deltas). Tuned to fire rarely — quiet days with zero callouts are expected.
 - Separate cron: `resolve-predictions` at 03:00 UTC (2h after pipeline) auto-scores due predictions.
 
 **Fault tolerance:**
-- Collectors / triage / enrichment / audio brief: **non-fatal** — failures default to fallback values; pipeline ships without the missing piece.
+- Collectors / triage / enrichment / audio brief / market-signals: **non-fatal** — failures default to fallback values; pipeline ships without the missing piece.
 - Enrichment runs its 4 Perplexity queries in parallel **inside one** Trigger task via `Promise.allSettled` — not as 4 subtasks.
-- AI Brain: **FATAL** — if Claude fails, no briefing is published.
+- AI Brain: **mostly fatal**. If Claude (Anthropic + Kie.ai) exhausts but market data is present, [fallback-template.ts](src/trigger/processors/fallback-template.ts) `buildFallbackBriefing()` produces a data-derived briefing (no narrative AI; calibrated copy from market state). True hard fail only when both Claude AND market data are missing.
 - Publishers: **sequential** — if save fails, email is never sent.
 
 **BriefingJSON composition** (see [src/lib/types.ts](src/lib/types.ts)):
@@ -156,8 +161,11 @@ collectors (news + market, parallel via batch.triggerAndWait)
 - Daily-digest + weekly-recap use the `%%UNSUBSCRIBE_URL%%` placeholder, replaced per-subscriber with a magic-token sign-in URL. Welcome email links to `/sign-in` (no token at subscribe time).
 - Templates in `emails/`. Contact email: `hello@btctoday.co`.
 
-## Removed: AI chat feature
-The user-facing Claude chat was intentionally removed (2026-04-12). `ANTHROPIC_API_KEY` and `KIE_API_KEY` are pipeline-only now. **Never** suggest adding a chat route, component, or CTA.
+## Anti-patterns (do not propose)
+- **No user-facing Claude chat.** Removed 2026-04-12; `ANTHROPIC_API_KEY` and `KIE_API_KEY` are pipeline-only. Don't suggest a chat route, component, or CTA.
+- **No `tailwind.config.js`** — Tailwind v4 is configured in `globals.css` only.
+- **No `Promise.all` over `triggerAndWait`** — use `batch.triggerAndWait()`. `Promise.allSettled` inside a single task body is fine.
+- **No `.single()`** on Supabase reads — use `.maybeSingle()`.
 
 ## Frontend Rules
 - **Invoke the `frontend-design` skill** before writing any frontend code. No exceptions.
@@ -186,21 +194,13 @@ The user-facing Claude chat was intentionally removed (2026-04-12). `ANTHROPIC_A
 - **Anti-skeptic by data** — let BTC vs Everything (24h, YTD, 1Y) speak for itself.
 - **Expert voices** — Perplexity-sourced from recognized analysts (Lyn Alden, Saylor), not YouTube influencers.
 
-## Briefing Rules (hard, enforced in AI brain system prompt)
-- **5-item combined cap:** `top_stories.length + regulatory.length + adoption.length <= 5`. Allocate by importance across all three, not by per-section quota.
-- **Two-question reader contract:** `daily_diff.sentiment_shift` and `hero_three_lines.signal` must plainly answer (1) is today mostly noise? (2) did anything change near-term risk? Ban soft hedging ("various developments", "markets are watching").
-- **Earned significance:** analytical framing must match the data. Noise days read short and flat; thesis-shift days go deep. The day classifier's `depth_weight` is the signal.
-- **Comparative anchoring:** `market.comparative` provides 30-day baselines (realized vol, price vs 30d avg, funding percentile, F&G delta, ETF flow z-score). When Claude characterizes any quantitative claim, it must reference a baseline — no vague intensifiers without anchors.
-- **Audio OPEN:** the locked "Good morning..." sentence now optionally appends `day_classification.day_tone_line` when the classifier succeeded. Handled in [prompts.ts buildAudioScriptUserPrompt](src/trigger/audio-brief/prompts.ts).
-
-## Pages
-| Route | Purpose |
-|---|---|
-| `/` | Latest briefing (homepage) |
-| `/archive`, `/archive/[date]` | Briefing archive |
-| `/listen/[date]` | Pro-only audio player ([AudioPlayer.tsx](src/components/player/AudioPlayer.tsx)). Falls back to "Audio unavailable" if `audio_url` is null. |
-| `/pdf/[date]` | PDF download (Pro only) |
-| `/sign-in`, `/pricing`, `/privacy`, `/terms` | Standard pages |
+## Briefing Rules
+**The AI brain system prompt in [ai-brain.ts](src/trigger/processors/ai-brain.ts) is the source of truth.** Read it when changing briefing behavior. Orientation:
+- **5-item combined cap** across `top_stories + regulatory + adoption`, allocated by importance — not per-section quota. Soft floor of ~3 on quiet days.
+- **Two-question reader contract:** `daily_diff.sentiment_shift` and `hero_three_lines.signal` must plainly answer (1) is today mostly noise? (2) did anything change near-term risk? No soft hedging.
+- **Earned significance:** depth tracks `day_classifier.depth_weight` — quiet days read short and flat, thesis-shift days go deep.
+- **Comparative anchoring:** quantitative claims must reference `market.comparative` baselines (30-day realized vol, price-vs-30d-avg, funding percentile, F&G delta, ETF flow z-score). No vague intensifiers without an anchor.
+- **Audio OPEN** appends `day_classification.day_tone_line` when present, in [audio-brief/prompts.ts buildAudioScriptUserPrompt](src/trigger/audio-brief/prompts.ts).
 
 ## Deployment
 See [docs/deployment.md](docs/deployment.md). Production TODOs: env vars in Vercel; Stripe env vars (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_MONTHLY_URL`, `NEXT_PUBLIC_STRIPE_ANNUAL_URL`); webhook URL in Stripe dashboard → `https://btctoday.co/api/webhooks/stripe`.
