@@ -34,6 +34,7 @@ import { FearGreed } from "@/components/briefing/FearGreed";
 import { CorrelationMatrix } from "@/components/briefing/CorrelationMatrix";
 import { BriefEndState } from "@/components/briefing/BriefEndState";
 import { EditorsNote } from "@/components/briefing/EditorsNote";
+import { EmptySignals } from "@/components/briefing/EmptySignals";
 import { ProGateCompact } from "@/components/premium/ProGate";
 import { getFoundingMemberStatus } from "@/lib/founding";
 
@@ -304,8 +305,14 @@ export default async function ArchiveDatePage({
                   the homepage's tier contract. */}
               {canViewPro ? (
                 <>
-                  <Adoption updates={briefing.adoption} />
-                  <Regulatory updates={briefing.regulatory} />
+                  {briefing.adoption.length > 0 || briefing.regulatory.length > 0 ? (
+                    <>
+                      <Adoption updates={briefing.adoption} />
+                      <Regulatory updates={briefing.regulatory} />
+                    </>
+                  ) : (
+                    <div className="mt-10"><EmptySignals /></div>
+                  )}
                   <InstitutionalFlows flows={briefing.institutional_flows} />
                   <div className="mt-10"><TechnicalSignals signals={briefing.technical_signals} /></div>
                   <div className="mt-10"><NetworkHealth network={briefing.network_health} /></div>

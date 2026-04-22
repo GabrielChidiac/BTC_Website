@@ -128,15 +128,15 @@ export const generateAudioBriefTask = task({
 
     logger.info("Script generated", { date, wordCount });
 
-    // Word count target (tightened for listener-hooked brevity) is 420-500.
-    // We warn on drift outside 400-540 but still proceed since audio is
-    // non-fatal and drift is soft, not broken.
-    if (wordCount < 400 || wordCount > 540) {
+    // Word count target (comprehension-paced at ~120 WPM) is 440-490,
+    // landing audio at ~3:40 to 4:05. We warn on drift outside 420-510
+    // but still proceed since audio is non-fatal and drift is soft.
+    if (wordCount < 420 || wordCount > 510) {
       logger.warn("Script word count out of expected range", {
         date,
         wordCount,
-        expectedMin: 420,
-        expectedMax: 500,
+        expectedMin: 440,
+        expectedMax: 490,
       });
     }
 

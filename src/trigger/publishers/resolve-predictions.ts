@@ -1,6 +1,7 @@
 import { schedules, logger } from "@trigger.dev/sdk/v3";
 import { createServiceClient } from "@/lib/supabase/server";
 import { fetchBtcCloseAtDate } from "@/trigger/lib/coingecko";
+import type { BriefingJSON } from "@/lib/types";
 
 // ─── Resolution constants ─────────────────────────────────────────────────
 
@@ -9,9 +10,28 @@ import { fetchBtcCloseAtDate } from "@/trigger/lib/coingecko";
 // experiences "did the market move?" over a multi-week horizon.
 const FLAT_BAND_PCT = 2;
 
-// Only resolve predictions for metrics we can verify automatically. Others
-// are marked "inconclusive" with a reason and can be revisited later.
-const SUPPORTED_METRICS = new Set(["btc_price", "btc", "bitcoin_price"]);
+// Funding rate flat band in basis points. BTC perp funding typically sits
+// in ±10 bps; a move under ±2 bps is noise relative to that baseline.
+const FUNDING_FLAT_BAND_BPS = 2;
+
+// ETF flow z-score flat band in standard deviations. A move under ±0.5 σ
+// is typical intra-cycle drift; ≥0.5 σ indicates a real regime change.
+const ETF_FLOW_FLAT_BAND_Z = 0.5;
+
+// Metric keys we know how to auto-resolve. Any other metric is marked
+// "inconclusive" with a note explaining why.
+const METRIC_GROUPS = {
+  btcPrice: new Set(["btc_price", "btc", "bitcoin_price", "price"]),
+  dxy: new Set(["dxy", "dollar_index", "dollar", "usd_index"]),
+  fundingRate: new Set(["funding_rate", "funding", "btc_funding"]),
+  etfFlowZ: new Set([
+    "etf_flow_z_score",
+    "etf_flows",
+    "etf_flow",
+    "etf_inflows",
+    "etf_net_flow",
+  ]),
+};
 
 // ─── Row shape from Supabase ──────────────────────────────────────────────
 
@@ -56,8 +76,182 @@ async function resolveBtcPricePrediction(
   const exit = exitResult.data;
   const pctMove = ((exit - entry) / entry) * 100;
 
+  return classifyDirection({
+    entryValue: entry,
+    exitValue: exit,
+    pctMove,
+    flatBand: FLAT_BAND_PCT,
+    claim: row.direction,
+    descriptor: (v) => `$${Math.round(v).toLocaleString()}`,
+    metricLabel: "BTC price",
+    briefingDate: row.briefing_date,
+    targetDate: row.target_date,
+  });
+}
+
+// ─── Macro resolvers (read from persisted daily_briefings rows) ──────────
+
+// Fetch a briefing's full JSON content from Supabase by date. Returns null
+// if the row is missing or malformed — the caller treats that as inconclusive.
+async function fetchBriefingContent(
+  supabase: ReturnType<typeof createServiceClient>,
+  date: string
+): Promise<BriefingJSON | null> {
+  const { data, error } = await supabase
+    .from("daily_briefings")
+    .select("content")
+    .eq("date", date)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  const content = (data as { content: BriefingJSON }).content;
+  if (!content || typeof content !== "object") return null;
+  return content;
+}
+
+// DXY direction: the YTD-percent change delta between briefing_date and
+// target_date rows approximates the DXY move over that window. Not
+// millimeter-precise, but sufficient for a direction-only call.
+async function resolveDxyPrediction(
+  supabase: ReturnType<typeof createServiceClient>,
+  row: PendingPredictionRow
+): Promise<ResolutionOutcome> {
+  const [entryBriefing, exitBriefing] = await Promise.all([
+    fetchBriefingContent(supabase, row.briefing_date),
+    fetchBriefingContent(supabase, row.target_date),
+  ]);
+
+  if (!entryBriefing || !exitBriefing) {
+    return {
+      status: "inconclusive",
+      outcome: `Missing briefing row for ${!entryBriefing ? row.briefing_date : row.target_date}. Cannot resolve DXY direction.`,
+    };
+  }
+
+  const entryDxy = findAssetYtdPct(entryBriefing, "DXY", "Dollar Index");
+  const exitDxy = findAssetYtdPct(exitBriefing, "DXY", "Dollar Index");
+  if (entryDxy == null || exitDxy == null) {
+    return {
+      status: "inconclusive",
+      outcome: `DXY change_ytd_pct not recorded on ${entryDxy == null ? row.briefing_date : row.target_date}.`,
+    };
+  }
+
+  const pctMove = exitDxy - entryDxy;
+  return classifyDirection({
+    entryValue: entryDxy,
+    exitValue: exitDxy,
+    pctMove,
+    flatBand: FLAT_BAND_PCT,
+    claim: row.direction,
+    descriptor: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}% YTD`,
+    metricLabel: "DXY",
+    briefingDate: row.briefing_date,
+    targetDate: row.target_date,
+  });
+}
+
+async function resolveFundingRatePrediction(
+  supabase: ReturnType<typeof createServiceClient>,
+  row: PendingPredictionRow
+): Promise<ResolutionOutcome> {
+  const [entryBriefing, exitBriefing] = await Promise.all([
+    fetchBriefingContent(supabase, row.briefing_date),
+    fetchBriefingContent(supabase, row.target_date),
+  ]);
+
+  if (!entryBriefing || !exitBriefing) {
+    return {
+      status: "inconclusive",
+      outcome: `Missing briefing row for ${!entryBriefing ? row.briefing_date : row.target_date}. Cannot resolve funding rate.`,
+    };
+  }
+
+  const entryRate = entryBriefing.funding_rate?.weighted_rate;
+  const exitRate = exitBriefing.funding_rate?.weighted_rate;
+  if (typeof entryRate !== "number" || typeof exitRate !== "number") {
+    return {
+      status: "inconclusive",
+      outcome: `Funding rate not recorded on ${typeof entryRate !== "number" ? row.briefing_date : row.target_date}.`,
+    };
+  }
+
+  // Convert decimal fractions to basis points for readability.
+  const entryBps = entryRate * 10_000;
+  const exitBps = exitRate * 10_000;
+  const deltaBps = exitBps - entryBps;
+
   let actualDirection: "up" | "down" | "flat";
-  if (Math.abs(pctMove) < FLAT_BAND_PCT) {
+  if (Math.abs(deltaBps) < FUNDING_FLAT_BAND_BPS) {
+    actualDirection = "flat";
+  } else if (deltaBps > 0) {
+    actualDirection = "up";
+  } else {
+    actualDirection = "down";
+  }
+
+  const correct = actualDirection === row.direction;
+  const outcome = `Claim: ${row.direction}. Actual: ${actualDirection} (${entryBps.toFixed(1)} bps on ${row.briefing_date} → ${exitBps.toFixed(1)} bps on ${row.target_date}, Δ ${deltaBps >= 0 ? "+" : ""}${deltaBps.toFixed(1)} bps).`;
+  return { status: correct ? "correct" : "incorrect", outcome };
+}
+
+async function resolveEtfFlowZScorePrediction(
+  supabase: ReturnType<typeof createServiceClient>,
+  row: PendingPredictionRow
+): Promise<ResolutionOutcome> {
+  const [entryBriefing, exitBriefing] = await Promise.all([
+    fetchBriefingContent(supabase, row.briefing_date),
+    fetchBriefingContent(supabase, row.target_date),
+  ]);
+
+  if (!entryBriefing || !exitBriefing) {
+    return {
+      status: "inconclusive",
+      outcome: `Missing briefing row for ${!entryBriefing ? row.briefing_date : row.target_date}. Cannot resolve ETF flow z-score.`,
+    };
+  }
+
+  const entryZ = entryBriefing.comparative?.etf_flows_30d_z_score;
+  const exitZ = exitBriefing.comparative?.etf_flows_30d_z_score;
+  if (typeof entryZ !== "number" || typeof exitZ !== "number") {
+    return {
+      status: "inconclusive",
+      outcome: `ETF flow z-score not recorded on ${typeof entryZ !== "number" ? row.briefing_date : row.target_date}.`,
+    };
+  }
+
+  const deltaZ = exitZ - entryZ;
+  let actualDirection: "up" | "down" | "flat";
+  if (Math.abs(deltaZ) < ETF_FLOW_FLAT_BAND_Z) {
+    actualDirection = "flat";
+  } else if (deltaZ > 0) {
+    actualDirection = "up";
+  } else {
+    actualDirection = "down";
+  }
+
+  const correct = actualDirection === row.direction;
+  const outcome = `Claim: ${row.direction}. Actual: ${actualDirection} (z-score ${entryZ.toFixed(2)} on ${row.briefing_date} → ${exitZ.toFixed(2)} on ${row.target_date}, Δ ${deltaZ >= 0 ? "+" : ""}${deltaZ.toFixed(2)} σ).`;
+  return { status: correct ? "correct" : "incorrect", outcome };
+}
+
+// ─── Shared classification helper ────────────────────────────────────────
+
+function classifyDirection(args: {
+  entryValue: number;
+  exitValue: number;
+  pctMove: number;
+  flatBand: number;
+  claim: "up" | "down" | "flat";
+  descriptor: (v: number) => string;
+  metricLabel: string;
+  briefingDate: string;
+  targetDate: string;
+}): ResolutionOutcome {
+  const { entryValue, exitValue, pctMove, flatBand, claim, descriptor, metricLabel, briefingDate, targetDate } = args;
+
+  let actualDirection: "up" | "down" | "flat";
+  if (Math.abs(pctMove) < flatBand) {
     actualDirection = "flat";
   } else if (pctMove > 0) {
     actualDirection = "up";
@@ -65,10 +259,21 @@ async function resolveBtcPricePrediction(
     actualDirection = "down";
   }
 
-  const correct = actualDirection === row.direction;
-  const outcome = `Claim: ${row.direction}. Actual: ${actualDirection} (${pctMove >= 0 ? "+" : ""}${pctMove.toFixed(2)}% from $${Math.round(entry).toLocaleString()} on ${row.briefing_date} to $${Math.round(exit).toLocaleString()} on ${row.target_date}).`;
+  const correct = actualDirection === claim;
+  const outcome = `Claim: ${claim}. Actual: ${actualDirection} (${metricLabel} ${pctMove >= 0 ? "+" : ""}${pctMove.toFixed(2)}% from ${descriptor(entryValue)} on ${briefingDate} to ${descriptor(exitValue)} on ${targetDate}).`;
 
   return { status: correct ? "correct" : "incorrect", outcome };
+}
+
+function findAssetYtdPct(briefing: BriefingJSON, ...names: string[]): number | null {
+  const lowerNames = names.map((n) => n.toLowerCase());
+  for (const asset of briefing.btc_vs_everything ?? []) {
+    const label = `${asset.name ?? ""} ${asset.ticker ?? ""}`.toLowerCase();
+    if (lowerNames.some((n) => label.includes(n))) {
+      return typeof asset.change_ytd_pct === "number" ? asset.change_ytd_pct : null;
+    }
+  }
+  return null;
 }
 
 // ─── Main task ────────────────────────────────────────────────────────────
@@ -125,19 +330,25 @@ export const resolvePredictionsTask = schedules.task({
       let result: ResolutionOutcome;
       const metricKey = row.metric.toLowerCase().trim();
 
-      if (SUPPORTED_METRICS.has(metricKey)) {
-        try {
+      try {
+        if (METRIC_GROUPS.btcPrice.has(metricKey)) {
           result = await resolveBtcPricePrediction(row);
-        } catch (e) {
+        } else if (METRIC_GROUPS.dxy.has(metricKey)) {
+          result = await resolveDxyPrediction(supabase, row);
+        } else if (METRIC_GROUPS.fundingRate.has(metricKey)) {
+          result = await resolveFundingRatePrediction(supabase, row);
+        } else if (METRIC_GROUPS.etfFlowZ.has(metricKey)) {
+          result = await resolveEtfFlowZScorePrediction(supabase, row);
+        } else {
           result = {
             status: "inconclusive",
-            outcome: `Resolver threw: ${(e as Error).message}`,
+            outcome: `Metric "${row.metric}" not yet supported by the automated resolver.`,
           };
         }
-      } else {
+      } catch (e) {
         result = {
           status: "inconclusive",
-          outcome: `Metric "${row.metric}" not yet supported by the automated resolver.`,
+          outcome: `Resolver threw: ${(e as Error).message}`,
         };
       }
 

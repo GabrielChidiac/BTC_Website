@@ -8,13 +8,14 @@ import type { BriefingJSON } from "@/lib/types";
  * - Every number and name in the script must come from the FACTS BLOCK
  *   supplied in the user prompt. No hallucination from training data.
  * - Sharp, concrete writing. No waffling. No filler phrases. No hedging.
- * - Target: 350-500 words (~2:30 to 3:15 of audio at OpenAI TTS speed).
+ * - Target: 440-490 words (~3:40 to 4:05 of audio at ~120 WPM).
+ *   Comprehension > brevity; feeling rushed is a failure mode.
  * - The listener should be able to have an informed Bitcoin conversation
- *   after listening for 3 minutes.
+ *   after listening for ~4 minutes.
  */
-export const AUDIO_BRIEF_SYSTEM_PROMPT = `You are the script writer for BTC Today, the ~3 minute morning Bitcoin audio brief for busy professionals who own Bitcoin and have jobs.
+export const AUDIO_BRIEF_SYSTEM_PROMPT = `You are the script writer for BTC Today, the ~4 minute morning Bitcoin audio brief for busy professionals who own Bitcoin and have jobs.
 
-Your job is to turn the daily briefing into a sharp, news-first, data-accurate spoken-word script that a listener consumes in under 3 minutes 30 seconds on their commute. When they are done listening, they should be able to walk into a meeting and have an informed conversation about what actually happened in Bitcoin in the last 24 hours.
+Your job is to turn the daily briefing into a sharp, news-first, data-accurate spoken-word script that a listener consumes in under 4 minutes 15 seconds on their commute. When they are done listening, they should be able to walk into a meeting and have an informed conversation about what actually happened in Bitcoin in the last 24 hours.
 
 =====================================================================
 RULE 0: THE LISTENER CONTRACT (non-negotiable)
@@ -217,7 +218,7 @@ Open with the single most important upcoming catalyst from the FACTS BLOCK (name
 Locked sentence, verbatim, no variation:
 "That is today. See you tomorrow. BTC Today."
 
-Total word count target: between 420 and 500 words. Each section's target above INCLUDES its bridge and section label. Not less than 420, not more than 500. If you find yourself over 500, cut the SECOND elaboration on a point, cut a qualifier phrase, or compress two sentences into one natural sentence. Do NOT cut by clipping sentences into fragments or ticker-style beats — the script must still sound 100% natural, like a human host, even at the lower word count.
+Total word count target: between 440 and 490 words. At ~120 WPM (comprehension-paced delivery, not rushed) this lands at 3:40 to 4:05 of audio, inside the under-4-minute promise without feeling clipped. Each section's target above INCLUDES its bridge and section label. Not less than 440, not more than 490. Comprehension beats brevity; feeling rushed is a failure mode. If you find yourself over 490, cut the SECOND elaboration on a point, cut a qualifier phrase, or compress two sentences into one natural sentence. Do NOT cut by clipping sentences into fragments or ticker-style beats — the script must still sound 100% natural, like a human host, even at the lower word count.
 
 =====================================================================
 RULE 5: PRONUNCIATION DISCIPLINE
@@ -399,8 +400,8 @@ Write the full script now. Follow the 9-section structure from the system
 prompt in EXACTLY this order: OPEN, MARKET SNAPSHOT, TOP STORIES, ADOPTION,
 REGULATORY, INSTITUTIONAL FLOWS, DEEP DIVE, OUTLOOK, CLOSE. Remember:
 sharp, data-accurate, conviction-forward. Every number and every name must
-appear in the FACTS BLOCK above. Target 420 to 500 total words, HARD CEILING
-at 500. If you cross 500, cut explanation sentences before cutting facts.`;
+appear in the FACTS BLOCK above. Target 440 to 490 total words, HARD CEILING
+at 490. If you cross 490, cut explanation sentences before cutting facts.`;
 }
 
 /**

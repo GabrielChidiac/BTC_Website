@@ -11,6 +11,7 @@ import { revalidateSiteTask } from "./publishers/revalidate-site";
 import { sendDigestTask } from "./publishers/send-digest";
 import { generateAudioBriefTask } from "./audio-brief/generate-audio-brief";
 import { computeMarketSignals } from "./processors/market-signals";
+import { sendOwnerAlert } from "./lib/alert";
 import { computeReadTimeSeconds } from "@/lib/utils";
 import type { BriefingJSON, DayClassification } from "@/lib/types";
 
@@ -245,6 +246,22 @@ export const dailyPipelineTask = schedules.task({
       });
     }
 
+    // ── Step 3.9: Health gate (non-blocking) ──────────────────────────────
+    // Summarize the brief's completeness and alert the owner when degraded.
+    // By design this NEVER blocks the ship — "BTC Today ships every day" is
+    // the product contract. The alert just tells you to investigate tomorrow's
+    // pipeline, not to halt today's.
+    const health = summarizeBriefingHealth(finalBriefing);
+    logger.info("Briefing health summary", { ...health });
+    if (health.degraded) {
+      // Fire and forget — the send helper swallows its own errors.
+      await sendOwnerAlert({
+        severity: "degraded",
+        subject: `Briefing shipping degraded: ${date}`,
+        text: `The ${date} briefing is about to ship, but one or more pipeline components came back empty or defaulted. The brief will still deliver (product contract: ship every day), but you may want to investigate before tomorrow's run.\n\nHealth summary:\n${JSON.stringify(health, null, 2)}\n\nCheck Trigger.dev dashboard logs for details.`,
+      });
+    }
+
     // ── Step 4: Publish (sequential) ──────────────────────────────────────
     await saveBriefingTask.triggerAndWait({ date, briefing: finalBriefing }).unwrap();
     logger.info("Briefing saved to Supabase");
@@ -265,22 +282,79 @@ export const dailyPipelineTask = schedules.task({
     } catch (error) {
       logger.error("PIPELINE FAILED", { date, error: (error as Error).message });
 
-      // Send alert email so the owner knows immediately
-      try {
-        const resendKey = process.env.RESEND_API_KEY;
-        if (resendKey) {
-          const { Resend } = await import("resend");
-          const resend = new Resend(resendKey);
-          await resend.emails.send({
-            from: "BTC Today Alerts <hello@btctoday.co>",
-            to: "hello@btctoday.co",
-            subject: `[ALERT] Daily pipeline failed: ${date}`,
-            text: `The daily pipeline for ${date} failed.\n\nError: ${(error as Error).message}\n\nStack: ${(error as Error).stack}\n\nCheck Trigger.dev dashboard for details.`,
-          });
-        }
-      } catch { /* alert send failed — nothing we can do */ }
+      await sendOwnerAlert({
+        severity: "critical",
+        subject: `Daily pipeline failed: ${date}`,
+        text: `The daily pipeline for ${date} failed.\n\nError: ${(error as Error).message}\n\nStack: ${(error as Error).stack}\n\nCheck Trigger.dev dashboard for details.`,
+      });
 
       throw error; // Re-throw so Trigger.dev marks the run as failed
     }
   },
 });
+
+// ─── Health gate ─────────────────────────────────────────────────────────
+
+interface BriefingHealth {
+  storyCount: number;
+  hasMarket: boolean;
+  hasHeroLines: boolean;
+  hasAudio: boolean;
+  hasExperts: boolean;
+  hasFlows: boolean;
+  hasLookingAhead: boolean;
+  fallbackUsed: boolean;
+  degraded: boolean;
+  degradedReasons: string[];
+}
+
+/**
+ * Compute a compact health summary of the final briefing. We alert (not
+ * block) the owner whenever 2+ signals are degraded, when the AI Brain
+ * fallback fired, or when the brief has zero stories. The brief still
+ * ships — this is ops telemetry, not a gate.
+ *
+ * Thresholds chosen conservatively so we don't page on a normal quiet day.
+ * A normal quiet day might have 0 stories and still be complete if
+ * adoption + regulatory pick up the slack.
+ */
+function summarizeBriefingHealth(briefing: BriefingJSON): BriefingHealth {
+  const storyCount =
+    briefing.top_stories.length + briefing.regulatory.length + briefing.adoption.length;
+  const hasMarket = Number(briefing.market_snapshot?.price_usd) > 0;
+  const hasHeroLines = Boolean(briefing.hero_three_lines?.move);
+  const hasAudio = Boolean(briefing.audio_url);
+  const hasExperts = (briefing.expert_insights?.length ?? 0) > 0;
+  const flowsSummary = briefing.institutional_flows?.summary;
+  const flowsMoves = briefing.institutional_flows?.notable_moves ?? [];
+  const hasFlows = flowsMoves.length > 0 || (!!flowsSummary && flowsSummary !== "Data unavailable");
+  const hasLookingAhead =
+    !!briefing.looking_ahead &&
+    !briefing.looking_ahead.toLowerCase().includes("unavailable");
+  const fallbackUsed = Boolean(briefing.fallback_used);
+
+  const degradedReasons: string[] = [];
+  if (fallbackUsed) degradedReasons.push("AI Brain fallback fired (both Anthropic and Kie.ai exhausted)");
+  if (storyCount === 0) degradedReasons.push("Zero stories across top_stories + regulatory + adoption");
+  if (!hasHeroLines) degradedReasons.push("No hero_three_lines (3-Minute Contract hero missing)");
+  if (!hasMarket) degradedReasons.push("No market_snapshot price (collector failed)");
+  if (!hasAudio) degradedReasons.push("No audio_url (audio brief failed)");
+  if (!hasExperts) degradedReasons.push("No expert_insights (Perplexity failed or returned empty)");
+
+  // Alert if either the fallback fired, or 2+ independent signals are degraded.
+  // A single non-fatal failure on a normal day (e.g. audio flake) doesn't page.
+  const degraded = fallbackUsed || degradedReasons.length >= 2;
+
+  return {
+    storyCount,
+    hasMarket,
+    hasHeroLines,
+    hasAudio,
+    hasExperts,
+    hasFlows,
+    hasLookingAhead,
+    fallbackUsed,
+    degraded,
+    degradedReasons,
+  };
+}

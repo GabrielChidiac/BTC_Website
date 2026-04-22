@@ -38,30 +38,63 @@ export const saveBriefingTask = task({
     // environment, or the AI output may be malformed).
     const predictions = briefing.looking_ahead_predictions ?? [];
     if (predictions.length > 0) {
-      try {
-        const rows = predictions.map((p) => ({
-          briefing_date: date,
-          claim_text: p.claim_text,
-          direction: p.direction,
-          metric: p.metric,
-          target_date: p.target_date,
-        }));
+      const rows = predictions.map((p) => ({
+        briefing_date: date,
+        claim_text: p.claim_text,
+        direction: p.direction,
+        metric: p.metric,
+        target_date: p.target_date,
+      }));
 
-        const { error: predictionError } = await supabase
-          .from("predictions")
-          .insert(rows);
+      // Two attempts with 500ms backoff. The day-60 accuracy scorecard
+      // depends on a complete history; a silent miss today would bias the
+      // scorecard permanently. We still don't throw — briefing save must
+      // succeed — but on final failure we log ERROR with the payload so the
+      // row is manually recoverable from the Trigger dashboard.
+      const MAX_ATTEMPTS = 2;
+      let inserted = false;
+      let lastError: string = "unknown";
 
-        if (predictionError) {
-          logger.warn("Failed to insert predictions (non-fatal)", {
-            error: predictionError.message,
-            count: rows.length,
-          });
-        } else {
-          logger.info("Predictions recorded", { count: rows.length });
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        try {
+          const { error: predictionError } = await supabase
+            .from("predictions")
+            .insert(rows);
+
+          if (!predictionError) {
+            inserted = true;
+            logger.info("Predictions recorded", { count: rows.length, attempt });
+            break;
+          }
+
+          lastError = predictionError.message;
+          if (attempt < MAX_ATTEMPTS) {
+            logger.warn("Predictions insert failed — retrying", {
+              attempt,
+              error: lastError,
+            });
+            await new Promise((resolve) => setTimeout(resolve, 500));
+          }
+        } catch (e) {
+          lastError = (e as Error).message;
+          if (attempt < MAX_ATTEMPTS) {
+            logger.warn("Predictions insert threw — retrying", {
+              attempt,
+              error: lastError,
+            });
+            await new Promise((resolve) => setTimeout(resolve, 500));
+          }
         }
-      } catch (e) {
-        logger.warn("Predictions insert threw (non-fatal)", {
-          error: (e as Error).message,
+      }
+
+      if (!inserted) {
+        // ERROR (not warn): the scorecard series has a gap for this date.
+        // Log the full payload so it can be manually backfilled if needed.
+        logger.error("Predictions insert failed after retries — scorecard will have a gap for this date", {
+          date,
+          count: rows.length,
+          error: lastError,
+          rows: rows.slice(0, 5),
         });
       }
     }

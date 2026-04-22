@@ -35,6 +35,7 @@ import { FundingRate } from "@/components/briefing/FundingRate";
 import { BriefingTabs } from "@/components/briefing/BriefingTabs";
 import { BriefEndState } from "@/components/briefing/BriefEndState";
 import { EditorsNote } from "@/components/briefing/EditorsNote";
+import { EmptySignals } from "@/components/briefing/EmptySignals";
 import { ProTeaser } from "@/components/premium/ProTeaser";
 import { getFoundingMemberStatus, type FoundingMemberStatus } from "@/lib/founding";
 
@@ -336,18 +337,23 @@ export default async function Home() {
                 <ProTeaser foundingOffer={foundingOffer} variant="tab" />
               ) : (
               <>
-                {/* 05 — ADOPTION & REGULATORY */}
-                {(briefing.adoption.length > 0 || briefing.regulatory.length > 0) && (
-                  <div id="signals" className="mt-8 scroll-mt-28">
-                    <SectionLabel number="05" title="Adoption &amp; Regulatory" className="mb-4" />
-                    <ScrollReveal>
+                {/* 05 — ADOPTION & REGULATORY
+                    Unconditionally renders for Pro users so the seven-section
+                    mental model holds. When both arrays are empty, shows a
+                    single EmptySignals card rather than vanishing. */}
+                <div id="signals" className="mt-8 scroll-mt-28">
+                  <SectionLabel number="05" title="Adoption &amp; Regulatory" className="mb-4" />
+                  <ScrollReveal>
+                    {briefing.adoption.length > 0 || briefing.regulatory.length > 0 ? (
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-start">
                         {briefing.adoption.length > 0 && <Adoption updates={briefing.adoption} />}
                         {briefing.regulatory.length > 0 && <Regulatory updates={briefing.regulatory} />}
                       </div>
-                    </ScrollReveal>
-                  </div>
-                )}
+                    ) : (
+                      <EmptySignals />
+                    )}
+                  </ScrollReveal>
+                </div>
 
                 {/* 06 — DEEP DIVE */}
                 <div id="deep-dive" className="mt-10 scroll-mt-28">
