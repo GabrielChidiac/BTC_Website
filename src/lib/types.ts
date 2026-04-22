@@ -6,12 +6,11 @@ export type Result<T> =
 
 // ─── Briefing sub-types ─────────────────────────────────────────────────────
 
-export type TopStoryCategory =
-  | "market"
-  | "regulatory"
-  | "adoption"
-  | "macro"
-  | "technical";
+// TopStory.category is restricted to themes that belong in the top_stories
+// array. Adoption and regulatory items live in their own dedicated arrays
+// (adoption, regulatory) and must never be placed in top_stories, so they
+// are not valid TopStoryCategory values.
+export type TopStoryCategory = "market" | "macro" | "technical";
 
 export interface TopStory {
   headline: string;
@@ -281,6 +280,11 @@ export interface BriefingJSON {
   // FACTS BLOCK can render them and so they're persisted for diagnostics.
   // Not rendered in the UI.
   comparative?: ComparativeBaselines | null;
+  // True when the AI Brain fell back to the data-derived template (Claude +
+  // Kie.ai both unavailable). Surfaces as an "editor's note" on the email
+  // footer and homepage so the lighter commentary is communicated honestly.
+  // Absent (undefined) on normal-path briefings.
+  fallback_used?: boolean;
 }
 
 // ─── Triage types (two-pass news verification) ─────────────────────────────

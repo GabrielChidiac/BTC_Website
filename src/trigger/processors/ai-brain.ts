@@ -5,6 +5,7 @@ import { halvingProgress } from "@/lib/utils";
 import { dedupeBriefingStories } from "@/lib/dedupe-stories";
 import { EXPERT_CONTEXT } from "@/trigger/processors/expert-context";
 import { AiBrainOutputSchema } from "@/lib/schemas";
+import { buildFallbackBriefing as buildDataDrivenFallback } from "@/trigger/processors/fallback-template";
 import type {
   BriefingJSON,
   TopStory,
@@ -13,6 +14,7 @@ import type {
   NewsCollectorOutput,
   MarketCollectorOutput,
   DailyBriefingRow,
+  CountdownEvent,
 } from "@/lib/types";
 
 const EXPERT_CONTEXT_ENABLED = process.env.EXPERT_CONTEXT_ENABLED !== "false";
@@ -84,7 +86,7 @@ Specific failures to reject even if they look like big news:
 
 A SMALLER set of stories with real mechanisms is always better than a padded set. 2 impact-gated items beat 5 attention-gated items every time. If only 2 items today have a real mechanism, top_stories + regulatory + adoption total 2, not 5.
 
-NUMERIC FLOOR: every included item should normally have been ranked by triage at importance >= 6. Items ranked 5 or below should not appear in top_stories, regulatory, or adoption unless an exception below applies.
+NUMERIC FLOOR: most included items should have been ranked by triage at importance >= 6. Items ranked 5 MAY be included when the brief would otherwise feel thin (fewer than 3 items combined) and they pass the Bitcoin-primary + mechanism gates — treat them as worth-knowing context, not market-movers, and keep their summaries shorter and more factual. Items ranked 4 or below should not appear in top_stories, regulatory, or adoption unless an exception below applies.
 
 EXCEPTIONS (use SPARINGLY, hard cap of 1 per brief total):
 You may include a story that fails the mechanism test OR falls below the triage-6 floor ONLY if ONE of these is true AND you explicitly name the exception reason in the story's summary:
@@ -93,6 +95,30 @@ You may include a story that fails the mechanism test OR falls below the triage-
 3. Heavy-day relaxation: if dayContext.depth_weight === "heavy" AND dayContext.confidence >= 0.75, the historical-precedent threshold relaxes from ">=2% in 7 days" to "moved measurably in 30 days". Cite the dayContext in the summary.
 
 HARD CAP: exactly ONE exception per brief. If you want to invoke exceptions on two or more items today, you are padding — today is quieter than you think, and those items don't belong.
+
+═══════════════════════════════════════════════════════════════════════════
+BITCOIN-PRIMARY SELF-CHECK (mechanical, applied AFTER you draft each summary)
+═══════════════════════════════════════════════════════════════════════════
+
+Before committing any item to top_stories, regulatory, or adoption, re-read your own drafted summary text and confirm it substantively names at least ONE of the following:
+- "Bitcoin" or "BTC" as the subject of the story (not incidental mention, not an afterthought tagline)
+- A Bitcoin-specific mechanism or metric: Bitcoin mining, hash rate, miner revenue, halving, block reward, on-chain supply, long-term holder behavior, Lightning Network, Bitcoin network fundamentals
+- A Bitcoin-specific instrument: spot Bitcoin ETF (by name like IBIT/FBTC/ARKB, or as a class), Bitcoin futures, Bitcoin treasury holdings
+- A direct, quantified Bitcoin price or flow impact stated in one concrete sentence
+
+If your drafted summary does NOT contain at least one substantive reference of this kind, the story is NOT Bitcoin-primary. EXCLUDE it from the brief. Do not attempt to "rescue" the story by sprinkling the word "Bitcoin" into the summary as a retrofitted tagline. Either the Bitcoin angle IS the story, or the story does not belong here.
+
+A story being about a Bitcoin-adjacent company (a miner, a custodian, a crypto exchange) is NOT sufficient on its own. The SUBJECT of the story must be Bitcoin or a direct Bitcoin mechanism, not the company's non-Bitcoin activity.
+
+Concrete failure example (EXCLUDE, do not reframe):
+"Core Scientific announced plans to sell $3.3 billion in junk bonds to fund AI data centers leased to CoreWeave for 12 years, expected to generate $10 billion in revenue."
+→ Core Scientific is a Bitcoin miner, but the STORY is AI infrastructure financing. No Bitcoin mechanism named, no hash rate impact quantified, no miner-revenue-to-Bitcoin connection stated. EXCLUDE. Do not rewrite the summary just to pass the test.
+
+Contrast — a legitimate mining-related story (INCLUDE):
+"Public miners' aggregate hash rate fell 8% month-over-month as Core Scientific and two peers redirected capital to AI, the sharpest sector-wide capex shift post-halving."
+→ The story IS about a quantified Bitcoin mechanism (hash rate, miner economics post-halving). Include.
+
+The test is mechanical. If after writing your summary you cannot point to a specific word or phrase in it that satisfies one of the four bullets above, drop the item.
 
 ═══════════════════════════════════════════════════════════════════════════
 COMBINED SECTION CAP (hard rule, no exceptions)
@@ -137,7 +163,7 @@ interface TopStory {
   url: string;
   summary: string;             // 2-3 sentences. Each must go beyond a headline restatement to explain what the story MEANS for Bitcoin holders. Structure: one sentence of context (what happened), then one or two sentences of implications (the "so what" for capital flows, positioning, macro, or timeline pressure on catalysts). Assume financial literacy, not crypto-native knowledge. The reader should learn something they could not have guessed from the headline alone.
   sentiment: "bullish" | "bearish" | "neutral";
-  category: "market" | "regulatory" | "adoption" | "macro" | "technical";  // REQUIRED. Primary theme of the story. See category rules below.
+  category: "market" | "macro" | "technical";  // REQUIRED. Only these three values are allowed for items in top_stories. Adoption and regulatory items are NEVER placed in top_stories — they route to the adoption[] and regulatory[] arrays respectively. See routing rules below.
   tags: string[];              // 1-3 topic tags, e.g. ["ETF", "macro"], ["regulation", "institutional"]
 }
 
@@ -260,26 +286,34 @@ The root JSON object must have these exact keys:
 }
 
 Rules:
-- ABSOLUTE NO-DUPLICATES RULE: Each story (identified by URL or near-identical headline) may appear in EXACTLY ONE of top_stories, regulatory, or adoption. Never list the same story in two sections. Never list the same URL twice within top_stories. If a story could plausibly fit multiple sections, place it in the one where its primary angle is strongest:
-  - Place in regulatory when the primary angle is: government action, legislation, enforcement, SEC/CFTC/Fed moves, central bank policy, court rulings, tax changes, or regulator/political personnel with direct authority over Bitcoin.
-  - Place in adoption when the primary angle is: corporate treasury BTC purchases, country-level adoption, merchant/payment integration, or custody and infrastructure build-out.
-  - Place in top_stories when the primary angle is: market-moving ETF flows, price catalysts, institutional flows, macro developments, protocol or mining news, or any story with broad investor significance that does not clearly belong in regulatory or adoption.
-  If a story has BOTH a regulatory/adoption angle AND strong general importance, still pick ONE slot — top_stories if the general market impact is the main point, regulatory/adoption if the policy or adoption angle is the main point. Never compromise by listing it twice.
+- ABSOLUTE NO-DUPLICATES RULE: Each story (identified by URL or near-identical headline) may appear in EXACTLY ONE of top_stories, regulatory, or adoption. Never list the same story in two sections. Never list the same URL twice within top_stories.
+
+- HARD ROUTING RULES (mechanical, no judgment calls):
+  - regulatory[]: ANY story driven by a public-sector actor — government action, legislation, enforcement, SEC / CFTC / Fed / central bank policy, court rulings, tax changes, sanctions, or regulator / political personnel with direct authority over Bitcoin. If the subject of the story is a public-sector actor acting on Bitcoin, it goes here. Period.
+  - adoption[]: ANY story about a non-financial actor putting Bitcoin to use — corporate treasury BTC purchases, country-level BTC adoption, merchant or payment integration, custody / infrastructure build-out, pension fund BTC allocations, sovereign wealth fund BTC allocations. If the subject is an entity acquiring or integrating Bitcoin, it goes here. Period.
+  - top_stories[]: everything else that qualifies as Bitcoin-primary — market-moving ETF flows, price catalysts, institutional flows, derivatives / options positioning, liquidations, macro developments, protocol or mining news. top_stories is NOT a catch-all for "important" items; it is specifically for market / macro / technical stories.
+
+- TOP_STORIES CATEGORY IS CLOSED: top_stories[].category MUST be exactly one of "market", "macro", or "technical". The values "adoption" and "regulatory" are NOT valid TopStory categories and will fail schema validation. If you find yourself wanting to tag a top_story as adoption or regulatory, the item belongs in the adoption[] or regulatory[] array — move it there.
+
+- ROUTING SELF-CHECK (apply after you assemble each array, before returning):
+  1. Walk every item in top_stories[]. For each one, ask: "Is this driven by a public-sector actor acting on Bitcoin?" If yes → MOVE to regulatory[]. "Is this a non-financial entity acquiring or integrating Bitcoin?" If yes → MOVE to adoption[]. If neither, it stays.
+  2. Walk every item in top_stories[]. Confirm its category is exactly "market", "macro", or "technical". If anything else, the item is mis-routed — MOVE it.
+  3. A corporate Bitcoin treasury purchase (e.g. "Strategy adds N coins") is ALWAYS adoption[], never top_stories[].
+  4. A lawsuit, enforcement action, legislation, or regulator appointment is ALWAYS regulatory[], never top_stories[].
 - Tone: Authoritative, data-driven, and concise. Let the data speak for itself. Write as a peer to a busy professional who already owns Bitcoin. Never condescend, never hype, never use Crypto Twitter voice.
 - Target audience: Busy professionals who own Bitcoin and have jobs. Doctors, lawyers, founders, engineers, managers, wealth advisors. Not crypto-native. Not institutional HNW. They understand finance but may not follow crypto daily. They have 3 to 5 minutes, not 30.
 - For hero_three_lines: these three sentences are the single most important output of your day. The move, signal, and watch each stand alone as self-contained declarations. Each one strictly under 140 characters. No "read more" hooks, no cliffhangers, no hedging. Signal must be an INTERPRETATION of the data, not a restatement of the headline; go one level deeper than the surface. Watch must name exactly ONE upcoming catalyst with a specific date or day count.
 - For looking_ahead_predictions: generate 2 to 3 testable directional predictions drawn from your countdown_events and macro_context. Each prediction must commit to a direction (up, down, or flat) for a specific metric with a specific target_date within the next 30 days. These feed an internal accuracy tracking system and are never publicly shown. Be honest and commit; do not hedge into useless predictions. If an event's target_date is ambiguous, pick the most likely date.
-- For top_stories: select up to 5 most significant BITCOIN stories through a professional investor lens, BUT: (a) remember the combined cap: top_stories + regulatory + adoption = 5 items maximum total. If 2 items belong in regulatory and 1 in adoption today, top_stories can only be 2. (b) Every item must pass the IMPACT MECHANISM TEST above. (c) Cross-check against today's actual market data: if today's BTC price barely moved (<1.5% on the day AND inside the 30-day range per market.comparative) AND ETF flows are inside normal range (z-score between -1 and +1), the "market-moving" bar is higher — only include items that you'd flag as market-moving even in hindsight. On such days, fewer stories is correct. Each summary must do two things: (1) state what happened in ONE sentence of context, (2) tell the reader what it MEANS for Bitcoin holders in one or two sentences, covering capital flows, positioning shifts, macro implications, or timeline pressure on upcoming catalysts. Do NOT write headline restatements. Do NOT stop at describing the news. The reader should learn something they could not have guessed from the headline alone. Skip stories that only matter to retail traders. Exclude any story where Bitcoin is not the primary subject.
+- For top_stories: select the most significant market / macro / technical BITCOIN stories through a professional investor lens, BUT: (a) remember the combined cap: top_stories + regulatory + adoption = 5 items maximum total. If 2 items belong in regulatory and 1 in adoption today, top_stories can only be 2. (b) Every item must pass the IMPACT MECHANISM TEST and BITCOIN-PRIMARY SELF-CHECK above. (c) Quiet-day guidance (SOFT): if today's BTC price barely moved (<1.5% on the day AND inside the 30-day range per market.comparative) AND ETF flows are inside normal range (z-score between -1 and +1), still include items that give the reader genuine context or a worth-knowing update — a pension fund disclosure, a notable derivatives shift, a protocol milestone — even if they would not rank as "market-moving in hindsight". The reader is a busy Bitcoin holder who needs to stay informed, not only alerted when something dramatic happens. On quiet days aim for 3 items combined across top_stories / regulatory / adoption rather than zero; drop below 3 only if genuinely nothing qualifies. Each summary must do two things: (1) state what happened in ONE sentence of context, (2) tell the reader what it MEANS for Bitcoin holders in one or two sentences, covering capital flows, positioning shifts, macro implications, or timeline pressure on upcoming catalysts. Do NOT write headline restatements. Skip stories that only matter to retail traders. Exclude any story where Bitcoin is not the primary subject.
 
   Negative example (what NOT to do): "Japan's GPIF confirmed it will add Bitcoin ETFs to its allocation model. The pension fund holds over 1.5 trillion dollars in assets. The decision follows a multi-year review process." This is pure description, no interpretation, and teaches the reader nothing the headline did not already imply.
 
   Positive example: "Japan's GPIF, a 1.5 trillion dollar pension fund, confirmed Bitcoin ETF allocation. This is the first G7 sovereign pension to move from studying Bitcoin to committing capital, and the signaling effect on CalPERS and Norway's fund matters more than GPIF's initial position size. Watch for parallel moves from Canadian and Dutch pension boards over the next 90 days." This names the significance, identifies the second-order effect, and tells the reader what to watch next.
-- For top_stories.category (REQUIRED on every top story, exactly one of the five values): pick the single theme that best describes the story's primary subject. Do not hedge, do not combine. The reader uses this label to orient instantly, so it must be decisive.
+- For top_stories.category (REQUIRED on every top story, exactly one of THREE values — adoption and regulatory are NOT valid here): pick the single theme that best describes the story's primary subject. Do not hedge, do not combine. The reader uses this label to orient instantly, so it must be decisive.
   - "market" — ETF flows and filings, price catalysts, derivatives and options positioning, liquidations, institutional fund moves, exchange activity. Default for most headlines about money flowing into or out of Bitcoin.
-  - "regulatory" — government, SEC, CFTC, central bank policy, legislation, enforcement, court rulings, tax changes, regulator or political personnel with direct authority over Bitcoin. Use this when the story is driven by a public-sector actor.
-  - "adoption" — corporate treasury BTC purchases, country-level adoption, merchant or payment integration, custody buildouts. Use this when the story is driven by a non-financial entity putting Bitcoin to use.
   - "macro" — Fed rate decisions, CPI or PCE inflation prints, dollar index moves, jobs reports, fiscal or liquidity policy, broader risk-asset rotations. Use this when the story is macroeconomic rather than Bitcoin-specific but has direct BTC implications.
   - "technical" — mining, hashrate, protocol upgrades, halving milestones, Lightning network metrics, on-chain signals. Use this when the story is about the Bitcoin network itself.
+  - If the story's primary angle is adoption or regulatory, it does NOT belong in top_stories at all — route it to the adoption[] or regulatory[] array. The HARD ROUTING RULES above are the authority.
 - For regulatory: 0 to 5 genuine regulatory developments that directly affect Bitcoin, constrained by the combined 5-item cap. Each item MUST be sourced from a specific input article, with its exact URL and source. Do NOT generate regulatory items from your training data or general knowledge. If no input articles contain regulatory news, return an empty array (this is the norm on most days). Never force non-regulatory or altcoin-specific regulation into this section.
 - For adoption: 0 to 5 genuine Bitcoin adoption stories (corporate BTC buys, sovereign Bitcoin adoption, Bitcoin payment adoption, Bitcoin infrastructure growth), constrained by the combined 5-item cap. Each item MUST be sourced from a specific input article, with its exact URL and source. Do NOT generate adoption items from your training data or general knowledge. If no input articles contain adoption news, return an empty array. Exclude general crypto or altcoin adoption.
 - For macro_context: synthesize how current macro conditions (monetary policy, liquidity, DXY, inflation) relate to Bitcoin's positioning. Use your knowledge of scheduled macro events.
@@ -391,70 +425,6 @@ function buildComparisons(
       btc_relative_1y_pct: relative1y(c?.sol_change_1y_pct),
     },
   ];
-}
-
-// ─── Fallback briefing builder ─────────────────────────────────────────────
-
-function buildFallbackBriefing(
-  date: string,
-  market: MarketCollectorOutput,
-  halving: { progressPct: number; blocksRemaining: number }
-): AiBrainOutput {
-  const btcChange = market.price.change_24h_pct;
-
-  return {
-    date,
-    top_stories: [],
-    market_snapshot: {
-      price_usd: market.price.usd,
-      change_24h_pct: market.price.change_24h_pct,
-      change_7d_pct: market.price.change_7d_pct,
-      market_cap_usd: market.price.market_cap_usd,
-      volume_24h_usd: market.price.volume_24h_usd,
-      dominance_pct: market.dominance_pct,
-      ath_usd: market.ath_usd ?? null,
-      ath_date: market.ath_date ?? null,
-    },
-    technical_signals: {
-      rsi_14: market.technical.rsi_14,
-      sma_50: market.technical.sma_50,
-      sma_200: market.technical.sma_200,
-      support_level: market.technical.support_level,
-      resistance_level: market.technical.resistance_level,
-      signal_summary: "Data available but AI analysis failed",
-    },
-    btc_vs_everything: buildComparisons(market, btcChange),
-    network_health: {
-      hashrate_eh_s: market.network.hashrate_eh_s,
-      difficulty: market.network.difficulty,
-      block_height: market.network.block_height,
-      mempool_tx_count: market.network.mempool_tx_count,
-      mempool_size_mb: market.network.mempool_size_mb,
-      fee_fast_sat_vb: market.network.fee_fast_sat_vb,
-      fee_medium_sat_vb: market.network.fee_medium_sat_vb,
-      fee_slow_sat_vb: market.network.fee_slow_sat_vb,
-      halving_progress_pct: halving.progressPct,
-      blocks_until_halving: halving.blocksRemaining,
-    },
-    daily_diff: {
-      price_change: `${btcChange >= 0 ? "+" : ""}${btcChange.toFixed(2)}% (24h)`,
-      sentiment_shift: "AI analysis unavailable",
-      key_changes: [],
-    },
-    countdown_events: [],
-    regulatory: [],
-    adoption: [],
-    narrative_consensus: {
-      score: 0,
-      label: "Data Unavailable",
-      rationale: "AI analysis unavailable for this briefing.",
-    },
-    macro_context: {
-      narrative: "Macro analysis unavailable today.",
-      btc_correlation_note: "",
-      key_macro_events: [],
-    },
-  };
 }
 
 // ─── User prompt builder ───────────────────────────────────────────────────
@@ -703,7 +673,7 @@ export const aiBrainTask = task({
     }
 
     // Fetch yesterday's briefing
-    let yesterday: { price_usd: number; top_stories: TopStory[] } | null = null;
+    let yesterday: { price_usd: number; top_stories: TopStory[]; countdown_events: CountdownEvent[] } | null = null;
     try {
       const yesterdayDate = new Date(date + "T00:00:00Z");
       yesterdayDate.setUTCDate(yesterdayDate.getUTCDate() - 1);
@@ -723,6 +693,7 @@ export const aiBrainTask = task({
         yesterday = {
           price_usd: content.market_snapshot.price_usd,
           top_stories: content.top_stories ?? [],
+          countdown_events: content.countdown_events ?? [],
         };
         logger.info("Yesterday's briefing found", {
           date: yesterdayStr,
@@ -745,23 +716,52 @@ export const aiBrainTask = task({
       expertContextEnabled: EXPERT_CONTEXT_ENABLED,
     });
 
+    // If we have yesterday's briefing, serialize a trimmed version as a
+    // few-shot shape anchor. Only used on the schema-correction retry path,
+    // so it costs nothing on the happy path.
+    const correctionExample = yesterday
+      ? JSON.stringify(
+          {
+            market_snapshot: { price_usd: yesterday.price_usd },
+            top_stories: yesterday.top_stories.slice(0, 2),
+          },
+          null,
+          2
+        ).slice(0, 2000)
+      : undefined;
+
     const result = await callClaudeJSON<AiBrainOutput>({
       system: SYSTEM_PROMPT,
       prompt: userPrompt,
       maxTokens: 8192,
       schema: AiBrainOutputSchema,
       retryOnSchemaError: true,
+      correctionExample,
     });
 
     if (result.error) {
       if (!market) {
-        // Both Claude and market collector failed — no real data to publish
+        // Both Claude and market collector failed — no real data to publish.
+        // This is the last-resort error path: without market data the
+        // template generator has nothing to work with.
         throw new Error(`Claude failed and no market data available: ${result.error}`);
       }
-      logger.error("Claude call failed, using fallback briefing with real market data", {
+      // The data-derived fallback always produces a valid, coherent briefing
+      // from market data alone. Never "Data Unavailable." Subscribers still
+      // get a real brief; the editor's note downstream tells them today's
+      // commentary is lighter than usual.
+      logger.error("Claude + Kie.ai exhausted — shipping data-derived fallback briefing", {
         error: result.error,
       });
-      return buildFallbackBriefing(date, market, halving);
+      return buildDataDrivenFallback({
+        date,
+        market,
+        halving,
+        yesterday: yesterday
+          ? { price_usd: yesterday.price_usd, countdown_events: yesterday.countdown_events }
+          : null,
+        dayClassification: payload.dayContext ?? null,
+      });
     }
 
     const briefing = result.data!;

@@ -65,10 +65,10 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
       >
         {copied ? (
           <>
-            <svg className="w-3.5 h-3.5 text-emerald-600" viewBox="0 0 16 16" fill="none">
+            <svg className="w-3.5 h-3.5 text-[var(--color-bullish)]" viewBox="0 0 16 16" fill="none">
               <path d="M3.5 8.5l3 3 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span className="text-xs font-medium text-emerald-600">Copied</span>
+            <span className="text-xs font-medium text-[var(--color-bullish)]">Copied</span>
           </>
         ) : (
           <>

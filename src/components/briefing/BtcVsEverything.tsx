@@ -8,7 +8,7 @@ function PctCell({ pct }: { pct: number | null | undefined }) {
   return (
     <span
       className={`font-[family-name:var(--font-heading)] text-sm font-bold tabular-nums ${
-        isPositive ? "text-emerald-700" : "text-red-700"
+        isPositive ? "text-[var(--color-bullish)]" : "text-[var(--color-bearish)]"
       }`}
     >
       {formatPctChange(pct)}

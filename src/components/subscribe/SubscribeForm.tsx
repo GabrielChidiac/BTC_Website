@@ -128,7 +128,7 @@ export function SubscribeForm() {
 
   if (step === "success") {
     return (
-      <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700 border border-emerald-200">
+      <div className="flex items-center gap-2 rounded-xl bg-[var(--color-bullish-soft)] px-4 py-3 text-sm text-[var(--color-bullish)] border border-[var(--color-bullish)]/25">
         <svg
           className="h-4 w-4 shrink-0"
           viewBox="0 0 16 16"
@@ -182,7 +182,7 @@ export function SubscribeForm() {
               {loading ? "..." : "Verify"}
             </MotionButton>
           </div>
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-[var(--color-bearish)]">{error}</p>}
           <button
             type="button"
             onClick={handleResend}
@@ -247,15 +247,15 @@ export function SubscribeForm() {
         </div>
       </form>
       {alreadySubscribed && (
-        <p className="mt-2 text-xs text-red-600">
+        <p className="mt-2 text-xs text-[var(--color-bearish)]">
           This email is already subscribed.{" "}
-          <a href="/sign-in" className="underline hover:text-red-700">
+          <a href="/sign-in" className="underline hover:text-[var(--color-bearish)]/80">
             Sign in instead
           </a>
         </p>
       )}
       {error && !alreadySubscribed && (
-        <p className="mt-2 text-xs text-red-600">{error}</p>
+        <p className="mt-2 text-xs text-[var(--color-bearish)]">{error}</p>
       )}
     </div>
   );

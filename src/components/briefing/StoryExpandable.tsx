@@ -6,8 +6,6 @@ import { Badge } from "@/components/ui/badge";
 
 const CATEGORY_LABELS: Record<TopStoryCategory, string> = {
   market: "Market",
-  regulatory: "Regulatory",
-  adoption: "Adoption",
   macro: "Macro",
   technical: "Technical",
 };

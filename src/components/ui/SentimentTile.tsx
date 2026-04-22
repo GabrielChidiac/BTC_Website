@@ -9,19 +9,19 @@ interface SentimentTileProps {
 }
 
 function gaugeColor(value: number): string {
-  if (value <= 25) return "#dc2626";
-  if (value <= 45) return "#ea580c";
-  if (value <= 55) return "#ca8a04";
-  if (value <= 75) return "#65a30d";
-  return "#16a34a";
+  if (value <= 25) return "#B44A3F";
+  if (value <= 45) return "#E8850F";
+  if (value <= 55) return "#F7931A";
+  if (value <= 75) return "#3F8D6F";
+  return "#0F7A5A";
 }
 
 function sublabelClass(value: number): string {
-  if (value <= 25) return "text-red-700";
-  if (value <= 45) return "text-orange-600";
-  if (value <= 55) return "text-amber-600";
-  if (value <= 75) return "text-lime-700";
-  return "text-emerald-700";
+  if (value <= 25) return "text-[var(--color-bearish)]";
+  if (value <= 45) return "text-[var(--color-accent-hover)]";
+  if (value <= 55) return "text-[var(--color-accent)]";
+  if (value <= 75) return "text-[var(--color-bullish)]/80";
+  return "text-[var(--color-bullish)]";
 }
 
 export function SentimentTile({

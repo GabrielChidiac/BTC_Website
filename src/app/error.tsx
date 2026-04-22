@@ -10,7 +10,7 @@ export default function Error({
     <main className="flex min-h-[80vh] flex-col items-center justify-center px-4">
       <div className="w-full max-w-md text-center">
         <div className="mb-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-bg-surface)] px-3 py-1.5 ring-1 ring-[var(--color-border)]">
-          <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
+          <div className="h-1.5 w-1.5 rounded-full bg-[var(--color-bearish)]" />
           <span className="font-[family-name:var(--font-heading)] text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
             Something went wrong
           </span>

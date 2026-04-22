@@ -146,7 +146,7 @@ export function MobileNav({ signedInEmail, displayName, tier = "free" }: { signe
                       }
                     }
                   }}
-                  className="cursor-pointer text-[11px] text-[var(--color-text-muted)] hover:text-red-500 transition-colors"
+                  className="cursor-pointer text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-bearish)] transition-colors"
                 >
                   Unsubscribe
                 </button>

@@ -1,19 +1,19 @@
 import type { FearGreedIndex } from "@/lib/types";
 
 function gaugeColor(value: number): string {
-  if (value <= 25) return "#dc2626";  // red-600 — Extreme Fear
-  if (value <= 45) return "#ea580c";  // orange-600 — Fear
-  if (value <= 55) return "#ca8a04";  // yellow-600 — Neutral
-  if (value <= 75) return "#65a30d";  // lime-600 — Greed
-  return "#16a34a";                   // green-600 — Extreme Greed
+  if (value <= 25) return "#B44A3F";  // brand bearish — Extreme Fear
+  if (value <= 45) return "#E8850F";  // brand accent hover — Fear
+  if (value <= 55) return "#F7931A";  // brand accent — Neutral
+  if (value <= 75) return "#3F8D6F";  // brand bullish (lighter) — Greed
+  return "#0F7A5A";                   // brand bullish — Extreme Greed
 }
 
 function gaugeTextColor(value: number): string {
-  if (value <= 25) return "text-red-700";
-  if (value <= 45) return "text-orange-600";
-  if (value <= 55) return "text-amber-600";
-  if (value <= 75) return "text-lime-700";
-  return "text-emerald-700";
+  if (value <= 25) return "text-[var(--color-bearish)]";
+  if (value <= 45) return "text-[var(--color-accent-hover)]";
+  if (value <= 55) return "text-[var(--color-accent)]";
+  if (value <= 75) return "text-[var(--color-bullish)]/80";
+  return "text-[var(--color-bullish)]";
 }
 
 export function FearGreed({

@@ -3,6 +3,10 @@ import { queryPerplexity } from "@/trigger/lib/perplexity";
 import { fetchForwardLookingContext } from "@/trigger/lib/searchapi";
 import { getExpertPhotoUrls } from "@/lib/expert-photos";
 import { EXPERT_CONTEXT_DIGEST } from "@/trigger/processors/expert-context";
+import { ExpertInsightsArraySchema } from "@/lib/schemas";
+import type { z } from "zod";
+
+type ParsedExpertInsight = z.infer<typeof ExpertInsightsArraySchema>[number];
 import type {
   TopStory,
   RawArticle,
@@ -151,7 +155,8 @@ Return an array of 1 to 3 experts in this JSON format:
 ]
 
 Rules:
-- Return 1 to 3 experts. EARNED SIGNIFICANCE: 2 genuinely substantive voices are better than 3 where one is padding. If only 1 or 2 experts have said something substantive in the last 7 days, return 1 or 2. Never pad to hit a count. Never include a weak or generic quote just to reach 3.
+- Return between 1 and 3 experts. The MINIMUM is 1. Never return an empty array. Even on a quiet news week, at least one credible Bitcoin voice has said something worth surfacing within the last 14 days; widen the window if needed and return that person. Zero experts is not a valid output, period. The downstream homepage section depends on at least one expert always being present.
+- Between 1 and 3, EARNED SIGNIFICANCE applies: 2 genuinely substantive voices beat 3 where one is padding. If only 1 or 2 experts have said something substantive, return 1 or 2. Never pad TO reach 3; never drop BELOW 1.
 - Every expert MUST be someone deeply in the Bitcoin space with real skin in the game: builders, fund managers, on-chain analysts, miners, protocol developers, macro strategists who actively cover BTC, or executives running Bitcoin-focused companies. They do NOT need to be household names or TV personalities. What matters is domain expertise and that their insight is substantive and impactful.
 - WELL-KNOWN figures (Michael Saylor, Cathie Wood, Larry Fink, Raoul Pal, Lyn Alden, Stanley Druckenmiller, Jeff Park, Luke Gromen, Matt Hougan, Jan van Eck) are great when they have recent commentary, but do NOT default to them if a lesser-known expert said something more insightful this week.
 - ALSO CONSIDER deep Bitcoin analysts and researchers who publish on Substack, podcasts, or X: Dylan LeClair, Willy Woo, James Check (Checkmate), Will Clemente, Sam Callahan, Joe Burnett, Pierre Rochard, Tuur Demeester, Adam Back, Jameson Lopp, Nic Carter, Preston Pysh, Greg Foss, Alex Gladstein, and similar Bitcoin-native voices.
@@ -328,26 +333,84 @@ export const enrichmentTask = task({
     }
 
     // ── Expert insights ───────────────────────────────────────────────────
-    if (expertsResult.status === "fulfilled" && !expertsResult.value.error) {
+    // Extra care here because the homepage experts section depends on a
+    // non-empty array. Common Perplexity failure modes: leaked [1] citation
+    // markers that break JSON, trailing commentary after the JSON array,
+    // wrapping the array in a {"experts": [...]} object, returning fewer
+    // than 1 item. We strip citation markers, parse, zod-validate, and on
+    // schema failure retry ONCE with an explicit "fix your JSON" prompt.
+    const tryParseExperts = (raw: string): ParsedExpertInsight[] | null => {
+      if (!raw.trim()) return null;
+      const cleaned = raw
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .replace(/\[\d+\]/g, "") // strip Perplexity citation markers like [1], [2]
+        .trim();
+      // Pull out the first top-level JSON array if extra prose is present.
+      const firstBracket = cleaned.indexOf("[");
+      const lastBracket = cleaned.lastIndexOf("]");
+      const jsonSlice =
+        firstBracket >= 0 && lastBracket > firstBracket
+          ? cleaned.slice(firstBracket, lastBracket + 1)
+          : cleaned;
+      let parsed: unknown;
       try {
-        const raw = expertsResult.value.data?.trim() ?? "";
-        const cleaned = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        const parsed = JSON.parse(cleaned) as ExpertInsight[];
-        if (Array.isArray(parsed)) {
-          output.expert_insights = parsed.map((insight) => ({
-            ...insight,
-            photo_url: getExpertPhotoUrls(
-              insight.expert_name,
-              insight.twitter_handle,
-            )[0],
-          }));
-          logger.info("Expert insights complete", { count: parsed.length });
-        }
-      } catch (e) {
-        logger.warn("Failed to parse expert insights JSON", { error: (e as Error).message });
+        parsed = JSON.parse(jsonSlice);
+      } catch {
+        return null;
       }
+      const validation = ExpertInsightsArraySchema.safeParse(parsed);
+      if (!validation.success) return null;
+      return validation.data;
+    };
+
+    const firstRaw =
+      expertsResult.status === "fulfilled" && !expertsResult.value.error
+        ? expertsResult.value.data?.trim() ?? ""
+        : "";
+    let experts = tryParseExperts(firstRaw);
+
+    if (!experts) {
+      logger.warn("Expert insights first pass failed, retrying with repair prompt", {
+        firstPassStatus: expertsResult.status,
+        firstPassError:
+          expertsResult.status === "fulfilled" ? expertsResult.value.error : null,
+        rawPreview: firstRaw.slice(0, 300),
+      });
+      const retryResult = await queryPerplexity({
+        system: EXPERTS_SYSTEM,
+        prompt:
+          "Return a JSON array of between 1 and 3 current Bitcoin experts and their most recent substantive commentary. The array MUST contain at least one item. Do NOT return an empty array. Do NOT include citation markers like [1], [2], [3]. Do NOT wrap the array in an object. Do NOT include any prose before or after the array. Output must start with [ and end with ].",
+      });
+      if (retryResult.data) {
+        experts = tryParseExperts(retryResult.data);
+      }
+    }
+
+    if (experts && experts.length > 0) {
+      output.expert_insights = experts.map((insight) => {
+        const handle = insight.twitter_handle ?? undefined;
+        return {
+          expert_name: insight.expert_name,
+          role: insight.role,
+          quote_or_summary: insight.quote_or_summary,
+          source: insight.source,
+          date: insight.date,
+          twitter_handle: handle,
+          photo_url: getExpertPhotoUrls(insight.expert_name, handle)[0],
+        };
+      });
+      logger.info("Expert insights complete", { count: experts.length });
     } else {
-      logger.warn("Expert insights query failed");
+      // Loud failure: this means the homepage Deep Dive experts section
+      // will be empty, which is a visible regression. Upgrade to error
+      // so it surfaces in the Trigger dashboard instead of being buried.
+      logger.error("Expert insights UNAVAILABLE after retry — homepage section will render empty", {
+        firstPassStatus: expertsResult.status,
+        firstPassError:
+          expertsResult.status === "fulfilled" ? expertsResult.value.error : null,
+        firstPassRawPreview: firstRaw.slice(0, 500),
+      });
     }
 
     // ── Supply dynamics ───────────────────────────────────────────────────

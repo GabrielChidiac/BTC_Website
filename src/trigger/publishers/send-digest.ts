@@ -180,6 +180,11 @@ export const sendDigestTask = task({
     if (adoption?.length) sigLines.push(`${adoption[0].category}: ${adoption[0].summary.split(/\.\s/)[0]}.`);
     if (sigLines.length > 0) sections.push(`--- SIGNALS ---\n${sigLines.join("\n")}`);
 
+    // Editor's note on fallback days (plain-text parity with the HTML version).
+    if (briefing.fallback_used) {
+      sections.push("EDITOR'S NOTE: Today's commentary is lighter than usual. Full analytical brief resumes tomorrow.");
+    }
+
     sections.push(`Listen (Pro audio brief): %%AUDIO_URL%%\nRead full briefing: %%BRIEFING_URL%%\nDownload PDF: %%PDF_URL%%\nUnsubscribe: %%UNSUBSCRIBE_URL%%\n\n- BTC Today`);
 
     const textTemplate = sections.join("\n\n");

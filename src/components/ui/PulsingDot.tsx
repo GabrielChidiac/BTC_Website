@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 type DotVariant = "live" | "bullish" | "bearish";
 
 const colorMap: Record<DotVariant, { dot: string; ring: string }> = {
-  live: { dot: "bg-emerald-500", ring: "bg-emerald-400" },
-  bullish: { dot: "bg-emerald-500", ring: "bg-emerald-400" },
-  bearish: { dot: "bg-red-500", ring: "bg-red-400" },
+  live: { dot: "bg-[var(--color-bullish)]", ring: "bg-[var(--color-bullish)]/70" },
+  bullish: { dot: "bg-[var(--color-bullish)]", ring: "bg-[var(--color-bullish)]/70" },
+  bearish: { dot: "bg-[var(--color-bearish)]", ring: "bg-[var(--color-bearish)]/70" },
 };
 
 interface PulsingDotProps {

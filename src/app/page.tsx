@@ -34,6 +34,7 @@ import { LookingAhead } from "@/components/briefing/LookingAhead";
 import { FundingRate } from "@/components/briefing/FundingRate";
 import { BriefingTabs } from "@/components/briefing/BriefingTabs";
 import { BriefEndState } from "@/components/briefing/BriefEndState";
+import { EditorsNote } from "@/components/briefing/EditorsNote";
 import { ProTeaser } from "@/components/premium/ProTeaser";
 import { getFoundingMemberStatus, type FoundingMemberStatus } from "@/lib/founding";
 
@@ -209,6 +210,7 @@ export default async function Home() {
               market={market}
               dailyDiff={briefing.daily_diff}
               consensus={briefing.narrative_consensus}
+              readTimeSeconds={briefing.read_time_seconds}
             />
           </div>
 
@@ -463,6 +465,11 @@ export default async function Home() {
               )
             }
           />
+
+          {/* Editor's note: only fires on fallback days (both LLM providers
+              unavailable). Honest framing, not an apology. Placed above the
+              share buttons so readers see it before deciding to share. */}
+          {briefing.fallback_used && <EditorsNote />}
 
           {/* ═══════════════════════════════════════════════════════════════
               BRIEF END STATE — Explicit completion + share buttons

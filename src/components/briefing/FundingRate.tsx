@@ -2,11 +2,11 @@ import type { FundingRate as FundingRateType } from "@/lib/types";
 import { compactNumber } from "@/lib/utils";
 
 function rateSentiment(bps: number): { label: string; color: string } {
-  if (bps > 10) return { label: "Aggressively long", color: "text-red-700" };
-  if (bps > 3) return { label: "Leaning long", color: "text-amber-600" };
+  if (bps > 10) return { label: "Aggressively long", color: "text-[var(--color-bearish)]" };
+  if (bps > 3) return { label: "Leaning long", color: "text-[var(--color-accent)]" };
   if (bps > -3) return { label: "Neutral", color: "text-[var(--color-text-secondary)]" };
-  if (bps > -10) return { label: "Leaning short", color: "text-amber-600" };
-  return { label: "Aggressively short", color: "text-emerald-700" };
+  if (bps > -10) return { label: "Leaning short", color: "text-[var(--color-accent)]" };
+  return { label: "Aggressively short", color: "text-[var(--color-bullish)]" };
 }
 
 export function FundingRate({
@@ -39,7 +39,7 @@ export function FundingRate({
         <div className="flex items-baseline gap-2 mt-1">
           <p
             className={`font-[family-name:var(--font-heading)] text-xl font-bold ${
-              isPositive ? "text-emerald-700" : "text-red-700"
+              isPositive ? "text-[var(--color-bullish)]" : "text-[var(--color-bearish)]"
             }`}
           >
             {isPositive ? "+" : ""}{bps.toFixed(2)} bps
@@ -52,14 +52,14 @@ export function FundingRate({
 
         {/* Funding rate bar — centered at 0 */}
         <div className="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
-          <div className="absolute inset-y-0 left-0 w-1/2 bg-red-50 rounded-l-full" />
-          <div className="absolute inset-y-0 right-0 w-1/2 bg-emerald-50 rounded-r-full" />
+          <div className="absolute inset-y-0 left-0 w-1/2 bg-[var(--color-bearish-soft)] rounded-l-full" />
+          <div className="absolute inset-y-0 right-0 w-1/2 bg-[var(--color-bullish-soft)] rounded-r-full" />
           {/* Center tick */}
           <div className="absolute top-0 bottom-0 left-1/2 w-px bg-[var(--color-text-muted)]/30" />
           {/* Rate indicator */}
           <div
             className={`absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full shadow-sm ${
-              isPositive ? "bg-emerald-600" : "bg-red-600"
+              isPositive ? "bg-[var(--color-bullish)]" : "bg-[var(--color-bearish)]"
             }`}
             style={{
               left: `clamp(4%, ${50 + bps * 2}%, 96%)`,
@@ -92,7 +92,7 @@ export function FundingRate({
               </span>
               <span
                 className={`font-medium ${
-                  ex.funding_rate >= 0 ? "text-emerald-700" : "text-red-700"
+                  ex.funding_rate >= 0 ? "text-[var(--color-bullish)]" : "text-[var(--color-bearish)]"
                 }`}
               >
                 {(ex.funding_rate * 10_000).toFixed(2)}

@@ -28,8 +28,8 @@ function StatCard({
             sub.positive === undefined
               ? "text-[var(--color-text-secondary)]"
               : sub.positive
-                ? "text-emerald-700"
-                : "text-red-700"
+                ? "text-[var(--color-bullish)]"
+                : "text-[var(--color-bearish)]"
           }`}
         >
           {sub.text}

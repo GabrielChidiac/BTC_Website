@@ -166,7 +166,7 @@ export function SubscribeBanner() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700 border border-emerald-200"
+          className="flex flex-col items-center gap-2 rounded-xl bg-[var(--color-bullish-soft)] px-4 py-3 text-sm text-[var(--color-bullish)] border border-[var(--color-bullish)]/25"
         >
           <div className="flex items-center gap-2">
             <svg
@@ -186,7 +186,7 @@ export function SubscribeBanner() {
             </svg>
             {successMessage}
           </div>
-          <p className="text-xs text-emerald-600">
+          <p className="text-xs text-[var(--color-bullish)]/80">
             Check your inbox for a welcome email.
           </p>
         </motion.div>
@@ -225,7 +225,7 @@ export function SubscribeBanner() {
               {loading ? "..." : "Verify"}
             </button>
           </div>
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-[var(--color-bearish)]">{error}</p>}
           <button
             type="button"
             onClick={handleResend}
@@ -284,15 +284,15 @@ export function SubscribeBanner() {
           </button>
         </div>
         {alreadySubscribed && (
-          <p className="text-xs text-red-600">
+          <p className="text-xs text-[var(--color-bearish)]">
             This email is already subscribed.{" "}
-            <a href="/sign-in" className="underline hover:text-red-700">
+            <a href="/sign-in" className="underline hover:text-[var(--color-bearish)]/80">
               Sign in instead
             </a>
           </p>
         )}
         {error && !alreadySubscribed && (
-          <p className="text-xs text-red-600">{error}</p>
+          <p className="text-xs text-[var(--color-bearish)]">{error}</p>
         )}
       </form>
     );

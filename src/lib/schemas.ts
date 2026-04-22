@@ -11,13 +11,10 @@ import { z } from "zod";
 
 const SentimentSchema = z.enum(["bullish", "bearish", "neutral"]);
 
-const TopStoryCategorySchema = z.enum([
-  "market",
-  "regulatory",
-  "adoption",
-  "macro",
-  "technical",
-]);
+// Restricted to themes that belong in the top_stories array. Adoption and
+// regulatory items route to their own arrays and must never appear here,
+// so zod rejects them at the pipeline boundary and triggers a retry.
+const TopStoryCategorySchema = z.enum(["market", "macro", "technical"]);
 
 // ─── Triage ────────────────────────────────────────────────────────────────
 
@@ -119,6 +116,21 @@ export const CountdownEventSchema = z.object({
   days_away: z.number().nullable(),
   description: z.string(),
 });
+
+// Perplexity expert-insight output — validated at enrichment boundary so a
+// malformed Perplexity response (missing fields, wrong shape) fails loudly
+// instead of silently degrading to an empty homepage section.
+export const ExpertInsightSchema = z.object({
+  expert_name: z.string().min(1),
+  role: z.string(),
+  twitter_handle: z.string().optional().nullable(),
+  photo_url: z.string().optional(),
+  quote_or_summary: z.string().min(1),
+  source: z.string(),
+  date: z.string(),
+});
+
+export const ExpertInsightsArraySchema = z.array(ExpertInsightSchema).min(1).max(3);
 
 export const RegulatoryUpdateSchema = z.object({
   headline: z.string(),

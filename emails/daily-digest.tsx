@@ -19,8 +19,6 @@ import { formatReadTime } from "../src/lib/utils";
 
 const CATEGORY_LABELS: Record<TopStoryCategory, string> = {
   market: "Market",
-  regulatory: "Regulatory",
-  adoption: "Adoption",
   macro: "Macro",
   technical: "Technical",
 };
@@ -603,6 +601,16 @@ export default function DailyDigest({
 
           <Hr style={s.hr} />
 
+          {/* Editor's note — only on fallback days. Honest framing, no apology. */}
+          {briefing.fallback_used && (
+            <Section style={s.editorsNote}>
+              <Text style={s.editorsNoteLabel}>Editor&rsquo;s note</Text>
+              <Text style={s.editorsNoteBody}>
+                Today&rsquo;s commentary is lighter than usual. Full analytical brief resumes tomorrow.
+              </Text>
+            </Section>
+          )}
+
           {/* ── Footer ──────────────────────────────────────── */}
           <Section style={s.footer}>
             <Text style={s.footerText}>
@@ -985,5 +993,28 @@ const s = {
     color: c.accent,
     textDecoration: "none",
     fontSize: "11px",
+  } as React.CSSProperties,
+
+  // Editor's note (fallback-day only). Kept neutral and small so it reads as
+  // a footer footnote, not a banner — honest context, no apology drama.
+  editorsNote: {
+    padding: "14px 20px",
+    margin: "0 0 12px",
+    backgroundColor: c.bgElevated,
+    borderLeft: `3px solid ${c.textMuted}`,
+  } as React.CSSProperties,
+  editorsNoteLabel: {
+    fontSize: "10px",
+    fontWeight: "700" as const,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase" as const,
+    color: c.textMuted,
+    margin: "0 0 4px",
+  } as React.CSSProperties,
+  editorsNoteBody: {
+    fontSize: "12px",
+    color: c.textSecondary,
+    margin: "0",
+    lineHeight: "1.5",
   } as React.CSSProperties,
 } as const;

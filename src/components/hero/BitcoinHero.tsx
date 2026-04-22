@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import type { MarketSnapshot, DailyDiff, NarrativeConsensus } from "@/lib/types";
-import { formatPctChange } from "@/lib/utils";
+import { formatPctChange, formatReadTime } from "@/lib/utils";
 import { BitcoinCoin } from "./BitcoinCoin";
 
 function pctColor(pct: number): string {
-  return pct >= 0 ? "text-emerald-700" : "text-red-700";
+  return pct >= 0 ? "text-[var(--color-bullish)]" : "text-[var(--color-bearish)]";
 }
 
 function useCountUp(to: number, duration = 1200) {
@@ -50,10 +50,12 @@ export function BitcoinHero({
   market,
   dailyDiff,
   consensus,
+  readTimeSeconds,
 }: {
   market: MarketSnapshot;
   dailyDiff: DailyDiff;
   consensus?: NarrativeConsensus;
+  readTimeSeconds?: number;
 }) {
   const animatedPrice = useCountUp(market.price_usd);
   const heroRef = useRef<HTMLElement>(null);
@@ -92,9 +94,9 @@ export function BitcoinHero({
 
   const sentimentColor = consensus
     ? consensus.score >= 25
-      ? "text-emerald-700"
+      ? "text-[var(--color-bullish)]"
       : consensus.score <= -25
-        ? "text-red-700"
+        ? "text-[var(--color-bearish)]"
         : "text-[var(--color-text-secondary)]"
     : "";
 
@@ -143,6 +145,14 @@ export function BitcoinHero({
               <span className={pctColor(market.change_7d_pct)}>
                 7d {formatPctChange(market.change_7d_pct)}
               </span>
+              {readTimeSeconds ? (
+                <>
+                  <span className="text-[var(--color-border)]">|</span>
+                  <span className="text-[var(--color-text-muted)] font-[family-name:var(--font-body)]">
+                    {formatReadTime(readTimeSeconds)} read
+                  </span>
+                </>
+              ) : null}
             </div>
           </div>
 

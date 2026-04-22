@@ -13,7 +13,7 @@ export interface ArchiveEntry {
 }
 
 function pctColor(pct: number): string {
-  return pct >= 0 ? "text-emerald-700" : "text-red-700";
+  return pct >= 0 ? "text-[var(--color-bullish)]" : "text-[var(--color-bearish)]";
 }
 
 function formatMonthHeader(monthKey: string): string {

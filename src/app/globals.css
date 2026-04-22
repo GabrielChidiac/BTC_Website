@@ -21,6 +21,13 @@
   --color-blue: #3B82F6;
   --color-blue-soft: #93C5FD;
 
+  /* Sentiment (brand-derived, not default Tailwind). Muted teal reads green
+     without clashing with BTC orange; warm rust stays in the warm family. */
+  --color-bullish: #0F7A5A;
+  --color-bullish-soft: rgba(15, 122, 90, 0.10);
+  --color-bearish: #B44A3F;
+  --color-bearish-soft: rgba(180, 74, 63, 0.10);
+
   /* Glow system — strong enough to see */
   --color-accent-glow: rgba(247, 147, 26, 0.15);
   --color-accent-glow-strong: rgba(247, 147, 26, 0.25);

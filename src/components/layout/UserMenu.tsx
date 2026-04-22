@@ -119,7 +119,7 @@ export function UserMenu({ displayName, tier = "free" }: { displayName: string |
                 <button
                   onClick={handleUnsubscribe}
                   disabled={loading}
-                  className="text-xs font-medium text-red-500 hover:text-red-600 transition-colors disabled:opacity-50"
+                  className="text-xs font-medium text-[var(--color-bearish)] hover:text-[var(--color-bearish)]/80 transition-colors disabled:opacity-50"
                 >
                   {loading ? "..." : "Yes"}
                 </button>

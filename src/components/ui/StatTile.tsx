@@ -50,7 +50,7 @@ export function StatTile({
               {value}
             </p>
             {delta && (
-              <p className={`mt-0.5 text-xs font-medium tabular-nums ${delta.positive ? "text-emerald-700" : "text-red-700"}`}>
+              <p className={`mt-0.5 text-xs font-medium tabular-nums ${delta.positive ? "text-[var(--color-bullish)]" : "text-[var(--color-bearish)]"}`}>
                 {delta.value}
               </p>
             )}

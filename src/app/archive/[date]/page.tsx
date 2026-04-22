@@ -33,6 +33,7 @@ import { FundingRate } from "@/components/briefing/FundingRate";
 import { FearGreed } from "@/components/briefing/FearGreed";
 import { CorrelationMatrix } from "@/components/briefing/CorrelationMatrix";
 import { BriefEndState } from "@/components/briefing/BriefEndState";
+import { EditorsNote } from "@/components/briefing/EditorsNote";
 import { ProGateCompact } from "@/components/premium/ProGate";
 import { getFoundingMemberStatus } from "@/lib/founding";
 
@@ -144,9 +145,15 @@ export default async function ArchiveDatePage({
   const sevenDaysAgo = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 7));
   const briefingDate = new Date(date + "T00:00:00Z");
   const isOldBriefing = briefingDate < sevenDaysAgo;
-  // Free users can view briefings within the last 7 days (full content, unblurred).
-  // Pro users can view everything. Briefings older than 7 days remain Pro-only.
-  const canViewFull = isPro || !isOldBriefing;
+  // Tier gating on the archive page — matches the homepage contract:
+  //   - canViewAny: show the page's free-tier sections (hero, market, top stories).
+  //     Free users get this within the last 7 days; Pro always.
+  //   - canViewPro:  show the Pro-only deep sections (Adoption, Regulatory,
+  //     Flows, Technical, Network, Funding, F&G, Correlations, Experts,
+  //     Supply, Countdown, Outlook). Pro-only, regardless of date.
+  //   - Briefings older than 7 days fall back to the full paywall branch below.
+  const canViewAny = isPro || !isOldBriefing;
+  const canViewPro = isPro;
 
   const cutoffDate = isPro ? undefined : sevenDaysAgo.toISOString().split("T")[0];
 
@@ -273,12 +280,12 @@ export default async function ArchiveDatePage({
             </div>
           </nav>
 
-          {canViewFull ? (
+          {canViewAny ? (
             <>
               <DailyDiffBanner dailyDiff={briefing.daily_diff} />
               <MarketSnapshot market={briefing.market_snapshot} />
 
-              {/* Full unblurred briefing content: all sections visible to free and Pro */}
+              {/* Free-tier sections: hero, macro, BTC vs, top stories */}
               <MacroContext macro={briefing.macro_context} />
               <BtcVsEverything comparisons={briefing.btc_vs_everything} />
               <TopStories stories={briefing.top_stories} />
@@ -292,18 +299,34 @@ export default async function ArchiveDatePage({
                 </div>
               )}
 
-              <Adoption updates={briefing.adoption} />
-              <Regulatory updates={briefing.regulatory} />
-              <InstitutionalFlows flows={briefing.institutional_flows} />
-              <div className="mt-10"><TechnicalSignals signals={briefing.technical_signals} /></div>
-              <div className="mt-10"><NetworkHealth network={briefing.network_health} /></div>
-              {briefing.funding_rate && <div className="mt-10"><FundingRate fundingRate={briefing.funding_rate} /></div>}
-              {briefing.fear_greed && <div className="mt-10"><FearGreed fearGreed={briefing.fear_greed} /></div>}
-              {briefing.correlation_matrix && <div className="mt-10"><CorrelationMatrix correlation={briefing.correlation_matrix} /></div>}
-              <ExpertInsights insights={briefing.expert_insights} />
-              <SupplyDynamics supply={briefing.supply_dynamics} />
-              <CountdownEvents events={briefing.countdown_events} />
-              <LookingAhead content={briefing.looking_ahead} />
+              {/* Pro-only deep sections. Free users within the 7-day window see
+                  a single ProGateCompact in place of this whole block, matching
+                  the homepage's tier contract. */}
+              {canViewPro ? (
+                <>
+                  <Adoption updates={briefing.adoption} />
+                  <Regulatory updates={briefing.regulatory} />
+                  <InstitutionalFlows flows={briefing.institutional_flows} />
+                  <div className="mt-10"><TechnicalSignals signals={briefing.technical_signals} /></div>
+                  <div className="mt-10"><NetworkHealth network={briefing.network_health} /></div>
+                  {briefing.funding_rate && <div className="mt-10"><FundingRate fundingRate={briefing.funding_rate} /></div>}
+                  {briefing.fear_greed && <div className="mt-10"><FearGreed fearGreed={briefing.fear_greed} /></div>}
+                  {briefing.correlation_matrix && <div className="mt-10"><CorrelationMatrix correlation={briefing.correlation_matrix} /></div>}
+                  <ExpertInsights insights={briefing.expert_insights} />
+                  <SupplyDynamics supply={briefing.supply_dynamics} />
+                  <CountdownEvents events={briefing.countdown_events} />
+                  <LookingAhead content={briefing.looking_ahead} />
+                </>
+              ) : (
+                <div className="mt-10">
+                  <ProGateCompact
+                    message="Deep-dive sections (Adoption, Regulatory, Flows, Technical, Expert Voices, Supply, Outlook) are included with Pro."
+                    foundingOffer={foundingOffer}
+                  />
+                </div>
+              )}
+
+              {briefing.fallback_used && <EditorsNote />}
 
               <BriefEndState
                 shareText={briefing.hero_three_lines?.move ?? briefing.one_line ?? `Bitcoin brief for ${formatDisplayDate(date)}`}

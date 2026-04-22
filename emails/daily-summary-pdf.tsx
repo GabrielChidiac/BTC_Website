@@ -11,8 +11,6 @@ import type { BriefingJSON, TopStoryCategory } from "../src/lib/types";
 
 const CATEGORY_LABELS: Record<TopStoryCategory, string> = {
   market: "MARKET",
-  regulatory: "REGULATORY",
-  adoption: "ADOPTION",
   macro: "MACRO",
   technical: "TECHNICAL",
 };

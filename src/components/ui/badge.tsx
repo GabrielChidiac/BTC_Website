@@ -16,8 +16,8 @@ const badgeVariants = cva(
           "bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
         outline:
           "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
-        bullish: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-        bearish: "bg-red-50 text-red-700 border border-red-200",
+        bullish: "bg-[var(--color-bullish-soft)] text-[var(--color-bullish)] border border-[var(--color-bullish)]/25",
+        bearish: "bg-[var(--color-bearish-soft)] text-[var(--color-bearish)] border border-[var(--color-bearish)]/25",
         neutral: "bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] border border-[var(--color-border)]",
       },
     },

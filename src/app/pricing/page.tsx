@@ -181,7 +181,7 @@ export default async function PricingPage() {
               <ul className="mt-6 space-y-2.5">
                 {FREE_FEATURES.map((f) => (
                   <li key={f.label} className="flex items-start gap-2 text-sm">
-                    <span className={`mt-0.5 text-xs ${f.included ? "text-emerald-600" : "text-[var(--color-text-muted)]"}`}>
+                    <span className={`mt-0.5 text-xs ${f.included ? "text-[var(--color-bullish)]" : "text-[var(--color-text-muted)]"}`}>
                       {f.included ? "✓" : "–"}
                     </span>
                     <span className={f.included ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}>
@@ -224,15 +224,15 @@ export default async function PricingPage() {
               <ul className="mt-6 space-y-2.5">
                 {PRO_FEATURES.map((f) => (
                   <li key={f.label} className="flex items-start gap-2 text-sm">
-                    <span className="mt-0.5 text-xs text-emerald-600">✓</span>
+                    <span className="mt-0.5 text-xs text-[var(--color-bullish)]">✓</span>
                     <span className="text-[var(--color-text-primary)]">{f.label}</span>
                   </li>
                 ))}
               </ul>
 
               {isPro ? (
-                <div className="mt-6 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-center">
-                  <p className="text-sm font-medium text-emerald-700">
+                <div className="mt-6 rounded-lg bg-[var(--color-bullish-soft)] border border-[var(--color-bullish)]/25 px-4 py-2.5 text-center">
+                  <p className="text-sm font-medium text-[var(--color-bullish)]">
                     {isFoundingMember ? "Active - Founding Member" : "Active"}
                   </p>
                 </div>

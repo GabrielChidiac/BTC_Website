@@ -181,7 +181,7 @@ function SignInInner() {
           </>
         )}
 
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-3 text-sm text-[var(--color-bearish)]">{error}</p>}
       </div>
     </main>
   );
