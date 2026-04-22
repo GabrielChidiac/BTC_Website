@@ -6,6 +6,7 @@ import { dedupeBriefingStories } from "@/lib/dedupe-stories";
 import { EXPERT_CONTEXT } from "@/trigger/processors/expert-context";
 import { AiBrainOutputSchema } from "@/lib/schemas";
 import { buildFallbackBriefing as buildDataDrivenFallback } from "@/trigger/processors/fallback-template";
+import { buildCountdownFactsBlock, validateCountdownEvents } from "@/trigger/lib/calendar";
 import type {
   BriefingJSON,
   TopStory,
@@ -277,7 +278,7 @@ The root JSON object must have these exact keys:
   "btc_vs_everything": AssetComparison[], // Exactly 6: S&P 500, NASDAQ-100, Gold, DXY, Ethereum, Solana
   "network_health": NetworkHealth,
   "daily_diff": DailyDiff,
-  "countdown_events": CountdownEvent[], // 3-5 upcoming events relevant to Bitcoin investors. ONLY include: halving, FOMC meetings, ETF deadlines, protocol upgrades, options expiry dates, macro events (CPI, jobs report, GDP). NEVER include conferences, summits, or industry events. Always calculate days_away from the briefing date. Use real scheduled dates only. If you are not 100% certain of a date, do not include the event.
+  "countdown_events": CountdownEvent[], // 3-5 upcoming events relevant to Bitcoin investors. HARD CONSTRAINT: you MUST pick items EXCLUSIVELY from the CALENDAR FACTS BLOCK provided in the user prompt. Do NOT invent events, do NOT fabricate dates, do NOT include any event whose (name, date) pair is not in that block. Copy the date and name VERBATIM from the block. You may paraphrase the description slightly but keep it factually tight. The server will drop any event not present in the block; items you invent will silently vanish from the final briefing.
   "regulatory": RegulatoryUpdate[],    // Subset of the 5-item combined cap. 0-5 regulatory developments by impact. ONLY from the input articles. Often 0 on pure market days.
   "adoption": AdoptionUpdate[],        // Subset of the 5-item combined cap. 0-5 adoption stories by significance. ONLY from the input articles. Often 0 on pure market days.
   "narrative_consensus": NarrativeConsensus,
@@ -618,6 +619,15 @@ ${depthGuidance}
 You may override this classification if today's data clearly contradicts it (priority-override rules in the system prompt still apply). Otherwise treat it as a depth-weighting signal.`);
   }
 
+  // Countdown events — source of truth. Claude must pick EXCLUSIVELY from this
+  // block; anything else will be dropped by the server-side validator.
+  sections.push(`## CALENDAR FACTS BLOCK (authoritative source for countdown_events)
+You MUST populate countdown_events EXCLUSIVELY from the list below. Copy the date and the name verbatim. Do NOT invent events, do NOT alter dates, do NOT include any event whose (name, date) pair is not in this list. Pick the 3-5 most relevant entries to a Bitcoin investor today, ordered by date ascending. You may lightly paraphrase the description. The server will drop any event that does not match this list exactly.
+
+Format: DATE (days away) | NAME | description
+
+${buildCountdownFactsBlock(date, 120)}`);
+
   if (yesterday) {
     sections.push(`## Yesterday's Briefing Data
 - Previous Price (USD): ${yesterday.price_usd}
@@ -790,6 +800,20 @@ export const aiBrainTask = task({
         adoptionAfter: deduped.adoption.length,
       });
     }
+
+    // Countdown events: validate against the deterministic calendar. Drop any
+    // event whose (name, date) pair is not in the FACTS BLOCK. Recompute
+    // days_away server-side so it cannot drift from the date. This is what
+    // prevents hallucinated FOMC dates, Saturday options expiries, etc. from
+    // ever reaching the homepage.
+    const validated = validateCountdownEvents(deduped.countdown_events ?? [], date);
+    if (validated.dropped.length > 0) {
+      logger.warn("Dropped hallucinated countdown_events (not in calendar)", {
+        dropped: validated.dropped,
+        keptCount: validated.kept.length,
+      });
+    }
+    deduped.countdown_events = validated.kept;
 
     // Observability: emit a compact calibration log so rubric tightness can
     // be tuned over time. Columns worth watching across 2-3 weeks of runs:

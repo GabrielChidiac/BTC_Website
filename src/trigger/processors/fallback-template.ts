@@ -9,6 +9,7 @@ import type {
   DayClassification,
   AssetComparison,
 } from "@/lib/types";
+import { getUpcomingKnownEvents, daysBetween } from "@/trigger/lib/calendar";
 
 // Shape used by ai-brain: the Claude output is everything in BriefingJSON
 // EXCEPT the enrichment-owned fields. Enrichment runs later in the pipeline
@@ -63,6 +64,8 @@ export function buildFallbackBriefing(params: {
   const price30dHigh = comparative?.price_30d_high ?? null;
   const price30dLow = comparative?.price_30d_low ?? null;
 
+  const countdownEvents = buildCountdownFromCalendar(date);
+
   const hero = buildHeroThreeLines({
     price,
     change24h,
@@ -73,7 +76,7 @@ export function buildFallbackBriefing(params: {
     priceVs30dAvg,
     price30dHigh,
     price30dLow,
-    yesterday,
+    countdownEvents,
   });
 
   const narrative = classifyNarrative({
@@ -142,7 +145,7 @@ export function buildFallbackBriefing(params: {
       blocks_until_halving: halving.blocksRemaining,
     },
     daily_diff: dailyDiff,
-    countdown_events: yesterday?.countdown_events ?? [],
+    countdown_events: countdownEvents,
     regulatory: [],
     adoption: [],
     narrative_consensus: narrative,
@@ -181,7 +184,7 @@ function buildHeroThreeLines(args: {
   priceVs30dAvg: number | null;
   price30dHigh: number | null;
   price30dLow: number | null;
-  yesterday: { countdown_events: CountdownEvent[] } | null;
+  countdownEvents: CountdownEvent[];
 }): HeroThreeLines {
   const {
     price,
@@ -192,7 +195,7 @@ function buildHeroThreeLines(args: {
     fearGreedValue,
     price30dHigh,
     price30dLow,
-    yesterday,
+    countdownEvents,
   } = args;
 
   // MOVE: price + 24h move + 30d context, all numeric, no hedge words.
@@ -225,16 +228,16 @@ function buildHeroThreeLines(args: {
   }
   signal = truncate140(signal);
 
-  // WATCH: nearest upcoming catalyst. Prefer yesterday's countdown, fall
-  // back to a deterministic static list if no history is available.
-  const watch = truncate140(buildWatchLine(yesterday));
+  // WATCH: nearest upcoming catalyst from the calendar-derived countdown
+  // events. Guaranteed real dates because countdownEvents came from the
+  // authoritative calendar, not yesterday's (possibly stale) briefing.
+  const watch = truncate140(buildWatchLine(countdownEvents));
 
   return { move, signal, watch };
 }
 
-function buildWatchLine(yesterday: { countdown_events: CountdownEvent[] } | null): string {
-  const events = yesterday?.countdown_events ?? [];
-  const upcoming = [...events]
+function buildWatchLine(countdownEvents: CountdownEvent[]): string {
+  const upcoming = [...countdownEvents]
     .filter((e) => e && typeof e.days_away === "number" && (e.days_away ?? -1) >= 0)
     .sort((a, b) => (a.days_away ?? 0) - (b.days_away ?? 0));
 
@@ -244,8 +247,20 @@ function buildWatchLine(yesterday: { countdown_events: CountdownEvent[] } | null
     return `${next.name} ${daysLabel}: ${next.description ?? "watch for impact on positioning"}.`;
   }
 
-  // Static fallback — the 2028 halving is always a known reference point.
   return "No near-term catalysts on the calendar. Next scheduled anchor: the 2028 Bitcoin halving.";
+}
+
+function buildCountdownFromCalendar(date: string): CountdownEvent[] {
+  // Pull the next 5 authoritative events from the calendar. This is the same
+  // list injected into the AI brain prompt, guaranteeing fallback days and
+  // AI-brain days surface the same dates.
+  const upcoming = getUpcomingKnownEvents(date, 120).slice(0, 5);
+  return upcoming.map((e) => ({
+    name: e.name,
+    date: e.date,
+    days_away: daysBetween(date, e.date),
+    description: e.description,
+  }));
 }
 
 // Narrative consensus: a rule-based reading. Score is a weighted blend of
