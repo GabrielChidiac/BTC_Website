@@ -620,15 +620,56 @@ export default function DailyDigest({
 
           <Hr style={s.hr} />
 
-          {/* Editor's note — only on fallback days. Honest framing, no apology. */}
-          {briefing.fallback_used && (
-            <Section style={s.editorsNote}>
-              <Text style={s.editorsNoteLabel}>Editor&rsquo;s note</Text>
-              <Text style={s.editorsNoteBody}>
-                Today&rsquo;s commentary is lighter than usual. Full analytical brief resumes tomorrow.
-              </Text>
-            </Section>
-          )}
+          {/* Editor's note — fires on fallback days (Claude down) or when any
+              enrichment section came up without verifiable sources. Honest
+              framing, no apology. Tier 2.13: the same accuracy bar that makes
+              us ship less on some days demands we say why. */}
+          {(() => {
+            const hasFlowsMoves =
+              (instFlows?.notable_moves?.length ?? 0) > 0 ||
+              (instFlows?.summary && !instFlows.summary.toLowerCase().includes("unavailable"));
+            const hasSupplyReal =
+              !!supply &&
+              !supply.supply_narrative?.toLowerCase().includes("unavailable") &&
+              !!supply.source_url;
+            const hasLookingReal =
+              !!looking_ahead &&
+              !looking_ahead.toLowerCase().includes("unavailable");
+            const missing: string[] = [];
+            if (!hasExpert) missing.push("expert commentary");
+            if (!hasFlowsMoves) missing.push("institutional flows");
+            if (!hasSupplyReal) missing.push("on-chain supply data");
+            if (!hasLookingReal) missing.push("forward outlook");
+
+            if (briefing.fallback_used) {
+              return (
+                <Section style={s.editorsNote}>
+                  <Text style={s.editorsNoteLabel}>Editor&rsquo;s note</Text>
+                  <Text style={s.editorsNoteBody}>
+                    Today&rsquo;s commentary is lighter than usual. Full analytical brief resumes tomorrow.
+                  </Text>
+                </Section>
+              );
+            }
+
+            if (missing.length > 0) {
+              const list = missing.length === 1
+                ? missing[0]
+                : missing.length === 2
+                  ? `${missing[0]} and ${missing[1]}`
+                  : `${missing.slice(0, -1).join(", ")}, and ${missing[missing.length - 1]}`;
+              return (
+                <Section style={s.editorsNote}>
+                  <Text style={s.editorsNoteLabel}>Editor&rsquo;s note</Text>
+                  <Text style={s.editorsNoteBody}>
+                    We did not surface {list} today because we could not verify the sources. Honest absence beats fabricated attribution. Resuming when verifiable sources return.
+                  </Text>
+                </Section>
+              );
+            }
+
+            return null;
+          })()}
 
           {/* ── Footer ──────────────────────────────────────── */}
           <Section style={s.footer}>

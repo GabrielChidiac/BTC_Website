@@ -115,20 +115,32 @@ on previous days. Use it:
 day_tone_line (the sentence that opens the audio brief)
 ═══════════════════════════════════════════════════════════════════════════
 
-One natural human sentence. Peer-to-peer, professional-adult tone. Never
-clinical or labeled. Never uses the classification keyword literally.
+CLOSED SET: day_tone_line MUST be EXACTLY one of the approved phrases below, copied verbatim. Free-form generation risks the tone contradicting the label (e.g., label "mostly_noise" with tone "Risk is rising.") and gets overwritten by the pipeline. Pick the phrase that best matches the classification; the pipeline will normalize any off-list string to a label-default anyway.
 
-Good examples by label:
-- mostly_noise: "A quiet day for Bitcoin." / "Little moved today, but a few flows are worth watching." / "The market took a breath."
-- risk_change: "Risk is rising." / "Today changed the near-term picture." / "The calm broke today."
-- thesis_shift: "Today mattered." / "This is the kind of day the long-term thesis turns on."
-- mixed: "Pockets of movement today, no dominant signal." / "The day pulled in two directions."
+Approved phrases by label (pick ONE, verbatim):
 
-Bad examples (do not produce):
-- "Today was a noise day." (clinical, uses the keyword)
-- "Welcome to BTC Today." (not a calibrating sentence)
-- "Markets are markets." (no information)
-- "Bitcoin moved up today." (not a tone calibration, that's a price summary)
+mostly_noise:
+- "A quiet day for Bitcoin."
+- "Little moved today, but a few flows are worth watching."
+- "The market took a breath today."
+- "A routine session, nothing structural today."
+
+risk_change:
+- "Risk is rising."
+- "Today changed the near-term picture."
+- "The calm broke today."
+- "Near-term risk shifted today."
+
+thesis_shift:
+- "Today mattered."
+- "This is the kind of day the long-term thesis turns on."
+- "A structural day for Bitcoin."
+- "A thesis day, not a noise day."
+
+mixed:
+- "Pockets of movement today, no dominant signal."
+- "The day pulled in two directions."
+- "A mixed session, signals cut both ways."
 
 Never use em dashes or en dashes. Use commas, periods, or semicolons.`;
 
@@ -275,6 +287,17 @@ export const dayClassifierTask = task({
     }
 
     const classification = result.data!;
+
+    // Normalize day_tone_line to the closed set. If Claude returned an off-list
+    // phrase, pick a deterministic default keyed to the classification label.
+    // This prevents the failure mode where label says "mostly_noise" but the
+    // tone line says "Risk is rising.", which would then open the audio brief
+    // with a contradiction.
+    classification.day_tone_line = normalizeDayToneLine(
+      classification.day_tone_line,
+      classification.label,
+    );
+
     logger.info("Day classification complete", {
       label: classification.label,
       depth_weight: classification.depth_weight,
@@ -284,3 +307,52 @@ export const dayClassifierTask = task({
     return classification;
   },
 });
+
+// ─── Day tone line normalization (closed set) ─────────────────────────────
+
+const APPROVED_TONE_LINES: Record<DayClassification["label"], string[]> = {
+  mostly_noise: [
+    "A quiet day for Bitcoin.",
+    "Little moved today, but a few flows are worth watching.",
+    "The market took a breath today.",
+    "A routine session, nothing structural today.",
+  ],
+  risk_change: [
+    "Risk is rising.",
+    "Today changed the near-term picture.",
+    "The calm broke today.",
+    "Near-term risk shifted today.",
+  ],
+  thesis_shift: [
+    "Today mattered.",
+    "This is the kind of day the long-term thesis turns on.",
+    "A structural day for Bitcoin.",
+    "A thesis day, not a noise day.",
+  ],
+  mixed: [
+    "Pockets of movement today, no dominant signal.",
+    "The day pulled in two directions.",
+    "A mixed session, signals cut both ways.",
+  ],
+};
+
+/**
+ * Accept the Claude-returned day_tone_line only if it exactly matches one of
+ * the approved phrases for the given label. Otherwise fall back to the first
+ * approved phrase for that label — deterministic, semantically consistent,
+ * and guaranteed to never contradict the classification.
+ */
+function normalizeDayToneLine(
+  returned: string,
+  label: DayClassification["label"],
+): string {
+  const approved = APPROVED_TONE_LINES[label] ?? APPROVED_TONE_LINES.mostly_noise;
+  const trimmed = (returned ?? "").trim();
+  if (approved.includes(trimmed)) {
+    return trimmed;
+  }
+  // Off-list output. Log at debug level since this is expected behaviour on
+  // some runs; the pipeline self-heals. Return the primary approved line for
+  // this label.
+  return approved[0];
+}

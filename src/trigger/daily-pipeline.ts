@@ -171,6 +171,7 @@ export const dailyPipelineTask = schedules.task({
     try {
       const enriched = await enrichmentTask
         .triggerAndWait({
+          date: briefing.date,
           top_stories: briefing.top_stories,
           all_articles: newsOutput.articles,
           market_summary: marketSummary,

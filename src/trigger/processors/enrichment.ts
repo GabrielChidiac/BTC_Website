@@ -4,6 +4,7 @@ import { fetchForwardLookingContext } from "@/trigger/lib/searchapi";
 import { getExpertPhotoUrls } from "@/lib/expert-photos";
 import { EXPERT_CONTEXT_DIGEST } from "@/trigger/processors/expert-context";
 import { ExpertInsightsArraySchema } from "@/lib/schemas";
+import { buildCountdownFactsBlock } from "@/trigger/lib/calendar";
 import type { z } from "zod";
 
 type ParsedExpertInsight = z.infer<typeof ExpertInsightsArraySchema>[number];
@@ -25,10 +26,18 @@ CRITICAL OUTPUT CONSTRAINT: Return ONLY the 3 paragraphs of analysis. Nothing el
 
 CRITICAL: This section is EXCLUSIVELY about Bitcoin. Do NOT mention altcoins (Ethereum, Solana, XRP, Cardano, etc.), stablecoins, prediction markets, or non-Bitcoin crypto projects unless they have a direct, material impact on Bitcoin's price or adoption. No Polymarket, no Tron unless it directly affects BTC.
 
+ZERO-HALLUCINATION RULE (highest priority): you may ONLY reference upcoming events that are either (a) in the scheduled catalyst calendar provided in the user prompt, (b) in the forward-looking headlines block (web-scraped real news), or (c) PUBLICLY-SCHEDULED macro prints whose dates are known and verifiable (FOMC meetings on the official Fed calendar, CPI releases on the BLS calendar, Jobs Report on the first Friday pattern, PCE releases). You may NOT invent:
+- SEC decision deadlines that are not on the SEC's official rulemaking calendar
+- Fed speeches or statements beyond the published FOMC schedule
+- Corporate earnings dates you cannot verify
+- Exchange listing deadlines
+- "Rumored" policy announcements, "expected" votes, or "anticipated" filings without a concrete calendar date
+When in doubt about a date or event, omit it. The reader would rather see fewer, verified catalysts than a padded outlook full of plausible-sounding but fabricated deadlines.
+
 Guidelines:
 - Write 3 concise, substantive paragraphs (not 4-5). Keep it tight and high-signal.
-- Paragraph themes: (1) macro catalysts affecting Bitcoin (Fed policy, CPI, yields, DXY), (2) Bitcoin-specific regulatory and institutional signals (ETF flows, SEC deadlines, corporate treasury moves), (3) Bitcoin technical levels and on-chain data worth watching
-- Integrate specific data points (prices, percentages, dates, names) naturally
+- Paragraph themes: (1) macro catalysts affecting Bitcoin (Fed policy, CPI, yields, DXY) — use only FOMC/BLS/Treasury-scheduled events whose dates you can verify, (2) Bitcoin-specific regulatory and institutional signals (ETF flows, SEC deadlines that are actually on the SEC calendar, corporate treasury moves from public filings), (3) Bitcoin technical levels and on-chain data worth watching
+- Integrate specific data points (prices, percentages, dates, names) naturally — but only ones you can verify
 - Be forward-looking: tell the reader what to WATCH FOR in the next 24-72 hours
 - Do NOT use markdown formatting. Return plain text only
 - Do NOT include citation markers like [1], [2], [3] or any bracketed references
@@ -43,6 +52,10 @@ interface LookingAheadContext {
   forward_headlines: string[];
   market_summary: string | null;
   briefing_summary: EnrichmentPayload["briefing_summary"];
+  // Deterministic calendar of upcoming events, rendered into the prompt so
+  // Perplexity can only reference dates that are actually scheduled. Without
+  // this, Perplexity invents FOMC dates, SEC deadlines, and rate decisions.
+  calendar_facts: string;
 }
 
 function buildLookingAheadPrompt(ctx: LookingAheadContext): string {
@@ -86,6 +99,18 @@ ${EXPERT_CONTEXT_DIGEST}\n`);
     }
     parts.push("");
   }
+
+  // Authoritative calendar — the only dates Perplexity may treat as verified
+  // upcoming events. Anything else (SEC deadlines, Fed speeches, corporate
+  // filings) must either appear in the web-scraped forward headlines above
+  // or be omitted. This is the zero-hallucination anchor for the outlook.
+  parts.push("## AUTHORITATIVE CALENDAR (dates you may reference as certain upcoming events)");
+  parts.push(
+    "You may cite dates from this block as already-scheduled catalysts. Do NOT invent dates outside this block; if an event is not in this calendar AND not in the web-scraped forward headlines above, do NOT state it as a scheduled catalyst.",
+  );
+  parts.push("");
+  parts.push(ctx.calendar_facts);
+  parts.push("");
 
   // Market state
   if (ctx.market_summary) {
@@ -185,25 +210,33 @@ Rules:
 
 const SUPPLY_SYSTEM = `You are a Bitcoin on-chain analyst. Return ONLY valid JSON, no markdown fences or extra text. Do NOT include any preamble, meta-commentary, or remarks about your instructions.
 
+ZERO-HALLUCINATION RULE: every number you cite MUST be from a verifiable on-chain data provider (Glassnode, CryptoQuant, Bitcoin Treasuries, mempool.space, on-chain explorer). Include a source_url pointing to the exact page the number was taken from. If you cannot verify a number with a URL, DO NOT include it — return the default "unavailable" values instead.
+
 Search for the latest Bitcoin supply and on-chain data. Return the data in this exact JSON format:
 
 {
   "exchange_reserve_trend": "<string describing exchange reserve trend>",
   "long_term_holder_pct": <number 0-100 or null>,
-  "supply_narrative": "<2-3 sentences summarizing supply dynamics for investors>"
+  "supply_narrative": "<2-3 sentences summarizing supply dynamics for investors>",
+  "source_url": "<https URL to the primary on-chain data source>"
 }
 
 Rules:
-- exchange_reserve_trend: describe the current trend, e.g. "Exchange reserves hit 5-year low at 2.3M BTC, declining for 8 consecutive months"
-- long_term_holder_pct: percentage of BTC supply held for >1 year. null if unavailable.
-- supply_narrative: write for sophisticated investors who understand supply/demand dynamics
-- Use real data from sources like Glassnode, CryptoQuant, or similar. Do not fabricate.
+- exchange_reserve_trend: describe the current trend, e.g. "Exchange reserves hit 5-year low at 2.3M BTC, declining for 8 consecutive months". If you cannot cite a real number from a verifiable URL, return "Data unavailable".
+- long_term_holder_pct: percentage of BTC supply held for >1 year. null if unavailable. Never estimate; if the source does not have a fresh number, return null.
+- supply_narrative: write for sophisticated investors who understand supply/demand dynamics. Do NOT invent on-chain metrics; every figure must trace to source_url.
+- source_url: must be a direct https URL to the on-chain data provider (e.g., "https://studio.glassnode.com/..."). If you cannot provide one, return all three text fields as "Data unavailable"/"Supply data unavailable today." and long_term_holder_pct as null.
+- Use real data from Glassnode, CryptoQuant, Bitcoin Treasuries, or similar. Do not fabricate.
 - Do NOT include citation markers like [1], [2], [3] or any bracketed references in any string values.
 - Never use em dashes or en dashes in string values. Use commas, periods, or semicolons instead.`;
 
 // ─── Task ───────────────────────────────────────────────────────────────────
 
 interface EnrichmentPayload {
+  // ISO date of the briefing, used to render the calendar FACTS BLOCK for the
+  // looking-ahead prompt so Perplexity can only reference real upcoming events.
+  // Optional for backward compat — when missing, falls back to today's date.
+  date?: string;
   top_stories: TopStory[];
   all_articles: RawArticle[];
   market_summary: string | null;
@@ -241,7 +274,9 @@ export const enrichmentTask = task({
   id: "enrichment",
   run: async (payload: EnrichmentPayload): Promise<EnrichmentOutput> => {
     const { top_stories, all_articles, market_summary, briefing_summary } = payload;
+    const date = payload.date ?? new Date().toISOString().split("T")[0];
     logger.info("Starting enrichment", {
+      date,
       storyCount: top_stories.length,
       articleCount: all_articles.length,
     });
@@ -257,12 +292,18 @@ export const enrichmentTask = task({
       logger.warn("Forward-looking SearchAPI scrape failed — continuing without");
     }
 
+    // Deterministic calendar block for the looking-ahead prompt. This is the
+    // same calendar the ai-brain countdown_events references, so outlook
+    // dates stay consistent with the homepage countdown.
+    const calendarFacts = buildCountdownFactsBlock(date, 90);
+
     const lookingAheadCtx: LookingAheadContext = {
       top_stories,
       all_articles,
       forward_headlines: forwardHeadlines,
       market_summary,
       briefing_summary,
+      calendar_facts: calendarFacts,
     };
 
     // Run all Perplexity queries in parallel (non-fatal individually)
@@ -499,13 +540,45 @@ export const enrichmentTask = task({
     }
 
     // ── Supply dynamics ───────────────────────────────────────────────────
+    // Zero-hallucination gate: source_url must be present and valid. Without
+    // it, on-chain numbers are indistinguishable from fabrication, so we fall
+    // back to the default "unavailable" copy instead of shipping unverified
+    // figures under the homepage Supply Dynamics section.
     if (supplyResult.status === "fulfilled" && !supplyResult.value.error) {
       try {
         const raw = supplyResult.value.data?.trim() ?? "";
-        const cleaned = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        const parsed = JSON.parse(cleaned) as SupplyDynamics;
-        output.supply_dynamics = parsed;
-        logger.info("Supply dynamics complete");
+        const cleaned = raw
+          .replace(/```json\n?/g, "")
+          .replace(/```\n?/g, "")
+          .replace(/\[\d+\]/g, "")
+          .trim();
+        const parsedRaw = JSON.parse(cleaned) as Partial<SupplyDynamics> & { source_url?: unknown };
+        const rawSourceUrl: unknown = parsedRaw.source_url;
+        const sourceUrl: string = typeof rawSourceUrl === "string" ? rawSourceUrl.trim() : "";
+        if (!isValidHttpsUrl(sourceUrl)) {
+          const preview: string = sourceUrl;
+          logger.warn("Supply dynamics returned without valid source_url — shipping defaults", {
+            returnedSourceUrl: preview.length > 100 ? preview.substring(0, 100) : preview,
+          });
+          // Leave output.supply_dynamics at DEFAULTS
+        } else {
+          output.supply_dynamics = {
+            exchange_reserve_trend:
+              typeof parsedRaw.exchange_reserve_trend === "string"
+                ? parsedRaw.exchange_reserve_trend
+                : "Data unavailable",
+            long_term_holder_pct:
+              typeof parsedRaw.long_term_holder_pct === "number"
+                ? parsedRaw.long_term_holder_pct
+                : null,
+            supply_narrative:
+              typeof parsedRaw.supply_narrative === "string"
+                ? parsedRaw.supply_narrative
+                : "Supply data unavailable today.",
+            source_url: sourceUrl,
+          };
+          logger.info("Supply dynamics complete", { hasSourceUrl: true });
+        }
       } catch (e) {
         logger.warn("Failed to parse supply dynamics JSON", { error: (e as Error).message });
       }

@@ -212,7 +212,17 @@ collectors (news + market, parallel via batch.triggerAndWait)
 - **Two-question reader contract:** `daily_diff.sentiment_shift` and `hero_three_lines.signal` must plainly answer (1) is today mostly noise? (2) did anything change near-term risk? No soft hedging.
 - **Earned significance:** depth tracks `day_classifier.depth_weight` — quiet days read short and flat, thesis-shift days go deep.
 - **Comparative anchoring:** quantitative claims must reference `market.comparative` baselines (30-day realized vol, price-vs-30d-avg, funding percentile, F&G delta, ETF flow z-score). No vague intensifiers without an anchor.
-- **Audio OPEN** appends `day_classification.day_tone_line` when present, in [audio-brief/prompts.ts buildAudioScriptUserPrompt](src/trigger/audio-brief/prompts.ts).
+- **Audio OPEN** appends `day_classification.day_tone_line` when present, in [audio-brief/prompts.ts buildAudioScriptUserPrompt](src/trigger/audio-brief/prompts.ts). `day_tone_line` is normalized to a closed phrase set in [day-classifier.ts](src/trigger/processors/day-classifier.ts) so it never contradicts the label.
+
+## Accuracy Gate (zero-unsourced-claims bar)
+- **[accuracy-validators.ts](src/trigger/lib/accuracy-validators.ts)** exports `findDirectionalViolations`, `findNarrativeConsensusContradictions`, and `findUnsourcedSummaries`. AI brain runs them post-generation in `ensureDataConsistency`; any violation triggers ONE correction retry before shipping.
+- **Source headline overwrite:** AI brain always overwrites `top_stories[].headline`, `regulatory[].headline`, `adoption[].headline` with the verbatim source article title from the news collector. Claude cannot editorialize headlines; the architecture prevents it.
+- **Directional truth block + approved headlines block** are injected at the top of the ai-brain user prompt: pre-computed approved/forbidden adjectives per 24h/7d period, plus the verbatim source titles. Mirrors the audio FACTS BLOCK discipline.
+- **Source URLs required on new writes for:** `expert_insights[].source_url`, `institutional_flows.notable_moves[].source_url`, `supply_dynamics.source_url`. Enrichment filters out items without valid https URLs. `ExpertInsightsArraySchema` is now `.max(3)` (no min) — empty array is valid; homepage renders an empty-state stub. Legacy Supabase rows without URLs still render (polymorphic type).
+- **Looking-ahead calendar constraint:** enrichment injects `buildCountdownFactsBlock(date, 90)` so Perplexity can only reference scheduled catalysts from our calendar. FOMC/CPI inventions are prompt-rejected.
+- **Macro context:** Claude may only reference Asset Comparisons, 90-day correlations, and the CALENDAR FACTS BLOCK. No training-data priors for Fed/M2/rate path.
+- **"BTC Today read"** is the user-facing label for `narrative_consensus` (was "Consensus"; renamed because that word implied external aggregation we do not have). Internal field names unchanged.
+- **Email editor's note** fires on fallback days AND when any enrichment section returned empty/unsourced, listing what was withheld.
 
 ## Deployment
 See [docs/deployment.md](docs/deployment.md). Production TODOs: env vars in Vercel; Stripe env vars (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_MONTHLY_URL`, `NEXT_PUBLIC_STRIPE_ANNUAL_URL`); webhook URL in Stripe dashboard → `https://btctoday.co/api/webhooks/stripe`.
