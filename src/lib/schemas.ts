@@ -120,6 +120,12 @@ export const CountdownEventSchema = z.object({
 // Perplexity expert-insight output — validated at enrichment boundary so a
 // malformed Perplexity response (missing fields, wrong shape) fails loudly
 // instead of silently degrading to an empty homepage section.
+//
+// source_url is required on new writes (accuracy gate — a quote we cannot link
+// to is indistinguishable from a fabricated quote), optional for backward
+// compatibility when Perplexity's sonar-pro response cannot produce a URL.
+// The enrichment processor drops items without a valid URL, so downstream
+// consumers see either verified insights or an empty array.
 export const ExpertInsightSchema = z.object({
   expert_name: z.string().min(1),
   role: z.string(),
@@ -127,10 +133,20 @@ export const ExpertInsightSchema = z.object({
   photo_url: z.string().optional(),
   quote_or_summary: z.string().min(1),
   source: z.string(),
+  source_url: z.string().url().optional(),
   date: z.string(),
 });
 
-export const ExpertInsightsArraySchema = z.array(ExpertInsightSchema).min(1).max(3);
+// Previously min(1) — the floor forced Perplexity to fabricate a quote on
+// genuinely quiet weeks. Now min(0): honest absence beats invented attribution.
+// The homepage renders an explicit empty state when this array is empty.
+export const ExpertInsightsArraySchema = z.array(ExpertInsightSchema).max(3);
+
+// Strict variant used when we want Perplexity to be forced to include URLs.
+// Parser falls back to the lenient schema if strict fails, then filters.
+export const ExpertInsightStrictSchema = ExpertInsightSchema.extend({
+  source_url: z.string().url(),
+});
 
 export const RegulatoryUpdateSchema = z.object({
   headline: z.string(),

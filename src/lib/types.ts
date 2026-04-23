@@ -101,9 +101,17 @@ export interface AdoptionUpdate {
   url: string;
 }
 
+export interface InstitutionalFlowMove {
+  text: string;
+  source_url?: string; // Required on new writes; optional for backward compat with legacy rows written before the source_url requirement.
+}
+
 export interface InstitutionalFlows {
   summary: string;
-  notable_moves: string[];
+  // Polymorphic for backward compat: legacy Supabase rows have notable_moves
+  // as string[]; new writes use the object form with a verifiable source_url.
+  // Render path normalizes both shapes. Write path only emits the object form.
+  notable_moves: Array<string | InstitutionalFlowMove>;
 }
 
 export interface MacroContext {
@@ -116,6 +124,7 @@ export interface SupplyDynamics {
   exchange_reserve_trend: string;
   long_term_holder_pct: number | null;
   supply_narrative: string;
+  source_url?: string; // Verifiable source (Glassnode, CryptoQuant, etc.). Required on new writes; optional on legacy rows.
 }
 
 export interface ExpertInsight {
@@ -124,7 +133,8 @@ export interface ExpertInsight {
   twitter_handle?: string;
   photo_url?: string;
   quote_or_summary: string;
-  source: string;
+  source: string;        // Human-readable label: "YouTube: ep 891", "Substack: Lyn Alden"
+  source_url?: string;   // Verifiable URL to the primary source. Required on new writes; optional for backward compat with legacy rows that predate the source_url requirement.
   date: string;
 }
 

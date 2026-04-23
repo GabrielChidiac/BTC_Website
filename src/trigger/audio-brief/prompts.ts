@@ -598,7 +598,14 @@ function buildFactsBlock(b: BriefingJSON | undefined | null): string {
   lines.push("### INSTITUTIONAL FLOWS");
   const etf = b.etf_flows;
   const inst = b.institutional_flows;
-  const notableMoves = Array.isArray(inst?.notable_moves) ? inst?.notable_moves ?? [] : [];
+  // notable_moves is polymorphic (string | {text, source_url?}) — normalize to
+  // spoken text. Source URLs are not relevant for audio; the listener cannot
+  // click them. Filter by text presence only.
+  const notableMoves: string[] = Array.isArray(inst?.notable_moves)
+    ? (inst?.notable_moves ?? [])
+        .map((m) => (typeof m === "string" ? m : m?.text ?? ""))
+        .filter((t) => typeof t === "string" && t.length > 0)
+    : [];
   const hasEtf = !!etf && (
     typeof etf.daily_net_flow_usd === "number" ||
     typeof etf.mtd_net_flow_usd === "number" ||

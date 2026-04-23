@@ -15,7 +15,7 @@ import {
   Img,
 } from "@react-email/components";
 import type { BriefingJSON, TopStoryCategory } from "../src/lib/types";
-import { formatReadTime } from "../src/lib/utils";
+import { formatReadTime, flowMoveText, flowMoveUrl } from "../src/lib/utils";
 
 const CATEGORY_LABELS: Record<TopStoryCategory, string> = {
   market: "Market",
@@ -483,11 +483,23 @@ export default function DailyDigest({
                     )}
                     {instFlows?.notable_moves && instFlows.notable_moves.length > 0 && (
                       <>
-                        {instFlows.notable_moves.map((move, i) => (
-                          <Text key={i} style={s.bullet}>
-                            {"\u2022"} {move}
-                          </Text>
-                        ))}
+                        {instFlows.notable_moves.map((move, i) => {
+                          const moveText = flowMoveText(move);
+                          const moveUrl = flowMoveUrl(move);
+                          return (
+                            <Text key={i} style={s.bullet}>
+                              {"\u2022"} {moveText}
+                              {moveUrl && (
+                                <>
+                                  {" "}
+                                  <Link href={moveUrl} style={{ color: c.accent, textDecoration: "underline" }}>
+                                    [source]
+                                  </Link>
+                                </>
+                              )}
+                            </Text>
+                          );
+                        })}
                       </>
                     )}
                   </>
@@ -550,9 +562,16 @@ export default function DailyDigest({
                     <Text style={s.quoteAttrib}>
                       - {expert.expert_name}, {expert.role}
                     </Text>
+                    {expert.source_url && (
+                      <Text style={{ ...s.quoteAttrib, marginTop: "4px" }}>
+                        <Link href={expert.source_url} style={{ color: c.accent, textDecoration: "underline" }}>
+                          {expert.source}
+                        </Link>
+                      </Text>
+                    )}
                   </>
                 ) : (
-                  <Text style={s.panelText}>No expert commentary today.</Text>
+                  <Text style={s.panelText}>No verified expert commentary this cycle.</Text>
                 )}
               </Column>
             </Row>

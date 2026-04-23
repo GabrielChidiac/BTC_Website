@@ -130,7 +130,13 @@ export const sendDigestTask = task({
       instLines.push(institutional_flows.summary);
     }
     if (institutional_flows?.notable_moves?.length) {
-      instLines.push(...institutional_flows.notable_moves.map((m) => `• ${m}`));
+      instLines.push(
+        ...institutional_flows.notable_moves.map((m) => {
+          const text = typeof m === "string" ? m : m.text;
+          const url = typeof m === "string" ? undefined : m.source_url;
+          return url ? `• ${text} [${url}]` : `• ${text}`;
+        }),
+      );
     }
     if (instLines.length > 0) sections.push(`--- INSTITUTIONAL ACTIVITY ---\n${instLines.join("\n")}`);
 
@@ -157,7 +163,8 @@ export const sendDigestTask = task({
     // Expert
     if (expert_insights?.length > 0) {
       const e = expert_insights[0];
-      sections.push(`--- EXPERT ---\n"${e.quote_or_summary.slice(0, 120)}" - ${e.expert_name}, ${e.role}`);
+      const sourceLink = e.source_url ? `\nSource: ${e.source_url}` : "";
+      sections.push(`--- EXPERT ---\n"${e.quote_or_summary.slice(0, 120)}" - ${e.expert_name}, ${e.role}${sourceLink}`);
     }
 
     // Outlook

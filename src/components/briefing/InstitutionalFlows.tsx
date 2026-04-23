@@ -1,4 +1,5 @@
 import type { InstitutionalFlows as InstitutionalFlowsType } from "@/lib/types";
+import { flowMoveText, flowMoveUrl } from "@/lib/utils";
 
 export function InstitutionalFlows({
   flows,
@@ -26,14 +27,32 @@ export function InstitutionalFlows({
 
       {hasNotableMoves && (
         <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-          {flows.notable_moves.map((move, i) => (
-            <li
-              key={i}
-              className="text-xs text-[var(--color-text-secondary)] pl-3 border-l-2 border-[var(--color-accent)]/30 leading-relaxed"
-            >
-              {move}
-            </li>
-          ))}
+          {flows.notable_moves.map((move, i) => {
+            const text = flowMoveText(move);
+            const url = flowMoveUrl(move);
+            return (
+              <li
+                key={i}
+                className="text-xs text-[var(--color-text-secondary)] pl-3 border-l-2 border-[var(--color-accent)]/30 leading-relaxed"
+              >
+                {text}
+                {url && (
+                  <>
+                    {" "}
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[var(--color-accent)] hover:underline"
+                      aria-label="Primary source"
+                    >
+                      [source]
+                    </a>
+                  </>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

@@ -28,13 +28,29 @@ export function ExpertExpandable({ insight }: { insight: ExpertInsight }) {
     </div>
   );
 
+  const sourceLine = (
+    <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+      {insight.source_url ? (
+        <a
+          href={insight.source_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-[var(--color-accent)] hover:underline"
+        >
+          {insight.source}
+        </a>
+      ) : (
+        insight.source
+      )}
+      {insight.date && ` | ${insight.date}`}
+    </p>
+  );
+
   if (!hasMore) {
     return (
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-5 sm:p-6 card-interactive">
         {preview}
-        <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-          {insight.source}{insight.date && ` | ${insight.date}`}
-        </p>
+        {sourceLine}
       </div>
     );
   }
@@ -44,9 +60,7 @@ export function ExpertExpandable({ insight }: { insight: ExpertInsight }) {
       <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
         {insight.quote_or_summary}
       </p>
-      <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-        {insight.source}{insight.date && ` | ${insight.date}`}
-      </p>
+      {sourceLine}
     </ExpandableCard>
   );
 }

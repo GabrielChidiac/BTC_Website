@@ -126,6 +126,30 @@ export function formatPctChange(pct: number): string {
 }
 
 /**
+ * Extract the display text from a notable institutional move. Handles the
+ * polymorphic (string | InstitutionalFlowMove) shape so legacy rows keep
+ * rendering while new writes carry a verifiable source_url.
+ */
+export function flowMoveText(
+  move: string | { text: string; source_url?: string },
+): string {
+  return typeof move === "string" ? move : move.text;
+}
+
+/**
+ * Extract the verifiable source URL from a notable institutional move, or
+ * undefined on legacy (string) rows or objects missing the url. UI components
+ * should link the text when this returns a non-empty URL.
+ */
+export function flowMoveUrl(
+  move: string | { text: string; source_url?: string },
+): string | undefined {
+  if (typeof move === "string") return undefined;
+  const u = move.source_url;
+  return u && u.trim().length > 0 ? u : undefined;
+}
+
+/**
  * Compute the approximate read time in seconds for a briefing, based on word
  * count of all reader-visible text fields at 200 words per minute. Powers the
  * 3-Minute Contract display at the top of the homepage and the email header.
@@ -148,7 +172,7 @@ export function computeReadTimeSeconds(briefing: BriefingJSON): number {
     ...(briefing.macro_context?.key_macro_events ?? []),
     briefing.looking_ahead,
     briefing.institutional_flows?.summary,
-    ...(briefing.institutional_flows?.notable_moves ?? []),
+    ...(briefing.institutional_flows?.notable_moves ?? []).map(flowMoveText),
     briefing.supply_dynamics?.exchange_reserve_trend,
     briefing.supply_dynamics?.supply_narrative,
   ];

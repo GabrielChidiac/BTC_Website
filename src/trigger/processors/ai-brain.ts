@@ -462,6 +462,127 @@ function buildComparisons(
 
 // ─── User prompt builder ───────────────────────────────────────────────────
 
+/**
+ * Build a compact block of directional facts derived from market data so
+ * Claude cannot confabulate the sign of weekly/daily moves. Pre-computes
+ * approved and forbidden adjectives per time period so the LLM has an
+ * unambiguous reference instead of having to infer direction from raw
+ * percentages. This is the ai-brain equivalent of the audio brief FACTS
+ * BLOCK pattern — every accuracy claim ties back here.
+ */
+function buildDirectionalTruthBlock(market: MarketCollectorOutput | null): string {
+  if (!market) return "";
+
+  const p = market.price;
+  const change24h = p.change_24h_pct;
+  const change7d = p.change_7d_pct;
+
+  const FLAT_THRESHOLD = 1.5;
+
+  const describeMove = (pct: number): { direction: string; approved: string[]; forbidden: string[] } => {
+    if (pct > FLAT_THRESHOLD) {
+      return {
+        direction: `UP (+${pct.toFixed(2)}%)`,
+        approved: ["rally", "rallied", "gain", "gained", "climb", "climbed", "rose", "surge", "surged", "strength", "breakout", "advance"],
+        forbidden: ["decline", "declined", "fell", "drop", "dropped", "weakness", "sell-off", "selloff", "pullback", "slump", "slumped", "plunge", "retreat", "sliding", "tumbled"],
+      };
+    }
+    if (pct < -FLAT_THRESHOLD) {
+      return {
+        direction: `DOWN (${pct.toFixed(2)}%)`,
+        approved: ["decline", "declined", "fell", "drop", "dropped", "weakness", "sell-off", "pullback", "slump", "slumped", "plunge", "retreat", "sliding"],
+        forbidden: ["rally", "rallied", "gain", "gained", "climb", "climbed", "rose", "surge", "surged", "strength", "breakout", "advance"],
+      };
+    }
+    return {
+      direction: `FLAT (${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%)`,
+      approved: ["consolidated", "range-bound", "muted", "quiet", "unchanged", "steady"],
+      forbidden: [],
+    };
+  };
+
+  const day = describeMove(change24h);
+  const week = describeMove(change7d);
+
+  const lines: string[] = [
+    "## DIRECTIONAL TRUTH BLOCK (binding — every text field must agree with these facts)",
+    "",
+    "If you write any phrase containing one of the FORBIDDEN adjectives below in a sentence that characterizes Bitcoin's move over this period, the output is a hallucination and will be rejected. Use the APPROVED adjectives or a flat-day word like \"unchanged\" or \"range-bound\" instead.",
+    "",
+    `24-HOUR DIRECTION: ${day.direction}`,
+    `  Approved words for describing today: ${day.approved.join(", ")}`,
+    day.forbidden.length > 0 ? `  Forbidden words for describing today: ${day.forbidden.join(", ")}` : "  (flat day, any directional language requires scope word)",
+    "",
+    `7-DAY DIRECTION: ${week.direction}`,
+    `  Approved words for describing this week: ${week.approved.join(", ")}`,
+    week.forbidden.length > 0 ? `  Forbidden words for describing this week: ${week.forbidden.join(", ")}` : "  (flat week, any directional language requires scope word)",
+    "",
+  ];
+
+  // Add comparative anchors so quantitative prose has concrete baselines.
+  if (market.comparative) {
+    const c = market.comparative;
+    if (c.price_vs_30d_avg_pct != null) {
+      const sign = c.price_vs_30d_avg_pct >= 0 ? "+" : "";
+      lines.push(`Price vs 30-day average: ${sign}${c.price_vs_30d_avg_pct.toFixed(2)}% ${c.price_vs_30d_avg_pct >= 0 ? "(above mean)" : "(below mean)"}`);
+    }
+    if (c.price_30d_high != null && c.price_30d_low != null) {
+      const range = c.price_30d_high - c.price_30d_low;
+      const pctFromLow = range > 0 ? ((p.usd - c.price_30d_low) / range) * 100 : 50;
+      const positionLabel =
+        pctFromLow >= 85 ? "near range high"
+          : pctFromLow >= 60 ? "upper half of range"
+            : pctFromLow >= 40 ? "middle of range"
+              : pctFromLow >= 15 ? "lower half of range"
+                : "near range low";
+      lines.push(`Price position in 30-day range: ${positionLabel} (${pctFromLow.toFixed(0)}% from low)`);
+    }
+    if (c.realized_vol_30d_pct != null) {
+      const vol = c.realized_vol_30d_pct;
+      const volLabel = vol >= 70 ? "elevated" : vol >= 45 ? "normal" : "compressed";
+      lines.push(`30-day realized volatility: ${vol.toFixed(1)}% annualized (${volLabel})`);
+    }
+    if (c.funding_rate_30d_percentile != null) {
+      const pct = c.funding_rate_30d_percentile;
+      const label = pct >= 85 ? "top decile, longs crowded" : pct >= 65 ? "upper half, moderately long" : pct >= 35 ? "middle of range, balanced" : pct >= 15 ? "lower half, moderately short" : "bottom decile, shorts crowded";
+      lines.push(`Funding rate percentile (30d): ${pct.toFixed(0)}th (${label})`);
+    }
+    if (c.etf_flows_30d_z_score != null) {
+      const z = c.etf_flows_30d_z_score;
+      const sign = z >= 0 ? "+" : "";
+      const label = Math.abs(z) >= 2 ? "extreme" : Math.abs(z) >= 1 ? "elevated" : "within normal range";
+      lines.push(`ETF flow z-score vs 30d: ${sign}${z.toFixed(2)}σ (${label})`);
+    }
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Build a block of verbatim source headlines so Claude has an explicit list
+ * of titles it is permitted to use as TopStory/RegulatoryUpdate/AdoptionUpdate
+ * headlines. Even though the pipeline overwrites headlines post-generation
+ * from the same source, giving Claude this block up front reduces retry
+ * cycles because Claude anchors on the approved text from the start.
+ */
+function buildApprovedHeadlinesBlock(
+  articles: Array<{ url: string; title: string; source: string }>,
+): string {
+  if (articles.length === 0) return "";
+  const lines = [
+    "## APPROVED HEADLINES (these are the ONLY headlines you may use — copy verbatim)",
+    "",
+    "Each top_story, regulatory, or adoption item's headline field must be the title below, copied verbatim. Match by URL. Any paraphrase, editorialization (e.g., adding \"Despite Price Decline\"), or shortening will be overwritten by the pipeline and may trigger a correction retry.",
+    "",
+  ];
+  articles.slice(0, 40).forEach((a, i) => {
+    lines.push(`${i + 1}. URL: ${a.url}`);
+    lines.push(`   Title (VERBATIM): ${a.title}`);
+    lines.push(`   Source: ${a.source}`);
+  });
+  return lines.join("\n");
+}
+
 function buildUserPrompt(
   payload: AiBrainPayload,
   halving: { progressPct: number; blocksRemaining: number },
@@ -472,6 +593,17 @@ function buildUserPrompt(
   const sections: string[] = [];
 
   sections.push(`## Briefing Date\n${date}`);
+
+  // Directional truth block — highest-priority accuracy anchor. Put it early
+  // so Claude reads it before drafting any text fields.
+  const directionalBlock = buildDirectionalTruthBlock(market);
+  if (directionalBlock) sections.push(directionalBlock);
+
+  // Approved headlines block — explicit list of source titles Claude may use.
+  const approvedHeadlinesBlock = buildApprovedHeadlinesBlock(
+    Array.isArray(news?.articles) ? news.articles : [],
+  );
+  if (approvedHeadlinesBlock) sections.push(approvedHeadlinesBlock);
 
   if (EXPERT_CONTEXT_ENABLED) {
     sections.push(`## EXPERT REFERENCE FRAMEWORK

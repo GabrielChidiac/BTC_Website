@@ -143,18 +143,23 @@ export const dailyPipelineTask = schedules.task({
     logger.info("AI Brain complete");
 
     // ── Step 3: Enrichment (non-fatal) ────────────────────────────────────
-    let enrichment = {
+    let enrichment: {
+      looking_ahead: string;
+      institutional_flows: BriefingJSON["institutional_flows"];
+      supply_dynamics: BriefingJSON["supply_dynamics"];
+      expert_insights: BriefingJSON["expert_insights"];
+    } = {
       looking_ahead: "Forward-looking analysis unavailable today.",
       institutional_flows: {
         summary: "Data unavailable",
-        notable_moves: [] as string[],
+        notable_moves: [],
       },
       supply_dynamics: {
         exchange_reserve_trend: "Data unavailable",
-        long_term_holder_pct: null as number | null,
+        long_term_holder_pct: null,
         supply_narrative: "Supply data unavailable today.",
       },
-      expert_insights: [] as BriefingJSON["expert_insights"],
+      expert_insights: [],
     };
 
     // Build market summary for enrichment context

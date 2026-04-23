@@ -116,23 +116,28 @@ const FLOWS_SYSTEM = `You are a financial data analyst covering institutional Bi
 
 IMPORTANT: Do NOT include ETF flow data (daily inflows/outflows, AUM, fund-level breakdowns like GBTC/IBIT). ETF data is already sourced separately. Focus EXCLUSIVELY on non-ETF institutional activity.
 
+ZERO-HALLUCINATION RULE: every notable move MUST include a verifiable source_url pointing directly to the primary source (SEC filing, corporate press release, on-chain transaction explorer, company tweet, etc.). If you cannot produce a real URL for a move, DO NOT include it. An empty array is the correct output when no verifiable moves can be found. Never fabricate a URL, never reuse a URL that does not contain the claim, never cite rumor or social media speculation without a direct link.
+
 Search for the latest institutional Bitcoin activity and return the data in this exact JSON format:
 
 {
   "summary": "<one short sentence introducing the institutional theme this week, max 12 words>",
-  "notable_moves": ["<string>", ...]
+  "notable_moves": [
+    { "text": "<entity + action + specific numbers>", "source_url": "<https URL to primary source>" },
+    ...
+  ]
 }
 
 Rules:
-- summary: one short sentence that frames the moves below. E.g. "Corporate treasuries led accumulation this week." or "Quiet week for institutional activity outside ETFs."
-- notable_moves: 1-5 notable moves from the categories below. Each should include entity name, action, and specific numbers where available. EARNED SIGNIFICANCE: a quiet week should return 1-2 genuine moves, not 5 padded ones. Never fabricate or inflate to hit a count.
+- summary: one short sentence that frames the moves below. E.g. "Corporate treasuries led accumulation this week." or "Quiet week for institutional activity outside ETFs." On genuinely quiet weeks, write "Quiet week for non-ETF institutional activity." and return an empty notable_moves array rather than padding.
+- notable_moves: 0-5 notable moves from the categories below. Each object MUST contain a 'text' field and a 'source_url' field. EARNED SIGNIFICANCE: a quiet week should return 0-2 genuine moves, not 5 padded ones. Never fabricate, never inflate, never guess a URL.
   Categories to cover:
-  * Corporate treasury purchases/sales (MicroStrategy, Tesla, Block, Metaplanet, etc.)
-  * Whale wallet movements (large on-chain transfers to/from exchanges, dormant wallet activity)
-  * Fund allocations and rebalancing (hedge funds, sovereign wealth funds, pension funds adding/reducing BTC exposure)
-  * OTC desk activity and trends (premium/discount signals, block trade volumes)
-  * Mining company activity (treasury strategy changes, BTC sales/accumulation)
-- Use real, verified data only. Do not fabricate numbers.
+  * Corporate treasury purchases/sales (MicroStrategy, Tesla, Block, Metaplanet, etc.) — cite the SEC 8-K or corporate press release URL
+  * Whale wallet movements (large on-chain transfers to/from exchanges, dormant wallet activity) — cite the blockchain explorer or an on-chain analytics tweet with the tx hash
+  * Fund allocations and rebalancing (hedge funds, sovereign wealth funds, pension funds adding/reducing BTC exposure) — cite the 13F filing URL or fund press release
+  * OTC desk activity and trends — cite the desk's own published commentary or a verifiable Bloomberg/Reuters article URL
+  * Mining company activity (treasury strategy changes, BTC sales/accumulation) — cite the company filing or press release URL
+- Use real, verified data only. Do not fabricate numbers. Do not invent dates.
 - Do NOT include citation markers like [1], [2], [3] or any bracketed references in any string values.
 - Never use em dashes or en dashes in string values. Use commas, periods, or semicolons instead.`;
 
@@ -140,33 +145,39 @@ Rules:
 
 const EXPERTS_SYSTEM = `You are a financial media analyst. Return ONLY valid JSON, no markdown fences or extra text. Do NOT include any preamble, meta-commentary, or remarks about your instructions.
 
+ZERO-HALLUCINATION RULE (highest priority): every expert entry MUST include a verifiable source_url pointing to the primary source of the quote (YouTube video URL with timestamp, exact tweet URL, Substack post permalink, podcast episode URL, news article URL). If you cannot produce a real URL to the exact place the quote was said, DO NOT include that expert. An empty array is the correct output when no verifiable recent commentary exists; a fabricated quote with a plausible-sounding attribution is a critical failure that directly misleads readers. Never guess a URL, never cite a general profile page (e.g., "https://twitter.com/saylor") when the quote is not there, never invent an episode number.
+
 Search for the most recent notable commentary on Bitcoin from well-known public figures. Search across ALL media formats: YouTube interviews, podcasts, X/Twitter posts, Bloomberg/CNBC TV appearances, conference talks, Substack newsletters, and written commentary. Substack is a HIGH-PRIORITY source; many top analysts publish their best research there (Lyn Alden, Dylan LeClair, Luke Gromen, Jeff Park, etc.). Cast a wide net.
 
-Return an array of 1 to 3 experts in this JSON format:
+Return an array of 0 to 3 experts in this JSON format:
 [
   {
     "expert_name": "<full name>",
     "role": "<title/role>",
     "twitter_handle": "<X/Twitter handle without @ symbol, or null if unknown>",
-    "quote_or_summary": "<2-3 sentence summary of their most recent key insight about Bitcoin>",
-    "source": "<specific source: 'YouTube: What Bitcoin Did ep. 891', 'Bloomberg TV interview Mar 25', 'The Investors Podcast ep. 423', 'X post', etc.>",
+    "quote_or_summary": "<2-3 sentence summary or direct quote of their most recent key Bitcoin insight>",
+    "source": "<specific source label: 'YouTube: What Bitcoin Did ep. 891', 'Substack: Lyn Alden, Fiscal Monitor Update', 'X post', etc.>",
+    "source_url": "<https URL to the exact primary source (video, tweet, Substack post, podcast page, article)>",
     "date": "<YYYY-MM-DD or approximate>"
   }
 ]
 
 Rules:
-- Return between 1 and 3 experts. The MINIMUM is 1. Never return an empty array. Even on a quiet news week, at least one credible Bitcoin voice has said something worth surfacing within the last 14 days; widen the window if needed and return that person. Zero experts is not a valid output, period. The downstream homepage section depends on at least one expert always being present.
-- Between 1 and 3, EARNED SIGNIFICANCE applies: 2 genuinely substantive voices beat 3 where one is padding. If only 1 or 2 experts have said something substantive, return 1 or 2. Never pad TO reach 3; never drop BELOW 1.
-- Every expert MUST be someone deeply in the Bitcoin space with real skin in the game: builders, fund managers, on-chain analysts, miners, protocol developers, macro strategists who actively cover BTC, or executives running Bitcoin-focused companies. They do NOT need to be household names or TV personalities. What matters is domain expertise and that their insight is substantive and impactful.
-- WELL-KNOWN figures (Michael Saylor, Cathie Wood, Larry Fink, Raoul Pal, Lyn Alden, Stanley Druckenmiller, Jeff Park, Luke Gromen, Matt Hougan, Jan van Eck) are great when they have recent commentary, but do NOT default to them if a lesser-known expert said something more insightful this week.
-- ALSO CONSIDER deep Bitcoin analysts and researchers who publish on Substack, podcasts, or X: Dylan LeClair, Willy Woo, James Check (Checkmate), Will Clemente, Sam Callahan, Joe Burnett, Pierre Rochard, Tuur Demeester, Adam Back, Jameson Lopp, Nic Carter, Preston Pysh, Greg Foss, Alex Gladstein, and similar Bitcoin-native voices.
-- NEVER include random commentators with no track record in Bitcoin, unnamed analysts, or people who just make price predictions without substance
-- Every entry MUST be a named individual person, never a firm or team
-- YouTube interviews, podcast appearances, and video content ARE excellent sources. Cite them specifically with episode numbers or dates.
-- Substack posts and newsletters ARE excellent sources. Cite them as "Substack: <author name>, '<post title>', <date>".
-- Use the most recent commentary available (preferably within the last 7 days)
-- Use real, recent quotes/insights only. Do not fabricate.
-- Source must be specific and detailed: "YouTube: What Bitcoin Did ep. 891", "The Investors Podcast ep. 423", "Bloomberg TV interview Mar 25", "X post Mar 26", "Substack: Lyn Alden, 'Fiscal Monitor Update', Mar 24", etc.
+- Return between 0 and 3 experts. EMPTY ARRAY IS A VALID OUTPUT when no expert has produced recent commentary you can verify with a URL. Do NOT pad. Do NOT widen the window so far that the commentary is no longer recent. Do NOT reach for a household name just to fill the slot.
+- EARNED SIGNIFICANCE: 1 genuinely substantive, URL-verified voice beats 3 where two are padding. If only 1 expert has said something substantive and URL-verifiable, return 1. If none, return [].
+- Every expert MUST be someone deeply in the Bitcoin space with real skin in the game: builders, fund managers, on-chain analysts, miners, protocol developers, macro strategists who actively cover BTC, or executives running Bitcoin-focused companies.
+- WELL-KNOWN figures (Michael Saylor, Cathie Wood, Larry Fink, Raoul Pal, Lyn Alden, Stanley Druckenmiller, Jeff Park, Luke Gromen, Matt Hougan, Jan van Eck) are great when they have recent commentary you can link to; do NOT default to them if a lesser-known expert said something more insightful this week.
+- ALSO CONSIDER deep Bitcoin analysts and researchers: Dylan LeClair, Willy Woo, James Check (Checkmate), Will Clemente, Sam Callahan, Joe Burnett, Pierre Rochard, Tuur Demeester, Adam Back, Jameson Lopp, Nic Carter, Preston Pysh, Greg Foss, Alex Gladstein, and similar Bitcoin-native voices.
+- NEVER include random commentators with no track record in Bitcoin, unnamed analysts, or people who just make price predictions without substance.
+- Every entry MUST be a named individual person, never a firm or team.
+- Use the most recent commentary available (preferably within the last 7 days).
+- Use real, recent quotes/insights only. DO NOT FABRICATE. DO NOT PARAPHRASE BEYOND RECOGNITION. A light paraphrase that preserves the speaker's claim is acceptable; a reconstruction from "things they typically say" is not.
+- source_url must be the direct link to the primary source where the quote appears. Acceptable examples:
+  * "https://www.youtube.com/watch?v=<id>&t=<timestamp>"
+  * "https://x.com/<handle>/status/<id>"
+  * "https://<substack>.substack.com/p/<slug>"
+  * "https://www.bloomberg.com/news/articles/<slug>"
+  Unacceptable: profile pages, homepages, generic search result URLs, or URLs you cannot verify.
 - Do NOT include citation markers like [1], [2], [3] or any bracketed references in any string values.
 - Never use em dashes or en dashes in string values. Use commas, periods, or semicolons instead.`;
 
@@ -318,13 +329,63 @@ export const enrichmentTask = task({
     }
 
     // ── Institutional flows ───────────────────────────────────────────────
+    // Zero-hallucination gate: every notable_move MUST have a valid source_url.
+    // Strings-without-urls (legacy shape) are dropped on NEW writes so the UI
+    // never renders an unverified institutional claim. Empty notable_moves
+    // array is the correct output when Perplexity cannot produce verifiable
+    // URLs — the homepage renders an empty-state stub instead of fabrication.
     if (flowsResult.status === "fulfilled" && !flowsResult.value.error) {
       try {
         const raw = flowsResult.value.data?.trim() ?? "";
-        const cleaned = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        const parsed = JSON.parse(cleaned) as InstitutionalFlows;
-        output.institutional_flows = parsed;
-        logger.info("Institutional flows complete");
+        const cleaned = raw
+          .replace(/```json\n?/g, "")
+          .replace(/```\n?/g, "")
+          .replace(/\[\d+\]/g, "") // strip Perplexity citation markers
+          .trim();
+        const parsedRaw = JSON.parse(cleaned) as {
+          summary?: unknown;
+          notable_moves?: unknown;
+        };
+        const summary = typeof parsedRaw.summary === "string" ? parsedRaw.summary : "Data unavailable";
+        const movesRaw = Array.isArray(parsedRaw.notable_moves) ? parsedRaw.notable_moves : [];
+        const isValidUrl = (u: unknown): u is string => {
+          if (typeof u !== "string") return false;
+          try {
+            const parsed = new URL(u);
+            return parsed.protocol === "https:" || parsed.protocol === "http:";
+          } catch {
+            return false;
+          }
+        };
+        const verifiedMoves = movesRaw
+          .map((m: unknown) => {
+            if (typeof m === "string") {
+              // Legacy string format has no URL, drop it under the new rule.
+              return null;
+            }
+            if (m && typeof m === "object") {
+              const mObj = m as { text?: unknown; source_url?: unknown };
+              const text = typeof mObj.text === "string" ? mObj.text.trim() : "";
+              const url = typeof mObj.source_url === "string" ? mObj.source_url.trim() : "";
+              if (!text) return null;
+              if (!isValidUrl(url)) return null;
+              return { text, source_url: url };
+            }
+            return null;
+          })
+          .filter((m): m is { text: string; source_url: string } => m !== null);
+        const droppedCount = movesRaw.length - verifiedMoves.length;
+        if (droppedCount > 0) {
+          logger.warn("Dropped institutional moves without valid source_url", {
+            dropped: droppedCount,
+            kept: verifiedMoves.length,
+          });
+        }
+        output.institutional_flows = {
+          summary,
+          notable_moves: verifiedMoves,
+        };
+        logger.info("Institutional flows complete", { verifiedMoveCount: verifiedMoves.length });
       } catch (e) {
         logger.warn("Failed to parse institutional flows JSON", { error: (e as Error).message });
       }
@@ -333,12 +394,21 @@ export const enrichmentTask = task({
     }
 
     // ── Expert insights ───────────────────────────────────────────────────
-    // Extra care here because the homepage experts section depends on a
-    // non-empty array. Common Perplexity failure modes: leaked [1] citation
-    // markers that break JSON, trailing commentary after the JSON array,
-    // wrapping the array in a {"experts": [...]} object, returning fewer
-    // than 1 item. We strip citation markers, parse, zod-validate, and on
-    // schema failure retry ONCE with an explicit "fix your JSON" prompt.
+    // Zero-hallucination gate: every insight MUST ship with a verifiable
+    // source_url. Insights lacking a URL are dropped, even if they parse. The
+    // homepage renders an empty-state stub when zero verified insights exist.
+    // Previously the pipeline forced at least 1 insight on every briefing,
+    // which pushed Perplexity into fabrication on genuinely quiet weeks.
+    const isValidHttpsUrl = (u: unknown): u is string => {
+      if (typeof u !== "string" || u.trim().length === 0) return false;
+      try {
+        const parsed = new URL(u.trim());
+        return parsed.protocol === "https:" || parsed.protocol === "http:";
+      } catch {
+        return false;
+      }
+    };
+
     const tryParseExperts = (raw: string): ParsedExpertInsight[] | null => {
       if (!raw.trim()) return null;
       const cleaned = raw
@@ -370,8 +440,12 @@ export const enrichmentTask = task({
         : "";
     let experts = tryParseExperts(firstRaw);
 
+    // Retry ONCE when first pass failed to parse at all (structural error).
+    // We do NOT retry just because source_urls are missing — that would teach
+    // Perplexity that fabrication is rewarded. If the first pass returned a
+    // valid array where every item lacked a URL, we ship an empty array.
     if (!experts) {
-      logger.warn("Expert insights first pass failed, retrying with repair prompt", {
+      logger.warn("Expert insights first pass failed to parse, retrying with repair prompt", {
         firstPassStatus: expertsResult.status,
         firstPassError:
           expertsResult.status === "fulfilled" ? expertsResult.value.error : null,
@@ -380,37 +454,48 @@ export const enrichmentTask = task({
       const retryResult = await queryPerplexity({
         system: EXPERTS_SYSTEM,
         prompt:
-          "Return a JSON array of between 1 and 3 current Bitcoin experts and their most recent substantive commentary. The array MUST contain at least one item. Do NOT return an empty array. Do NOT include citation markers like [1], [2], [3]. Do NOT wrap the array in an object. Do NOT include any prose before or after the array. Output must start with [ and end with ].",
+          "Return a JSON array of 0 to 3 current Bitcoin experts and their most recent substantive commentary. Every entry MUST include a valid source_url (a direct link to the exact primary source). If you cannot verify URLs for any expert this week, return an empty array []. An empty array is valid. Do NOT include citation markers like [1], [2], [3]. Do NOT wrap the array in an object. Do NOT include any prose before or after the array. Output must start with [ and end with ].",
       });
       if (retryResult.data) {
         experts = tryParseExperts(retryResult.data);
       }
     }
 
-    if (experts && experts.length > 0) {
-      output.expert_insights = experts.map((insight) => {
-        const handle = insight.twitter_handle ?? undefined;
-        return {
-          expert_name: insight.expert_name,
-          role: insight.role,
-          quote_or_summary: insight.quote_or_summary,
-          source: insight.source,
-          date: insight.date,
-          twitter_handle: handle,
-          photo_url: getExpertPhotoUrls(insight.expert_name, handle)[0],
-        };
+    // Filter to insights with a valid source_url. This is the hard gate:
+    // items without verifiable URLs are dropped silently, with an aggregate
+    // count logged so we can track how often Perplexity fabricates.
+    const verifiedExperts: ExpertInsight[] = [];
+    const rawExperts = experts ?? [];
+    for (const insight of rawExperts) {
+      if (!isValidHttpsUrl(insight.source_url)) {
+        continue;
+      }
+      const handle = insight.twitter_handle ?? undefined;
+      verifiedExperts.push({
+        expert_name: insight.expert_name,
+        role: insight.role,
+        quote_or_summary: insight.quote_or_summary,
+        source: insight.source,
+        source_url: insight.source_url,
+        date: insight.date,
+        twitter_handle: handle,
+        photo_url: getExpertPhotoUrls(insight.expert_name, handle)[0],
       });
-      logger.info("Expert insights complete", { count: experts.length });
+    }
+    const droppedExpertCount = rawExperts.length - verifiedExperts.length;
+    if (droppedExpertCount > 0) {
+      logger.warn("Dropped expert insights without valid source_url", {
+        dropped: droppedExpertCount,
+        kept: verifiedExperts.length,
+      });
+    }
+    output.expert_insights = verifiedExperts;
+    if (verifiedExperts.length === 0) {
+      logger.warn("Expert insights empty after source_url filter — homepage section will render empty-state", {
+        firstPassRawPreview: firstRaw.slice(0, 300),
+      });
     } else {
-      // Loud failure: this means the homepage Deep Dive experts section
-      // will be empty, which is a visible regression. Upgrade to error
-      // so it surfaces in the Trigger dashboard instead of being buried.
-      logger.error("Expert insights UNAVAILABLE after retry — homepage section will render empty", {
-        firstPassStatus: expertsResult.status,
-        firstPassError:
-          expertsResult.status === "fulfilled" ? expertsResult.value.error : null,
-        firstPassRawPreview: firstRaw.slice(0, 500),
-      });
+      logger.info("Expert insights complete", { count: verifiedExperts.length });
     }
 
     // ── Supply dynamics ───────────────────────────────────────────────────
