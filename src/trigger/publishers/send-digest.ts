@@ -114,7 +114,7 @@ export const sendDigestTask = task({
       `${daily_diff.price_change}\n` +
       `Market: $${market_snapshot.price_usd.toLocaleString("en-US")} | 24h: ${fmtPct(market_snapshot.change_24h_pct)} | 7d: ${fmtPct(market_snapshot.change_7d_pct)}\n` +
       `Mkt Cap: $${compact(market_snapshot.market_cap_usd)} | Vol: $${compact(market_snapshot.volume_24h_usd)} | Dom: ${market_snapshot.dominance_pct.toFixed(1)}%` +
-      `\nConsensus: ${narrative_consensus.score > 0 ? "+" : ""}${narrative_consensus.score} (${narrative_consensus.label})`
+      `\nBTC Today read: ${narrative_consensus.score > 0 ? "+" : ""}${narrative_consensus.score} (${narrative_consensus.label})`
     );
 
     // Flows

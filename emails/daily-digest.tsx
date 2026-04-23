@@ -330,7 +330,7 @@ export default function DailyDigest({
             <Text style={s.bannerPrice}>{daily_diff.price_change}</Text>
             <Text style={s.bannerOneLine}>{oneLine}</Text>
             <Text style={s.bannerMeta}>
-              <span style={{ color: c.textMuted }}>Consensus: </span>
+              <span style={{ color: c.textMuted }}>BTC Today read: </span>
               <span style={{ fontWeight: "700", color: consColor(consensus.score) }}>
                 {consensus.score > 0 ? "+" : ""}
                 {consensus.score} {consensus.label}

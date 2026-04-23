@@ -56,7 +56,7 @@ export function ArchiveList({ entries }: { entries: ArchiveEntry[] }) {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by date, insight, or consensus..."
+          placeholder="Search by date, insight, or read..."
           className="h-10 w-full max-w-sm rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] px-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/40 transition-colors"
         />
       </div>

@@ -172,7 +172,7 @@ export function BitcoinHero({
           {consensus && (
             <>
               <p className="mt-2 text-xs font-medium font-[family-name:var(--font-heading)] uppercase tracking-[0.1em]">
-                <span className="text-[var(--color-text-muted)]">Consensus</span>
+                <span className="text-[var(--color-text-muted)]">BTC Today read</span>
                 {" "}
                 <span className={sentimentColor}>{consensus.label}</span>
               </p>

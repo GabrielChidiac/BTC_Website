@@ -348,7 +348,7 @@ export function DailySummaryPDF({ briefing }: { briefing: BriefingJSON }) {
         {/* Consensus */}
         {briefing.narrative_consensus && (
           <View style={s.consensusBox}>
-            <Text style={s.sectionHeading}>Market Consensus</Text>
+            <Text style={s.sectionHeading}>BTC Today Read</Text>
             <Text style={s.consensusLabel}>{briefing.narrative_consensus.label}</Text>
             <Text style={s.consensusRationale}>{briefing.narrative_consensus.rationale}</Text>
           </View>

@@ -7,6 +7,12 @@ import { EXPERT_CONTEXT } from "@/trigger/processors/expert-context";
 import { AiBrainOutputSchema } from "@/lib/schemas";
 import { buildFallbackBriefing as buildDataDrivenFallback } from "@/trigger/processors/fallback-template";
 import { buildCountdownFactsBlock, validateCountdownEvents } from "@/trigger/lib/calendar";
+import {
+  findDirectionalViolations,
+  findNarrativeConsensusContradictions,
+  findUnsourcedSummaries,
+  formatViolationsForRetry,
+} from "@/trigger/lib/accuracy-validators";
 import type {
   BriefingJSON,
   TopStory,
@@ -44,7 +50,33 @@ CRITICAL: Return ONLY valid JSON. No markdown fences, no extra text, no comments
 CRITICAL: All text fields in the JSON must contain only the requested analysis content. NEVER include meta-commentary, remarks about your instructions, disclaimers about your role, or self-referential statements like "I appreciate the data" or "my instructions say." You are invisible; only the analysis exists. Write every text field as if it will be published directly to institutional investors.
 
 ═══════════════════════════════════════════════════════════════════════════
-NON-NEGOTIABLE READER CONTRACT (most important rule in this prompt)
+ZERO-HALLUCINATION GATE (highest-priority rule, supersedes all others)
+═══════════════════════════════════════════════════════════════════════════
+
+Every factual claim in every text field you write must trace back to one of three sources in the user prompt: (a) the Market Data block (numbers from our collectors), (b) the News Articles block (verbatim article titles, descriptions, and scraped content), or (c) the Calendar Facts Block. If a claim is not supported by one of those three blocks, you may not write it.
+
+A. DIRECTIONAL CONSISTENCY (hardest rule, applied field-by-field).
+Every sentence that characterizes Bitcoin's price direction over a period must agree in sign with the corresponding market number. Specifically:
+- If the Market Data block shows "7d Change: +X%" (positive), you may NOT use phrases like "price weakness", "price decline", "despite the drop", "during a sell-off", "amid the decline", "bitcoin fell this week", "weakness in bitcoin", "bitcoin retreat", "weekly decline", or any similar phrasing that implies the week closed down. These are outright lies when the week closed up.
+- If the Market Data block shows "7d Change: -X%" (negative), you may NOT use phrases like "price strength", "bitcoin rally", "bitcoin surge", "during a rally", "weekly gain", or any similar phrasing that implies the week closed up.
+- The same rule applies to 24h change for single-day characterizations.
+- Only exception: phrases explicitly scoped to a narrower sub-period ("mid-week pullback", "Wednesday's intraday dip") are acceptable PROVIDED the sentence makes the narrower scope explicit.
+
+B. SOURCE-ARTICLE FIDELITY (headlines and summaries for stories, regulatory, adoption).
+The 'headline' field for every top_story, regulatory, and adoption item must be the EXACT title of the source article, copied verbatim from the News Articles block in the user prompt. Do NOT paraphrase, do NOT add editorial framing (the word "despite" is a red flag; so is "amid", "as" used causally), do NOT invent relationships between facts the article does not assert, do NOT shorten the title. The source title IS the headline. Any editorialization of the headline will be overwritten by the pipeline, so you gain nothing by paraphrasing and lose everything if you fabricate framing.
+
+The 'summary' field for every top_story, regulatory, and adoption item must reference at least one concrete fact — a proper noun, a dollar amount, a percentage, or a 5+ word phrase — that appears in the source article's scraped text. Do NOT write implications that are not in the article. If you infer a consequence ("this signals institutional appetite broadening"), that inference must be a plain reading of the article text, not a plausible-sounding addition.
+
+C. NO INVENTED NUMBERS, NAMES, OR EVENTS.
+Every dollar amount, percentage, company name, person name, and event date you mention must appear somewhere in the user prompt's data blocks. If the article text says "roughly \$1 billion", you write "roughly \$1 billion", not "\$1.2 billion". If you cannot quote the number from the article or the Market Data block, drop the sentence.
+
+D. PRE-RETURN SELF-CHECK (mechanical, applied before you emit JSON).
+Before returning, re-read your own output one pass and flag every directional word you used. For each, confirm the sign matches the Market Data block. For every headline, confirm it is word-for-word from an article title in the News Articles block. For every dollar amount or percentage, confirm it appears verbatim in either the Market Data block or the article's scraped content. If you find any failures, rewrite before returning.
+
+The pipeline has a post-generation validator that will catch directional contradictions, editorialized headlines, and unsourced summaries. If it fires, you will be asked to repair the output. Save both of us the retry — get it right the first time.
+
+═══════════════════════════════════════════════════════════════════════════
+NON-NEGOTIABLE READER CONTRACT (second-highest rule)
 ═══════════════════════════════════════════════════════════════════════════
 
 Every briefing you produce must make these two questions answerable within the first 20 seconds of reading. If the reader cannot answer both after reading hero_three_lines and daily_diff, the briefing has failed.
@@ -159,10 +191,10 @@ This briefing is EXCLUSIVELY about Bitcoin (BTC). Apply these rules with zero to
 The JSON must conform exactly to this TypeScript schema:
 
 interface TopStory {
-  headline: string;            // Concise headline (≤12 words)
+  headline: string;            // EXACT title of the source article from the News Articles block, copied VERBATIM. Do NOT paraphrase, do NOT add editorial framing (e.g., "Despite Price Decline", "Amid Selling Pressure"), do NOT shorten. The pipeline will overwrite this field with the source article title regardless, so any editorial addition you attempt is wasted effort AND risks producing a contradictory retry cycle. Match the News Articles block exactly.
   source: string;
   url: string;
-  summary: string;             // 2-3 sentences. Each must go beyond a headline restatement to explain what the story MEANS for Bitcoin holders. Structure: one sentence of context (what happened), then one or two sentences of implications (the "so what" for capital flows, positioning, macro, or timeline pressure on catalysts). Assume financial literacy, not crypto-native knowledge. The reader should learn something they could not have guessed from the headline alone.
+  summary: string;             // 2-3 sentences. MUST reference at least one concrete fact (proper noun, dollar amount, percentage, or 5+ word phrase) that appears verbatim in the source article's scraped content. Structure: one sentence of context (what happened, grounded in the article text), then one or two sentences of implications (the "so what" for capital flows, positioning, macro, or timeline pressure on catalysts) — implications must be reasonable readings of the article text, not plausible-sounding inventions. If the article does not state weekly price direction, do NOT infer it. If the article does not name a specific institutional buyer, do NOT invent one.
   sentiment: "bullish" | "bearish" | "neutral";
   category: "market" | "macro" | "technical";  // REQUIRED. Only these three values are allowed for items in top_stories. Adoption and regulatory items are NEVER placed in top_stories — they route to the adoption[] and regulatory[] arrays respectively. See routing rules below.
   tags: string[];              // 1-3 topic tags, e.g. ["ETF", "macro"], ["regulation", "institutional"]
@@ -226,18 +258,18 @@ interface CountdownEvent {
 }
 
 interface RegulatoryUpdate {
-  headline: string;
+  headline: string;            // EXACT title of the source article from the News Articles block, copied VERBATIM. Same rule as TopStory.headline — the pipeline will overwrite with the source title.
   region: string;
-  summary: string;             // 2-3 sentences, standalone readable
+  summary: string;             // 2-3 sentences, standalone readable. MUST reference a concrete fact (proper noun, dollar amount, percentage, or 5+ word phrase) from the source article's scraped content. Do NOT fabricate jurisdictional details not in the article.
   impact: "positive" | "negative" | "neutral";
   source: string;
   url: string;
 }
 
 interface AdoptionUpdate {
-  headline: string;
+  headline: string;            // EXACT title of the source article from the News Articles block, copied VERBATIM. Same rule as TopStory.headline.
   category: "corporate" | "institutional" | "merchant" | "country" | "infrastructure";
-  summary: string;             // 2-3 sentences, standalone readable
+  summary: string;             // 2-3 sentences, standalone readable. MUST reference a concrete fact (proper noun, dollar amount, percentage, or 5+ word phrase) from the source article's scraped content. Do NOT fabricate purchase sizes or dates not in the article.
   source: string;
   url: string;
 }
@@ -649,6 +681,97 @@ No previous briefing available. Set daily_diff.price_change to "N/A (first brief
   return sections.join("\n\n");
 }
 
+// ─── Post-generation data-consistency gate ────────────────────────────────
+
+/**
+ * Run directional, narrative-consensus, and source-quote validators against
+ * Claude's output. If any fire, do ONE correction retry with the specific
+ * violations listed back to Claude. Return the better of the two outputs.
+ *
+ * The function always returns a briefing; it never fails the pipeline. Worst
+ * case: violations persist, the original (or retry) briefing ships with the
+ * violations logged for post-hoc review. This is intentional: accuracy fixes
+ * must not regress availability.
+ */
+async function ensureDataConsistency(args: {
+  briefing: AiBrainOutput;
+  market: MarketCollectorOutput;
+  articles: Array<{ url: string; title: string; content?: string }>;
+  userPrompt: string;
+}): Promise<AiBrainOutput> {
+  const { briefing, market, articles, userPrompt } = args;
+
+  const articlesByUrl = new Map(
+    articles.map((a) => [a.url, { title: a.title, content: a.content, url: a.url, source: "", published_at: "" }]),
+  );
+
+  const directional = findDirectionalViolations(briefing, market.price);
+  const narrative = findNarrativeConsensusContradictions(briefing, {
+    change_7d_pct: market.price.change_7d_pct,
+    etf_flows_30d_z_score: market.comparative?.etf_flows_30d_z_score ?? null,
+  });
+  const unsourced = findUnsourcedSummaries(briefing, articlesByUrl);
+  const allViolations = [...directional, ...narrative, ...unsourced];
+
+  if (allViolations.length === 0) {
+    logger.info("Data-consistency gate: all validators passed on first attempt");
+    return briefing;
+  }
+
+  logger.warn("Data-consistency gate fired, attempting correction retry", {
+    total: allViolations.length,
+    directional: directional.length,
+    narrative: narrative.length,
+    unsourced: unsourced.length,
+    sample: allViolations.slice(0, 5).map((v) => v.reason),
+  });
+
+  const repairPrompt = `${userPrompt}\n\n---\n\n## DATA-CONSISTENCY GATE FAILURE — REWRITE REQUIRED\n\nYour previous output violated the ZERO-HALLUCINATION GATE in the system prompt. Specific issues:\n\n${formatViolationsForRetry(allViolations)}\n\nRewrite the full briefing JSON to resolve these issues. The 7-day price change is ${market.price.change_7d_pct.toFixed(2)}% and the 24-hour change is ${market.price.change_24h_pct.toFixed(2)}% — all directional language must match these signs. Every headline must be the source article's title verbatim. Every summary must reference a concrete fact from the source article's scraped content. Return ONLY the corrected JSON, same shape as before.`;
+
+  const repairResult = await callClaudeJSON<AiBrainOutput>({
+    system: SYSTEM_PROMPT,
+    prompt: repairPrompt,
+    maxTokens: 8192,
+    schema: AiBrainOutputSchema,
+  });
+
+  if (repairResult.error || !repairResult.data) {
+    logger.error("Data-consistency repair retry failed, shipping original with violations", {
+      error: repairResult.error,
+    });
+    return briefing;
+  }
+
+  const repaired = repairResult.data;
+  repaired.date = briefing.date;
+  repaired.btc_vs_everything = buildComparisons(market, market.price.change_24h_pct);
+
+  const remainingDirectional = findDirectionalViolations(repaired, market.price);
+  const remainingNarrative = findNarrativeConsensusContradictions(repaired, {
+    change_7d_pct: market.price.change_7d_pct,
+    etf_flows_30d_z_score: market.comparative?.etf_flows_30d_z_score ?? null,
+  });
+  const remainingUnsourced = findUnsourcedSummaries(repaired, articlesByUrl);
+  const remainingTotal =
+    remainingDirectional.length + remainingNarrative.length + remainingUnsourced.length;
+
+  if (remainingTotal === 0) {
+    logger.info("Data-consistency gate resolved by retry");
+  } else if (remainingTotal < allViolations.length) {
+    logger.warn("Data-consistency retry partially resolved violations, shipping better version", {
+      originalTotal: allViolations.length,
+      remainingTotal,
+    });
+  } else {
+    logger.error("Data-consistency retry did not reduce violations, shipping retry anyway", {
+      originalTotal: allViolations.length,
+      remainingTotal,
+    });
+  }
+
+  return repaired;
+}
+
 // ─── Task definition ───────────────────────────────────────────────────────
 
 export const aiBrainTask = task({
@@ -774,7 +897,7 @@ export const aiBrainTask = task({
       });
     }
 
-    const briefing = result.data!;
+    let briefing = result.data!;
     briefing.date = date;
 
     // Always overwrite btc_vs_everything with computed values from real market data
@@ -782,6 +905,21 @@ export const aiBrainTask = task({
     if (market) {
       const btcChange = market.price.change_24h_pct;
       briefing.btc_vs_everything = buildComparisons(market, btcChange);
+    }
+
+    // ── Data-consistency gate (post-generation validator + correction retry) ──
+    // Catches directional contradictions (e.g., "despite price decline" in a
+    // positive-week), fabricated narrative_consensus labels, and summaries
+    // with zero anchor in the source article. Fires ONE correction retry if
+    // violations are found; ships the result whether the retry fully resolves
+    // them or not (partial improvement is still an improvement). Logs loudly.
+    if (market && payload.news?.articles) {
+      briefing = await ensureDataConsistency({
+        briefing,
+        market,
+        articles: payload.news.articles,
+        userPrompt,
+      });
     }
 
     const deduped = dedupeBriefingStories(briefing);
@@ -814,6 +952,35 @@ export const aiBrainTask = task({
       });
     }
     deduped.countdown_events = validated.kept;
+
+    // ── Headline overwrite (source-article fidelity) ────────────────────────
+    // Even with the system prompt rule and the correction retry, Claude can
+    // still paraphrase the headline (adding "Despite Price Decline" to a
+    // neutral source title, etc.). We match each item's url to its source
+    // article and overwrite the headline field with the verbatim title. This
+    // is the LAST line of defense; whatever slipped past the prompt and the
+    // retry dies here.
+    const articleByUrl = new Map(
+      (payload.news?.articles ?? []).map((a) => [a.url, a.title ?? ""]),
+    );
+    let headlineOverwrites = 0;
+    const overwriteHeadline = <T extends { url: string; headline: string }>(
+      item: T,
+    ): void => {
+      const sourceTitle = articleByUrl.get(item.url)?.trim();
+      if (sourceTitle && sourceTitle.length > 0 && sourceTitle !== item.headline) {
+        item.headline = sourceTitle;
+        headlineOverwrites++;
+      }
+    };
+    deduped.top_stories.forEach(overwriteHeadline);
+    deduped.regulatory.forEach(overwriteHeadline);
+    deduped.adoption.forEach(overwriteHeadline);
+    if (headlineOverwrites > 0) {
+      logger.warn("Overwrote editorialized headlines with source article titles", {
+        count: headlineOverwrites,
+      });
+    }
 
     // Observability: emit a compact calibration log so rubric tightness can
     // be tuned over time. Columns worth watching across 2-3 weeks of runs:
