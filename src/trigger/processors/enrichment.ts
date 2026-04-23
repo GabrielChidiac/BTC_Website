@@ -34,17 +34,37 @@ ZERO-HALLUCINATION RULE (highest priority): you may ONLY reference upcoming even
 - "Rumored" policy announcements, "expected" votes, or "anticipated" filings without a concrete calendar date
 When in doubt about a date or event, omit it. The reader would rather see fewer, verified catalysts than a padded outlook full of plausible-sounding but fabricated deadlines.
 
-Guidelines:
-- Write 3 concise, substantive paragraphs (not 4-5). Keep it tight and high-signal.
-- Paragraph themes: (1) macro catalysts affecting Bitcoin (Fed policy, CPI, yields, DXY) — use only FOMC/BLS/Treasury-scheduled events whose dates you can verify, (2) Bitcoin-specific regulatory and institutional signals (ETF flows, SEC deadlines that are actually on the SEC calendar, corporate treasury moves from public filings), (3) Bitcoin technical levels and on-chain data worth watching
-- Integrate specific data points (prices, percentages, dates, names) naturally — but only ones you can verify
-- Be forward-looking: tell the reader what to WATCH FOR in the next 24-72 hours
-- Do NOT use markdown formatting. Return plain text only
-- Do NOT include citation markers like [1], [2], [3] or any bracketed references
-- Never use em dashes or en dashes. Use commas, periods, or semicolons instead
-- No bullet points. Write in flowing editorial prose like the Financial Times
-- Close on a constructive note grounded in verifiable Bitcoin-specific data (institutional inflows, network fundamentals, supply scarcity). Never fabricate.
-- FRAMING WITHOUT ADVICE: never use "buy", "sell", "hold", "should", "recommend", "consider buying", "consider selling", "good opportunity", "time to". Use historical-pattern framing instead: "historically X preceded Y", "this reinforces/undermines the thesis that Z", "positioning has shifted toward X while flows remained Y". The reader decides; you report and frame.`;
+VOICE RULES (non-negotiable, match the audio brief's discipline)
+This paragraph reads on the homepage and in the email to busy professionals who own Bitcoin and have 3 minutes, many of whom are not native English speakers. They need to walk away feeling informed, NOT feeling like they just read a Financial Times editorial.
+- Short declarative sentences. Subject, verb, object. One idea per sentence. "Bitcoin is up 2.6% today. The Coinbase premium is steady." beats "Bitcoin has surged to record territory, as the Coinbase premium maintains a 14-day bullish streak matching conditions that preceded October's all-time high."
+- Plain words over jargon. Use "buying" not "accumulation", "dropped" not "drawdown", "flows slowed" not "flow velocity decelerated". Keep domain terms (funding rate, RSI, basis points) only when they are the exact right word.
+- One dependent clause per sentence is the cap. Zero is usually better. If a sentence contains more than one "which", "that", "because", or "while", break it into two.
+- No participial openers ("Given that...", "Having surged..."). No inverted constructions. They read fine on a page but stall readers.
+- Every sentence earns its place. No throat-clearing phrases. No "interestingly", "notably", "in the current environment", "it is worth noting", "market participants".
+- When a number or name is surprising, amplify in a separate short sentence. Do not pack everything into one long clause.
+
+LENGTH AND STRUCTURE
+- Three short paragraphs, each 2 to 4 sentences. Total length: 120 to 180 words. Tighter than a Financial Times editorial. Think Axios, not FT.
+- Paragraph 1: the single most important macro catalyst affecting Bitcoin over the next 24 to 72 hours. One named event (FOMC, CPI, PCE, Jobs Report) and what the reader should watch for.
+- Paragraph 2: the single most important Bitcoin-specific catalyst (ETF flows trend, SEC deadline, corporate treasury window). Real dates only.
+- Paragraph 3: the technical or on-chain level that matters this week. Name the price level or the on-chain metric and what crossing it would mean.
+- Do NOT use markdown, bullet points, or headings. Plain prose. Paragraph breaks with blank lines.
+- Do NOT include citation markers like [1], [2], [3] or any bracketed references. The pipeline strips them but it creates noise and retry risk.
+- Never use em dashes or en dashes. Use commas, periods, or semicolons.
+
+CONTENT RULES
+- Integrate specific data points (prices, percentages, dates, names) naturally, but only ones you can verify from the intelligence block above or the authoritative calendar.
+- Close the third paragraph on a constructive, data-grounded line. Never fabricate.
+- FRAMING WITHOUT ADVICE: never use "buy", "sell", "hold", "should", "recommend", "consider buying", "consider selling", "good opportunity", "time to". Use historical-pattern framing: "historically X preceded Y", "this reinforces the thesis that Z", "positioning has shifted toward X while flows stayed Y". The reader decides; you report.
+
+GOOD vs BAD (for calibration)
+Bad (too dense, reads like FT editorial, one sentence is 40+ words):
+"Bitcoin has surged to $78,418, up 2.6% in 24 hours, as the Coinbase premium maintains a 14-day bullish streak matching conditions that preceded the October 2025 all-time high of $126,000, with persistent institutional buying through the primary distribution channel for US wealth advisors signaling sustained capital inflows despite price appreciation."
+
+Good (same facts, broken into readable beats):
+"Bitcoin is at $78,418, up 2.6% on the day. The Coinbase premium has been positive for 14 straight days. That matches the setup before October's all-time high of $126,000. US wealth advisors keep buying, even as the price rises."
+
+The good version uses the same facts. It is easier to read. It is what we ship.`;
 
 interface LookingAheadContext {
   top_stories: TopStory[];
@@ -361,6 +381,18 @@ export const enrichmentTask = task({
           }
         }
         if (text) {
+          // Strip Perplexity citation markers like [1], [2], [3] that leak
+          // into the plain-text response despite the system prompt forbidding
+          // them. The other Perplexity paths (experts, flows, supply) do the
+          // same strip on their JSON output; looking_ahead is the one path
+          // that ships straight to the homepage Outlook section, so the
+          // markers render as visible noise ("...$126,000.[1][2]").
+          text = text
+            .replace(/\s*\[\d+(?:\s*,\s*\d+)*\]/g, "") // "[1]", "[1, 2]", "[1,2,3]"
+            .replace(/\s*\[\d+\](?:\s*\[\d+\])+/g, "") // "[1][2]" consecutive
+            .replace(/\s{2,}/g, " ") // collapse any double spaces left behind
+            .replace(/\s+([.,;:!?])/g, "$1") // tighten punctuation
+            .trim();
           output.looking_ahead = text;
           logger.info("Looking ahead complete", { length: text.length });
         }
