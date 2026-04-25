@@ -11,7 +11,7 @@ import type {
 } from "@/lib/types";
 import { getUpcomingKnownEvents, daysBetween } from "@/trigger/lib/calendar";
 
-// Shape used by ai-brain: the Claude output is everything in BriefingJSON
+// Shape used by synthesizer: the Claude output is everything in BriefingJSON
 // EXCEPT the enrichment-owned fields. Enrichment runs later in the pipeline
 // regardless of whether Claude or this template produced the base briefing.
 export type FallbackBriefing = Omit<
@@ -494,7 +494,7 @@ function buildTechnicalSummary(args: {
   return `Momentum ${rsiDescriptor}; price ${trendDescriptor}.`;
 }
 
-// Inline comparison builder — duplicates the shape ai-brain.ts uses without
+// Inline comparison builder — duplicates the shape synthesizer.ts uses without
 // needing to import a non-exported function. Keeps this module self-contained.
 function buildComparisonsFallback(
   market: MarketCollectorOutput,

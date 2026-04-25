@@ -4,16 +4,25 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { halvingProgress } from "@/lib/utils";
 import { dedupeBriefingStories } from "@/lib/dedupe-stories";
 import { EXPERT_CONTEXT } from "@/trigger/processors/expert-context";
-import { AiBrainOutputSchema } from "@/lib/schemas";
+import { SynthesizerOutputSchema } from "@/lib/schemas";
 import { buildFallbackBriefing as buildDataDrivenFallback } from "@/trigger/processors/fallback-template";
 import { buildCountdownFactsBlock, validateCountdownEvents } from "@/trigger/lib/calendar";
 import {
   findDirectionalViolations,
   findNarrativeConsensusContradictions,
   findUnsourcedSummaries,
+  validateNarrativeScore,
+  findInventedMacroEvents,
+  findInventedDailyDiffEvents,
+  validateCorrelationNote,
+  validateHeroEarnedSignificance,
+  findHeroUnsourcedClaims,
+  findInventedHeroDates,
+  validateNarrativeRationale,
   formatViolationsForRetry,
 } from "@/trigger/lib/accuracy-validators";
 import type {
+  AnalysisBlock,
   BriefingJSON,
   TopStory,
   TriageItem,
@@ -28,17 +37,22 @@ const EXPERT_CONTEXT_ENABLED = process.env.EXPERT_CONTEXT_ENABLED !== "false";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
-type AiBrainOutput = Omit<
+type SynthesizerOutput = Omit<
   BriefingJSON,
   "looking_ahead" | "institutional_flows" | "supply_dynamics" | "expert_insights" | "etf_flows"
 > & { one_line?: string };
 
-interface AiBrainPayload {
+interface SynthesizerPayload {
   date: string;
   news: NewsCollectorOutput;
   market: MarketCollectorOutput | null;
   triageContext?: TriageItem[];
   dayContext?: DayClassification;
+  // Analyst Agent output. Currently passed through and logged for telemetry;
+  // the prompt does not yet consume it (side-by-side validation phase per
+  // agents/synthesizer-agent.md migration plan). Once the Synthesizer prompt is
+  // tightened to consume AnalysisBlock, this becomes the load-bearing input.
+  analysisContext?: AnalysisBlock;
 }
 
 // ─── System prompt ─────────────────────────────────────────────────────────
@@ -467,7 +481,7 @@ function buildComparisons(
  * Claude cannot confabulate the sign of weekly/daily moves. Pre-computes
  * approved and forbidden adjectives per time period so the LLM has an
  * unambiguous reference instead of having to infer direction from raw
- * percentages. This is the ai-brain equivalent of the audio brief FACTS
+ * percentages. This is the synthesizer equivalent of the audio brief FACTS
  * BLOCK pattern — every accuracy claim ties back here.
  */
 function buildDirectionalTruthBlock(market: MarketCollectorOutput | null): string {
@@ -584,7 +598,7 @@ function buildApprovedHeadlinesBlock(
 }
 
 function buildUserPrompt(
-  payload: AiBrainPayload,
+  payload: SynthesizerPayload,
   halving: { progressPct: number; blocksRemaining: number },
   yesterday: { price_usd: number; top_stories: TopStory[] } | null
 ): string {
@@ -826,45 +840,143 @@ No previous briefing available. Set daily_diff.price_change to "N/A (first brief
  * must not regress availability.
  */
 async function ensureDataConsistency(args: {
-  briefing: AiBrainOutput;
+  briefing: SynthesizerOutput;
   market: MarketCollectorOutput;
-  articles: Array<{ url: string; title: string; content?: string }>;
+  articles: Array<{ url: string; title: string; content?: string; description?: string }>;
   userPrompt: string;
-}): Promise<AiBrainOutput> {
-  const { briefing, market, articles, userPrompt } = args;
+  date: string;
+  dayContext: DayClassification | null;
+}): Promise<SynthesizerOutput> {
+  const { briefing, market, articles, userPrompt, date, dayContext } = args;
 
   const articlesByUrl = new Map(
     articles.map((a) => [a.url, { title: a.title, content: a.content, url: a.url, source: "", published_at: "" }]),
   );
 
-  const directional = findDirectionalViolations(briefing, market.price);
-  const narrative = findNarrativeConsensusContradictions(briefing, {
-    change_7d_pct: market.price.change_7d_pct,
-    etf_flows_30d_z_score: market.comparative?.etf_flows_30d_z_score ?? null,
-  });
-  const unsourced = findUnsourcedSummaries(briefing, articlesByUrl);
-  const allViolations = [...directional, ...narrative, ...unsourced];
+  const calendarBlock = buildCountdownFactsBlock(date, 90);
 
-  if (allViolations.length === 0) {
+  // Shared market corpus shape for the anchor-checking validators (G9, G11
+  // and the existing daily_diff validator). Built once per call site below.
+  const marketCorpusInput = {
+    price: market.price,
+    fear_greed: market.fear_greed,
+    etf_flows: market.etf_flows,
+    funding_rate: market.funding_rate,
+    dominance_pct: market.dominance_pct,
+  };
+
+  const runAllValidators = (input: SynthesizerOutput) => {
+    const directional = findDirectionalViolations(input, market.price);
+    const narrative = findNarrativeConsensusContradictions(input, {
+      change_7d_pct: market.price.change_7d_pct,
+      etf_flows_30d_z_score: market.comparative?.etf_flows_30d_z_score ?? null,
+    });
+    const unsourced = findUnsourcedSummaries(input, articlesByUrl);
+    const scoreDrift = validateNarrativeScore(input.narrative_consensus, {
+      change_7d_pct: market.price.change_7d_pct,
+      etf_flows_30d_z_score: market.comparative?.etf_flows_30d_z_score ?? null,
+      funding_rate_30d_percentile: market.comparative?.funding_rate_30d_percentile ?? null,
+    });
+    const inventedMacro = findInventedMacroEvents(input.macro_context, calendarBlock, articles);
+    const inventedDailyDiff = findInventedDailyDiffEvents(
+      input.daily_diff,
+      articles,
+      marketCorpusInput,
+    );
+    const correlation = validateCorrelationNote(
+      input.macro_context,
+      market.correlation_matrix
+        ? {
+            btc_gold_90d: market.correlation_matrix.btc_gold_90d,
+            btc_sp500_90d: market.correlation_matrix.btc_sp500_90d,
+          }
+        : null,
+    );
+    // Phase 2 — Hero & rationale grounding (G8, G9, G10, G11).
+    const heroEarnedness = validateHeroEarnedSignificance(
+      input.hero_three_lines,
+      {
+        price: market.price,
+        comparative: market.comparative
+          ? {
+              etf_flows_30d_z_score: market.comparative.etf_flows_30d_z_score,
+              funding_rate_30d_percentile: market.comparative.funding_rate_30d_percentile,
+              fear_greed_30d_change: market.comparative.fear_greed_30d_change,
+              price_vs_30d_avg_pct: market.comparative.price_vs_30d_avg_pct,
+            }
+          : null,
+      },
+      dayContext,
+    );
+    const heroUnsourced = findHeroUnsourcedClaims(
+      input.hero_three_lines,
+      articles,
+      marketCorpusInput,
+    );
+    const heroDates = findInventedHeroDates(input.hero_three_lines, calendarBlock, articles);
+    const rationale = validateNarrativeRationale(
+      input.narrative_consensus,
+      articles,
+      marketCorpusInput,
+    );
+    return {
+      directional,
+      narrative,
+      unsourced,
+      scoreDrift,
+      inventedMacro,
+      inventedDailyDiff,
+      correlation,
+      heroEarnedness,
+      heroUnsourced,
+      heroDates,
+      rationale,
+      all: [
+        ...directional,
+        ...narrative,
+        ...unsourced,
+        ...scoreDrift,
+        ...inventedMacro,
+        ...inventedDailyDiff,
+        ...correlation,
+        ...heroEarnedness,
+        ...heroUnsourced,
+        ...heroDates,
+        ...rationale,
+      ],
+    };
+  };
+
+  const first = runAllValidators(briefing);
+
+  if (first.all.length === 0) {
     logger.info("Data-consistency gate: all validators passed on first attempt");
     return briefing;
   }
 
   logger.warn("Data-consistency gate fired, attempting correction retry", {
-    total: allViolations.length,
-    directional: directional.length,
-    narrative: narrative.length,
-    unsourced: unsourced.length,
-    sample: allViolations.slice(0, 5).map((v) => v.reason),
+    total: first.all.length,
+    directional: first.directional.length,
+    narrative: first.narrative.length,
+    unsourced: first.unsourced.length,
+    scoreDrift: first.scoreDrift.length,
+    inventedMacro: first.inventedMacro.length,
+    inventedDailyDiff: first.inventedDailyDiff.length,
+    correlation: first.correlation.length,
+    heroEarnedness: first.heroEarnedness.length,
+    heroUnsourced: first.heroUnsourced.length,
+    heroDates: first.heroDates.length,
+    rationale: first.rationale.length,
+    sample: first.all.slice(0, 5).map((v) => v.reason),
   });
 
-  const repairPrompt = `${userPrompt}\n\n---\n\n## DATA-CONSISTENCY GATE FAILURE — REWRITE REQUIRED\n\nYour previous output violated the ZERO-HALLUCINATION GATE in the system prompt. Specific issues:\n\n${formatViolationsForRetry(allViolations)}\n\nRewrite the full briefing JSON to resolve these issues. The 7-day price change is ${market.price.change_7d_pct.toFixed(2)}% and the 24-hour change is ${market.price.change_24h_pct.toFixed(2)}% — all directional language must match these signs. Every headline must be the source article's title verbatim. Every summary must reference a concrete fact from the source article's scraped content. Return ONLY the corrected JSON, same shape as before.`;
+  const repairPrompt = `${userPrompt}\n\n---\n\n## DATA-CONSISTENCY GATE FAILURE — REWRITE REQUIRED\n\nYour previous output violated the ZERO-HALLUCINATION GATE in the system prompt. Specific issues:\n\n${formatViolationsForRetry(first.all)}\n\nRewrite the full briefing JSON to resolve these issues. The 7-day price change is ${market.price.change_7d_pct.toFixed(2)}% and the 24-hour change is ${market.price.change_24h_pct.toFixed(2)}%; all directional language must match these signs. Every headline must be the source article's title verbatim. Every summary must reference a concrete fact from the source article. narrative_consensus.score must track the anchored signals. narrative_consensus.rationale must cite a comparative metric, a real market number, or a proper noun from a source article. hero_three_lines must not invent dates, must not cite specific numbers or named entities absent from the inputs, and must not claim a material/non-noise day unless a comparative metric crosses the earned-significance threshold. Every dated claim in macro_context and every specific number or named entity in daily_diff.key_changes must trace to the AUTHORITATIVE CALENDAR or to an input article. Return ONLY the corrected JSON, same shape as before.`;
 
-  const repairResult = await callClaudeJSON<AiBrainOutput>({
+  const repairResult = await callClaudeJSON<SynthesizerOutput>({
     system: SYSTEM_PROMPT,
     prompt: repairPrompt,
     maxTokens: 8192,
-    schema: AiBrainOutputSchema,
+    schema: SynthesizerOutputSchema,
   });
 
   if (repairResult.error || !repairResult.data) {
@@ -878,25 +990,32 @@ async function ensureDataConsistency(args: {
   repaired.date = briefing.date;
   repaired.btc_vs_everything = buildComparisons(market, market.price.change_24h_pct);
 
-  const remainingDirectional = findDirectionalViolations(repaired, market.price);
-  const remainingNarrative = findNarrativeConsensusContradictions(repaired, {
-    change_7d_pct: market.price.change_7d_pct,
-    etf_flows_30d_z_score: market.comparative?.etf_flows_30d_z_score ?? null,
-  });
-  const remainingUnsourced = findUnsourcedSummaries(repaired, articlesByUrl);
-  const remainingTotal =
-    remainingDirectional.length + remainingNarrative.length + remainingUnsourced.length;
+  const second = runAllValidators(repaired);
+  const remainingTotal = second.all.length;
 
   if (remainingTotal === 0) {
     logger.info("Data-consistency gate resolved by retry");
-  } else if (remainingTotal < allViolations.length) {
+  } else if (remainingTotal < first.all.length) {
     logger.warn("Data-consistency retry partially resolved violations, shipping better version", {
-      originalTotal: allViolations.length,
+      originalTotal: first.all.length,
       remainingTotal,
+      remainingByKind: {
+        directional: second.directional.length,
+        narrative: second.narrative.length,
+        unsourced: second.unsourced.length,
+        scoreDrift: second.scoreDrift.length,
+        inventedMacro: second.inventedMacro.length,
+        inventedDailyDiff: second.inventedDailyDiff.length,
+        correlation: second.correlation.length,
+        heroEarnedness: second.heroEarnedness.length,
+        heroUnsourced: second.heroUnsourced.length,
+        heroDates: second.heroDates.length,
+        rationale: second.rationale.length,
+      },
     });
   } else {
     logger.error("Data-consistency retry did not reduce violations, shipping retry anyway", {
-      originalTotal: allViolations.length,
+      originalTotal: first.all.length,
       remainingTotal,
     });
   }
@@ -906,12 +1025,12 @@ async function ensureDataConsistency(args: {
 
 // ─── Task definition ───────────────────────────────────────────────────────
 
-export const aiBrainTask = task({
-  id: "ai-brain",
-  run: async (rawPayload: Partial<AiBrainPayload>): Promise<AiBrainOutput> => {
+export const synthesizerTask = task({
+  id: "synthesizer",
+  run: async (rawPayload: Partial<SynthesizerPayload>): Promise<SynthesizerOutput> => {
     // Defensive payload normalization so dashboard manual tests or partial
     // payloads do not crash inside buildUserPrompt.
-    const payload: AiBrainPayload = {
+    const payload: SynthesizerPayload = {
       date: rawPayload?.date ?? new Date().toISOString().split("T")[0],
       news: {
         articles: Array.isArray(rawPayload?.news?.articles)
@@ -921,8 +1040,23 @@ export const aiBrainTask = task({
       market: rawPayload?.market ?? null,
       triageContext: rawPayload?.triageContext,
       dayContext: rawPayload?.dayContext,
+      analysisContext: rawPayload?.analysisContext,
     };
     const { date, market } = payload;
+
+    if (payload.analysisContext) {
+      // Side-by-side telemetry: AnalysisBlock arrives but is not yet consumed
+      // by the prompt. Comparing analyst regime vs the briefing's eventual
+      // narrative_consensus.label across runs lets us validate the analyst
+      // before flipping it into the load-bearing path.
+      logger.info("Analyst context received (telemetry only, not yet consumed)", {
+        regime: payload.analysisContext.regime,
+        conviction: payload.analysisContext.conviction,
+        driverCount: payload.analysisContext.primary_drivers.length,
+        riskChanged: payload.analysisContext.risk_changed_today,
+        gaps: payload.analysisContext.data_gaps,
+      });
+    }
 
     const halving = market
       ? halvingProgress(market.network.block_height)
@@ -995,11 +1129,11 @@ export const aiBrainTask = task({
         ).slice(0, 2000)
       : undefined;
 
-    const result = await callClaudeJSON<AiBrainOutput>({
+    const result = await callClaudeJSON<SynthesizerOutput>({
       system: SYSTEM_PROMPT,
       prompt: userPrompt,
       maxTokens: 8192,
-      schema: AiBrainOutputSchema,
+      schema: SynthesizerOutputSchema,
       retryOnSchemaError: true,
       correctionExample,
     });
@@ -1051,6 +1185,8 @@ export const aiBrainTask = task({
         market,
         articles: payload.news.articles,
         userPrompt,
+        date,
+        dayContext: payload.dayContext ?? null,
       });
     }
 
@@ -1060,7 +1196,7 @@ export const aiBrainTask = task({
       (briefing.regulatory.length - deduped.regulatory.length) +
       (briefing.adoption.length - deduped.adoption.length);
     if (droppedCount > 0) {
-      logger.warn("Dedup removed duplicate stories from AI Brain output", {
+      logger.warn("Dedup removed duplicate stories from Synthesizer output", {
         dropped: droppedCount,
         topStoriesBefore: briefing.top_stories.length,
         topStoriesAfter: deduped.top_stories.length,
@@ -1124,7 +1260,7 @@ export const aiBrainTask = task({
       deduped.regulatory.length +
       deduped.adoption.length;
 
-    logger.info("AI Brain completed", {
+    logger.info("Synthesizer completed", {
       storyCount: deduped.top_stories.length,
       regulatoryCount: deduped.regulatory.length,
       adoptionCount: deduped.adoption.length,

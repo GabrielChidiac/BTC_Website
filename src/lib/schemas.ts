@@ -196,16 +196,16 @@ export const LookingAheadPredictionSchema = z.object({
   target_date: z.string(),
 });
 
-// ─── AI Brain output (full briefing minus enrichment fields) ──────────────
+// ─── Synthesizer output (full briefing minus enrichment fields) ──────────
 //
-// Matches the AiBrainOutput type in processors/ai-brain.ts, which is
+// Matches the SynthesizerOutput type in processors/synthesizer.ts, which is
 // `Omit<BriefingJSON, "looking_ahead" | "institutional_flows" | "supply_dynamics"
 //       | "expert_insights" | "etf_flows"> & { one_line?: string }`.
 //
 // passthrough() preserves any extra fields Claude may emit (forward-compat)
 // instead of stripping them silently.
 
-export const AiBrainOutputSchema = z
+export const SynthesizerOutputSchema = z
   .object({
     date: z.string(),
     one_line: z.string().optional(),
@@ -239,4 +239,73 @@ export const DayClassificationSchema = z.object({
   depth_weight: z.enum(["heavy", "standard", "light"]),
   reasoning: z.string(),
   day_tone_line: z.string(),
+});
+
+// ─── Analyst Agent output ─────────────────────────────────────────────────
+//
+// Structured analytical block produced by the Analyst Agent (NEW pipeline
+// stage between Scraper and Synthesizer). Closed-vocabulary unions mirror the
+// types in [types.ts](types.ts); Synthesizer trusts these fields verbatim and
+// translates into BriefingJSON. Retry on schema error so analytical drift
+// fails loudly instead of leaking vague hedging into the briefing.
+
+const AnalystDirectionSchema = z.enum(["bullish", "bearish", "neutral"]);
+const AnalystMagnitudeSchema = z.enum(["strong", "moderate", "weak"]);
+
+export const AnalystPrimaryDriverSchema = z.object({
+  driver: z.string().min(1),
+  direction: AnalystDirectionSchema,
+  magnitude: AnalystMagnitudeSchema,
+  evidence: z.array(z.string().min(1)).min(2).max(4),
+});
+
+export const AnalystTechnicalPostureSchema = z.object({
+  rsi_read: z.enum(["overbought", "neutral", "oversold"]),
+  sma_alignment: z.enum([
+    "bullish_cross",
+    "bearish_cross",
+    "above_both",
+    "below_both",
+    "between",
+  ]),
+  structure: z.enum([
+    "trending_up",
+    "trending_down",
+    "ranging",
+    "breakout_attempt",
+  ]),
+  key_level: z.object({
+    price: z.number(),
+    type: z.enum(["support", "resistance"]),
+    significance: z.string().min(1),
+  }),
+});
+
+export const AnalystMacroAssessmentSchema = z.object({
+  fed_path_pricing: z.string(),
+  correlation_state: z.object({
+    gold: z.number().min(-1).max(1).nullable(),
+    sp500: z.number().min(-1).max(1).nullable(),
+    interpretation: z.string(),
+  }),
+  fiscal_or_dollar_note: z.string(),
+});
+
+export const AnalysisBlockSchema = z.object({
+  regime: z.enum([
+    "risk_on",
+    "risk_off",
+    "consolidation",
+    "transition",
+    "decoupling",
+  ]),
+  conviction: z.number().min(0).max(100),
+  one_line_thesis: z.string().min(1),
+  primary_drivers: z.array(AnalystPrimaryDriverSchema),
+  technical_posture: AnalystTechnicalPostureSchema,
+  macro_assessment: AnalystMacroAssessmentSchema,
+  risk_changed_today: z.boolean(),
+  risk_change_evidence: z.array(z.string()),
+  confidence_caveats: z.array(z.string()),
+  data_gaps: z.array(z.string()),
 });

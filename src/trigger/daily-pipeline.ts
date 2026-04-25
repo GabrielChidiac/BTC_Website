@@ -1,10 +1,11 @@
 import { schedules, batch, logger } from "@trigger.dev/sdk/v3";
 import { newsCollector } from "./collectors/news";
 import { marketCollector } from "./collectors/market";
-import { aiBrainTask } from "./processors/ai-brain";
+import { synthesizerTask } from "./processors/synthesizer";
 import { enrichmentTask } from "./processors/enrichment";
 import { triageTask, perplexityCrossRefTask, mergeTriageWithCrossRef } from "./processors/triage";
 import { dayClassifierTask } from "./processors/day-classifier";
+import { analystTask } from "./processors/analyst";
 import { scrapeArticles } from "./lib/jina";
 import { saveBriefingTask } from "./publishers/save-briefing";
 import { revalidateSiteTask } from "./publishers/revalidate-site";
@@ -13,7 +14,7 @@ import { generateAudioBriefTask } from "./audio-brief/generate-audio-brief";
 import { computeMarketSignals } from "./processors/market-signals";
 import { sendOwnerAlert } from "./lib/alert";
 import { computeReadTimeSeconds } from "@/lib/utils";
-import type { BriefingJSON, DayClassification } from "@/lib/types";
+import type { AnalysisBlock, BriefingJSON, DayClassification } from "@/lib/types";
 
 export const dailyPipelineTask = schedules.task({
   id: "daily-pipeline",
@@ -105,9 +106,9 @@ export const dailyPipelineTask = schedules.task({
       articlesWithContent: newsOutput.articles.filter((a) => a.content).length,
     });
 
-    // ── Step 1.8: Day classifier (non-fatal, precursor signal to AI brain)
+    // ── Step 1.8: Day classifier (non-fatal, precursor signal to Synthesizer)
     // Lightweight Claude call that labels today as thesis_shift / risk_change /
-    // mostly_noise / mixed with historical smoothing. Steers AI brain depth
+    // mostly_noise / mixed with historical smoothing. Steers Synthesizer depth
     // and provides the OPEN calibrating line for the audio brief.
     let dayClassification: DayClassification | null = null;
     try {
@@ -129,18 +130,52 @@ export const dailyPipelineTask = schedules.task({
       });
     }
 
-    // ── Step 2: AI Brain (fatal) ──────────────────────────────────────────
-    const briefing = await aiBrainTask
+    // ── Step 1.9: Analyst (non-fatal, NEW pre-step) ───────────────────────
+    // Produces a structured AnalysisBlock (regime, drivers, technical posture,
+    // macro assessment, risk-changed gate) consumed downstream by the
+    // Synthesizer. Currently logged + persisted only — Synthesizer prompt is
+    // not yet rewritten to consume it; that's the side-by-side validation
+    // phase per agents/synthesizer-agent.md. Failure returns a deterministic
+    // fallback.
+    let analysis: AnalysisBlock | null = null;
+    try {
+      const analystRun = await analystTask.triggerAndWait({
+        date,
+        news: newsOutput,
+        market: marketRun?.ok ? marketRun.output : null,
+        triageRankings,
+        dayClassification,
+      });
+      if (analystRun.ok) {
+        analysis = analystRun.output;
+        logger.info("Analyst complete", {
+          regime: analysis.regime,
+          conviction: analysis.conviction,
+          driverCount: analysis.primary_drivers.length,
+          riskChanged: analysis.risk_changed_today,
+        });
+      } else {
+        logger.warn("Analyst task failed — proceeding without analysis context");
+      }
+    } catch (err) {
+      logger.warn("Analyst threw — proceeding without analysis context", {
+        error: (err as Error).message,
+      });
+    }
+
+    // ── Step 2: Synthesizer (fatal) ───────────────────────────────────────
+    const briefing = await synthesizerTask
       .triggerAndWait({
         date,
         news: newsOutput,
         market: marketRun?.ok ? marketRun.output : null,
         triageContext: triageRankings.length > 0 ? triageRankings : undefined,
         dayContext: dayClassification ?? undefined,
+        analysisContext: analysis ?? undefined,
       })
       .unwrap();
 
-    logger.info("AI Brain complete");
+    logger.info("Synthesizer complete");
 
     // ── Step 3: Enrichment (non-fatal) ────────────────────────────────────
     let enrichment: {
@@ -204,6 +239,7 @@ export const dailyPipelineTask = schedules.task({
       correlation_matrix: marketOutput?.correlation_matrix ?? null,
       day_classification: dayClassification,
       comparative: marketOutput?.comparative ?? null,
+      analysis_block: analysis ?? null,
     };
 
     // ── Step 3.25: Market Signals (non-fatal) ────────────────────────────
@@ -316,7 +352,7 @@ interface BriefingHealth {
 
 /**
  * Compute a compact health summary of the final briefing. We alert (not
- * block) the owner whenever 2+ signals are degraded, when the AI Brain
+ * block) the owner whenever 2+ signals are degraded, when the Synthesizer
  * fallback fired, or when the brief has zero stories. The brief still
  * ships — this is ops telemetry, not a gate.
  *
@@ -340,7 +376,7 @@ function summarizeBriefingHealth(briefing: BriefingJSON): BriefingHealth {
   const fallbackUsed = Boolean(briefing.fallback_used);
 
   const degradedReasons: string[] = [];
-  if (fallbackUsed) degradedReasons.push("AI Brain fallback fired (both Anthropic and Kie.ai exhausted)");
+  if (fallbackUsed) degradedReasons.push("Synthesizer fallback fired (both Anthropic and Kie.ai exhausted)");
   if (storyCount === 0) degradedReasons.push("Zero stories across top_stories + regulatory + adoption");
   if (!hasHeroLines) degradedReasons.push("No hero_three_lines (3-Minute Contract hero missing)");
   if (!hasMarket) degradedReasons.push("No market_snapshot price (collector failed)");

@@ -240,6 +240,88 @@ export interface DayClassification {
   day_tone_line: string; // one sentence in Claude's natural voice
 }
 
+// ─── Analyst Agent output ───────────────────────────────────────────────────
+// Internal-voice structured analysis produced by the Analyst Agent (NEW pipeline
+// stage between Scraper and Synthesizer). Consumed by Synthesizer to produce
+// reader-facing prose; never serialized into BriefingJSON or shown to users.
+// See agents/analyst-agent.md for the full design.
+
+export type AnalystRegime =
+  | "risk_on"
+  | "risk_off"
+  | "consolidation"
+  | "transition"
+  | "decoupling";
+
+export type AnalystDirection = "bullish" | "bearish" | "neutral";
+export type AnalystMagnitude = "strong" | "moderate" | "weak";
+
+export type AnalystRsiRead = "overbought" | "neutral" | "oversold";
+export type AnalystSmaAlignment =
+  | "bullish_cross"
+  | "bearish_cross"
+  | "above_both"
+  | "below_both"
+  | "between";
+export type AnalystStructure =
+  | "trending_up"
+  | "trending_down"
+  | "ranging"
+  | "breakout_attempt";
+export type AnalystKeyLevelType = "support" | "resistance";
+
+export interface AnalystPrimaryDriver {
+  driver: string;                 // e.g. "ETF accumulation", "macro repricing"
+  direction: AnalystDirection;
+  magnitude: AnalystMagnitude;
+  evidence: string[];             // 2-4 specific facts cited from scraper data
+}
+
+export interface AnalystTechnicalPosture {
+  rsi_read: AnalystRsiRead;
+  sma_alignment: AnalystSmaAlignment;
+  structure: AnalystStructure;
+  key_level: {
+    price: number;
+    type: AnalystKeyLevelType;
+    significance: string;
+  };
+}
+
+export interface AnalystMacroAssessment {
+  fed_path_pricing: string;       // 1 sentence; calendar-block events only
+  correlation_state: {
+    gold: number | null;          // -1..1 90-day rolling correlation
+    sp500: number | null;
+    interpretation: string;
+  };
+  fiscal_or_dollar_note: string;  // 1 sentence; cite a number or omit
+}
+
+export interface AnalysisBlock {
+  // High-level verdicts
+  regime: AnalystRegime;
+  conviction: number;              // 0-100, certainty in regime call
+  one_line_thesis: string;         // single sentence, internal voice
+
+  // Drivers feeding top_stories + daily_diff.key_changes
+  primary_drivers: AnalystPrimaryDriver[];
+
+  // Feeds technical_signals.signal_summary
+  technical_posture: AnalystTechnicalPosture;
+
+  // Feeds macro_context.{narrative, btc_correlation_note}
+  macro_assessment: AnalystMacroAssessment;
+
+  // Earned-significance gate for hero_three_lines.signal
+  risk_changed_today: boolean;
+  risk_change_evidence: string[];  // empty when risk_changed_today = false
+
+  // Synthesizer uses to calibrate hedging in voice
+  confidence_caveats: string[];
+  data_gaps: string[];             // sources marked "missing" in ScraperOutput
+}
+
 // ─── Master Briefing type ───────────────────────────────────────────────────
 
 export interface BriefingJSON {
@@ -290,11 +372,17 @@ export interface BriefingJSON {
   // FACTS BLOCK can render them and so they're persisted for diagnostics.
   // Not rendered in the UI.
   comparative?: ComparativeBaselines | null;
-  // True when the AI Brain fell back to the data-derived template (Claude +
+  // True when the Synthesizer fell back to the data-derived template (Claude +
   // Kie.ai both unavailable). Surfaces as an "editor's note" on the email
   // footer and homepage so the lighter commentary is communicated honestly.
   // Absent (undefined) on normal-path briefings.
   fallback_used?: boolean;
+  // Internal-voice analytical block from the Analyst Agent (NEW pipeline stage
+  // between day-classifier and Synthesizer). Persisted so cloud review agents
+  // can read regime/conviction/drivers/risk-changed history from Supabase
+  // without needing Trigger.dev log access. Not exposed in the UI; absent on
+  // briefings written before the analyst was wired in (2026-04-25).
+  analysis_block?: AnalysisBlock | null;
 }
 
 // ─── Triage types (two-pass news verification) ─────────────────────────────

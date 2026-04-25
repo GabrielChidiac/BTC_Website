@@ -37,7 +37,7 @@ npm run build                 # Production build (verifies all types)
 npm run start                 # Serve the production build
 npx trigger.dev@latest dev    # Trigger.dev local runner
 ```
-Path alias `@/*` → `./src/*`. No test runner, linter, or formatter is configured — `npm run build` is the only type-safety gate. CI in `.github/workflows/trigger-deploy.yml` deploys Trigger.dev tasks on push to `main`. Project-local Claude skills in `Skills/`. Seed a test briefing locally via `scripts/seed-test-briefing.sql`.
+Path alias `@/*` → `./src/*`. No test runner, linter, or formatter is configured — `npm run build` is the only type-safety gate. CI deploys Trigger.dev on push to `main`. Project-local skills in `Skills/` (incl. `analyst-review` for periodic Synthesizer-rewrite-readiness checks). Supabase MCP is wired (read-only, OAuth-authed) — query `daily_briefings` directly during debugging instead of asking the user to paste rows. Seed a test briefing via `scripts/seed-test-briefing.sql`.
 
 ## Documentation
 [docs/plan.md](docs/plan.md), [docs/architecture.md](docs/architecture.md), [docs/decisions.md](docs/decisions.md), [docs/orchestrator.md](docs/orchestrator.md), [docs/deployment.md](docs/deployment.md), [docs/design-brief.md](docs/design-brief.md).
@@ -48,12 +48,13 @@ Path alias `@/*` → `./src/*`. No test runner, linter, or formatter is configur
 - **Read [Marketing.md](Marketing.md) before any marketing move.** Applies to copy, channel choices, positioning, launch plans, growth tactics, audience messaging, partnership outreach — anything reader-facing or distribution-related. Read it first; don't propose from priors.
 - **Memory is source of truth; CLAUDE.md is broadcast.** When saving a memory that sets a value (WPM, word count, field name, length cap, bucket name, etc.) also referenced here, update both in the same turn. Memories in `/Users/gab/.claude/projects/-Users-gab-Documents-BTC-Website/memory/` are auto-injected every session; ignoring them is not an option.
 - **Before editing governed files, re-read relevant memories.** Files covered: `src/trigger/**`, `emails/**`, `src/lib/schemas.ts`, `src/lib/types.ts`, `CLAUDE.md`. The one-line MEMORY.md index is not enough — open the feedback memory body.
+- **Scoped CLAUDE.md files** live in `src/trigger/`, `src/trigger/{collectors,processors,publishers,lib,audio-brief}/`, `src/lib/`, `src/lib/supabase/`, `emails/`, and `supabase/migrations/`. They carry directory-local conventions; this root file holds the global rules. When editing inside a directory, read its scoped file first.
 
 ## Load-Bearing Features (do not remove without explicit confirmation)
 These are core product features or pipeline steps whose removal requires an explicit user decision in the current session — never inferred from adjacent tasks, never "cleanup", never silent refactor:
 - **BriefingJSON enrichment fields:** `expert_insights`, `institutional_flows`, `supply_dynamics`, `looking_ahead`, `looking_ahead_predictions`.
 - **Audio brief pipeline (Pillar 2):** script generation, TTS synthesis, `/listen/[date]`, `/api/audio/[date]`, audio UI on homepage and archive.
-- **Day classifier** ([day-classifier.ts](src/trigger/processors/day-classifier.ts)) and its `dayContext` feed into AI brain and audio OPEN.
+- **Day classifier** ([day-classifier.ts](src/trigger/processors/day-classifier.ts)) and its `dayContext` feed into Synthesizer and audio OPEN.
 - **Founding member mechanic:** `is_founding_member` flag, `FOUNDING_MEMBER_LIMIT`, `founding-welcome.tsx`, founding-count UI.
 - **Weekly recap email** for free tier.
 - **Predictions table + `resolve-predictions` cron** (day-60 accuracy scorecard feed).
@@ -83,7 +84,7 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 ### Claude API
 - Used only inside the Trigger.dev pipeline. No user-facing chat endpoint.
 - `callClaudeJSON<T>()` ([src/trigger/lib/anthropic.ts](src/trigger/lib/anthropic.ts)) chain: Anthropic SDK → Kie.ai on 429/5xx → parse → optional `schema` (zod) validation → optional `retryOnSchemaError` correction retry. All return `Result<T>`.
-- Zod schemas for every Claude output live in [src/lib/schemas.ts](src/lib/schemas.ts). Keep in sync with types.ts. Pass `retryOnSchemaError: true` on fatal tasks (AI brain) only; non-fatal tasks save the retry tokens.
+- Zod schemas for every Claude output live in [src/lib/schemas.ts](src/lib/schemas.ts). Keep in sync with types.ts. Pass `retryOnSchemaError: true` on fatal/load-bearing tasks (Synthesizer, Analyst); non-fatal tasks save the retry tokens.
 - **Task payload guards:** every Trigger task that receives structured payloads normalizes `payload?.field ?? default` at entry. Never assume the dashboard test payload is well-formed.
 - All HTTP uses native `fetch` — no axios.
 
@@ -130,7 +131,8 @@ Routes in [src/app/api/](src/app/api/): subscribe + subscribe/verify, unsubscrib
 collectors (news + market, parallel via batch.triggerAndWait)
   → triage + perplexityCrossRef (parallel) → mergeTriageWithCrossRef → Jina scrape
   → day-classifier (precursor signal, non-fatal)
-  → AI Brain (Claude → BriefingJSON; data-derived fallback if Claude fails)
+  → analyst (NEW; non-fatal, deterministic fallback; AnalysisBlock telemetry to Synthesizer)
+  → Synthesizer (Claude → BriefingJSON; data-derived fallback if Claude fails)
   → enrichment (Perplexity ×4: looking_ahead, institutional_flows, expert_insights, supply_dynamics)
   → market-signals (Postgres-backed regime + funding callouts, max 2 shown)
   → computeReadTimeSeconds()
@@ -140,22 +142,22 @@ collectors (news + market, parallel via batch.triggerAndWait)
 ```
 - Collectors run **parallel**. Everything after runs **sequential**.
 - [src/trigger/lib/fetch-timeout.ts](src/trigger/lib/fetch-timeout.ts) provides `fetchWithTimeout()` / `withTimeout()`.
-- Triage rankings ([triage.ts](src/trigger/processors/triage.ts)) are passed to AI Brain via `triageContext` as a *signal*, not a hard filter — Claude is free to override.
-- Day classifier ([day-classifier.ts](src/trigger/processors/day-classifier.ts)) produces `DayClassification` {label, depth_weight, day_tone_line} used as `dayContext` for AI brain and inlined into audio OPEN. Reads last 7 days from Supabase for historical smoothing.
-- Expert framework ([expert-context.ts](src/trigger/processors/expert-context.ts), `EXPERT_CONTEXT`) is a ~2500-word analytical prior fed to AI Brain as user-prompt reference. Edit this to shift the briefing's analytical lens. Never quoted verbatim.
+- Triage rankings ([triage.ts](src/trigger/processors/triage.ts)) are passed to Synthesizer via `triageContext` as a *signal*, not a hard filter — Claude is free to override.
+- Day classifier ([day-classifier.ts](src/trigger/processors/day-classifier.ts)) produces `DayClassification` {label, depth_weight, day_tone_line} used as `dayContext` for Synthesizer and inlined into audio OPEN. Reads last 7 days from Supabase for historical smoothing.
+- Analyst ([analyst.ts](src/trigger/processors/analyst.ts)) produces `AnalysisBlock` (regime, drivers, technical posture, macro assessment, risk-changed gate). NEW; passed to Synthesizer as `analysisContext` for telemetry only — prompt does not yet consume it (side-by-side validation phase). `validateAnalystRiskChangeEarned` enforces earned-significance with one correction retry.
+- Expert framework ([expert-context.ts](src/trigger/processors/expert-context.ts), `EXPERT_CONTEXT`) is a ~2500-word analytical prior fed to Synthesizer + Analyst as user-prompt reference. Edit to shift the briefing's analytical lens. Never quoted verbatim.
 - Market signals ([market-signals.ts](src/trigger/processors/market-signals.ts)) reads 30-day history from Supabase, applies cooldowns, and emits at most 2 callouts (correlation regime flips, funding extremes, F&G deltas). Tuned to fire rarely — quiet days with zero callouts are expected.
 - Separate cron: `resolve-predictions` at 03:00 UTC (2h after pipeline) auto-scores due predictions.
 
 **Fault tolerance:**
-- Collectors / triage / enrichment / audio brief / market-signals: **non-fatal** — failures default to fallback values; pipeline ships without the missing piece.
-- Enrichment runs its 4 Perplexity queries in parallel **inside one** Trigger task via `Promise.allSettled` — not as 4 subtasks.
-- AI Brain: **mostly fatal**. If Claude (Anthropic + Kie.ai) exhausts but market data is present, [fallback-template.ts](src/trigger/processors/fallback-template.ts) `buildFallbackBriefing()` produces a data-derived briefing (no narrative AI; calibrated copy from market state). True hard fail only when both Claude AND market data are missing.
+- Collectors / triage / analyst / enrichment / audio brief / market-signals: **non-fatal** — failures default to fallback values.
+- Enrichment runs 4 Perplexity queries in parallel **inside one** Trigger task via `Promise.allSettled` — not as 4 subtasks. Analyst has its own deterministic fallback (regime by 7d sign, conviction=30, no drivers).
+- Synthesizer: **mostly fatal**. If Claude (Anthropic + Kie.ai) exhausts but market data is present, [fallback-template.ts](src/trigger/processors/fallback-template.ts) `buildFallbackBriefing()` produces a data-derived briefing. True hard fail only when both Claude AND market data are missing.
 - Publishers: **sequential** — if save fails, email is never sent.
 
 **BriefingJSON composition** (see [src/lib/types.ts](src/lib/types.ts)):
-- AI Brain generates the base structure (stories, market, technical, narrative, macro, etc.) plus `looking_ahead_predictions` (2–3 testable directional claims).
-- Enrichment overwrites `looking_ahead`, `institutional_flows`, `expert_insights`, `supply_dynamics`. `institutional_flows` from Perplexity focuses on **non-ETF** activity (corporate treasury, whales, fund allocations, OTC, mining).
-- `etf_flows` comes straight from the market collector (not AI Brain or enrichment).
+- Synthesizer generates the base structure (stories, market, technical, narrative, macro, etc.) plus `looking_ahead_predictions` (2–3 testable directional claims).
+- Enrichment overwrites `looking_ahead`, `institutional_flows`, `expert_insights`, `supply_dynamics`. `institutional_flows` focuses on **non-ETF** activity (corporate treasury, whales, fund allocations, OTC, mining). `etf_flows` comes straight from the market collector (not Synthesizer or enrichment).
 - `read_time_seconds` is computed by `computeReadTimeSeconds()` ([src/lib/utils.ts](src/lib/utils.ts)) after enrichment — powers the 3-minute contract display.
 - `hero_three_lines`, `audio_url`, `audio_duration_seconds`, `audio_script` are populated by the audio brief step.
 - `looking_ahead_predictions` is also persisted to the `predictions` table by [save-briefing.ts](src/trigger/publishers/save-briefing.ts) (try/catch wrapped — failure does not block the briefing save).
@@ -207,7 +209,7 @@ collectors (news + market, parallel via batch.triggerAndWait)
 - **Expert voices** — Perplexity-sourced from recognized analysts (Lyn Alden, Saylor), not YouTube influencers.
 
 ## Briefing Rules
-**The AI brain system prompt in [ai-brain.ts](src/trigger/processors/ai-brain.ts) is the source of truth.** Read it when changing briefing behavior. Orientation:
+**The Synthesizer system prompt in [synthesizer.ts](src/trigger/processors/synthesizer.ts) is the source of truth.** Read it when changing briefing behavior. Orientation:
 - **5-item combined cap** across `top_stories + regulatory + adoption`, allocated by importance — not per-section quota. Soft floor of ~3 on quiet days.
 - **Two-question reader contract:** `daily_diff.sentiment_shift` and `hero_three_lines.signal` must plainly answer (1) is today mostly noise? (2) did anything change near-term risk? No soft hedging.
 - **Earned significance:** depth tracks `day_classifier.depth_weight` — quiet days read short and flat, thesis-shift days go deep.
@@ -215,9 +217,9 @@ collectors (news + market, parallel via batch.triggerAndWait)
 - **Audio OPEN** appends `day_classification.day_tone_line` when present, in [audio-brief/prompts.ts buildAudioScriptUserPrompt](src/trigger/audio-brief/prompts.ts). `day_tone_line` is normalized to a closed phrase set in [day-classifier.ts](src/trigger/processors/day-classifier.ts) so it never contradicts the label.
 
 ## Accuracy Gate (zero-unsourced-claims bar)
-- **[accuracy-validators.ts](src/trigger/lib/accuracy-validators.ts)** exports `findDirectionalViolations`, `findNarrativeConsensusContradictions`, and `findUnsourcedSummaries`. AI brain runs them post-generation in `ensureDataConsistency`; any violation triggers ONE correction retry before shipping.
-- **Source headline overwrite:** AI brain always overwrites `top_stories[].headline`, `regulatory[].headline`, `adoption[].headline` with the verbatim source article title from the news collector. Claude cannot editorialize headlines; the architecture prevents it.
-- **Directional truth block + approved headlines block** are injected at the top of the ai-brain user prompt: pre-computed approved/forbidden adjectives per 24h/7d period, plus the verbatim source titles. Mirrors the audio FACTS BLOCK discipline.
+- **[accuracy-validators.ts](src/trigger/lib/accuracy-validators.ts)** exports 12 validators (directional, narrative, summaries, hero, etc.) chained in Synthesizer's `ensureDataConsistency` plus `validateAnalystRiskChangeEarned` chained in Analyst. One correction retry per stage on violation.
+- **Source headline overwrite:** Synthesizer always overwrites `top_stories[].headline`, `regulatory[].headline`, `adoption[].headline` with verbatim source article titles. Claude cannot editorialize headlines; the architecture prevents it.
+- **Directional truth block + approved headlines block** injected at the top of the Synthesizer user prompt: pre-computed approved/forbidden adjectives per 24h/7d period plus verbatim source titles. Mirrors the audio FACTS BLOCK discipline.
 - **Source URLs required on new writes for:** `expert_insights[].source_url`, `institutional_flows.notable_moves[].source_url`, `supply_dynamics.source_url`. Enrichment filters out items without valid https URLs. `ExpertInsightsArraySchema` is now `.max(3)` (no min) — empty array is valid; homepage renders an empty-state stub. Legacy Supabase rows without URLs still render (polymorphic type).
 - **Looking-ahead calendar constraint:** enrichment injects `buildCountdownFactsBlock(date, 90)` so Perplexity can only reference scheduled catalysts from our calendar. FOMC/CPI inventions are prompt-rejected.
 - **Macro context:** Claude may only reference Asset Comparisons, 90-day correlations, and the CALENDAR FACTS BLOCK. No training-data priors for Fed/M2/rate path.

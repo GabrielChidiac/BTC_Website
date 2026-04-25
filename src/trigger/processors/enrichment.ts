@@ -5,6 +5,7 @@ import { getExpertPhotoUrls } from "@/lib/expert-photos";
 import { EXPERT_CONTEXT_DIGEST } from "@/trigger/processors/expert-context";
 import { ExpertInsightsArraySchema } from "@/lib/schemas";
 import { buildCountdownFactsBlock } from "@/trigger/lib/calendar";
+import { findInventedLookingAheadDates } from "@/trigger/lib/accuracy-validators";
 import type { z } from "zod";
 
 type ParsedExpertInsight = z.infer<typeof ExpertInsightsArraySchema>[number];
@@ -139,7 +140,7 @@ ${EXPERT_CONTEXT_DIGEST}\n`);
     parts.push("");
   }
 
-  // Briefing summary from AI Brain
+  // Briefing summary from Synthesizer
   if (ctx.briefing_summary) {
     const bs = ctx.briefing_summary;
     parts.push("## Current Narrative & Analysis");
@@ -313,7 +314,7 @@ export const enrichmentTask = task({
     }
 
     // Deterministic calendar block for the looking-ahead prompt. This is the
-    // same calendar the ai-brain countdown_events references, so outlook
+    // same calendar the synthesizer countdown_events references, so outlook
     // dates stay consistent with the homepage countdown.
     const calendarFacts = buildCountdownFactsBlock(date, 90);
 
@@ -395,6 +396,23 @@ export const enrichmentTask = task({
             .trim();
           output.looking_ahead = text;
           logger.info("Looking ahead complete", { length: text.length });
+
+          // Anti-hallucination gate: flag any explicit date (e.g. "March 18",
+          // "2026-06-17") that is not in the AUTHORITATIVE CALENDAR or in any
+          // forward-looking article. Log-only for now; the user can promote
+          // this to a fallback-replace once the false-positive rate is known.
+          const lookaheadViolations = findInventedLookingAheadDates(
+            text,
+            calendarFacts,
+            all_articles,
+          );
+          if (lookaheadViolations.length > 0) {
+            logger.warn("Looking ahead cited dates not in calendar or articles", {
+              count: lookaheadViolations.length,
+              phrases: lookaheadViolations.map((v) => v.phrase),
+              sample: lookaheadViolations.slice(0, 3).map((v) => v.reason),
+            });
+          }
         }
       }
     } else {
@@ -534,13 +552,24 @@ export const enrichmentTask = task({
       }
     }
 
-    // Filter to insights with a valid source_url. This is the hard gate:
-    // items without verifiable URLs are dropped silently, with an aggregate
-    // count logged so we can track how often Perplexity fabricates.
+    // Filter to insights with a valid source_url AND a date within the last
+    // 7 days. This is the hard gate: items without verifiable URLs or with
+    // stale quotes are dropped silently, with aggregate counts logged so we
+    // can track how often Perplexity fabricates or surfaces stale content.
+    // Permissive on unparseable dates ("approximate", malformed) — keep them
+    // rather than false-drop, since the system prompt already asks for recent.
+    const briefingMs = new Date(date + "T00:00:00Z").getTime();
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    let droppedStaleCount = 0;
     const verifiedExperts: ExpertInsight[] = [];
     const rawExperts = experts ?? [];
     for (const insight of rawExperts) {
       if (!isValidHttpsUrl(insight.source_url)) {
+        continue;
+      }
+      const insightMs = new Date(insight.date).getTime();
+      if (!isNaN(insightMs) && briefingMs - insightMs > SEVEN_DAYS_MS) {
+        droppedStaleCount++;
         continue;
       }
       const handle = insight.twitter_handle ?? undefined;
@@ -557,8 +586,9 @@ export const enrichmentTask = task({
     }
     const droppedExpertCount = rawExperts.length - verifiedExperts.length;
     if (droppedExpertCount > 0) {
-      logger.warn("Dropped expert insights without valid source_url", {
+      logger.warn("Dropped expert insights (no source_url or stale)", {
         dropped: droppedExpertCount,
+        droppedStale: droppedStaleCount,
         kept: verifiedExperts.length,
       });
     }
