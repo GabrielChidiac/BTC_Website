@@ -214,9 +214,9 @@ If the FACTS BLOCK has NO EXPERT VOICE section (truly absent, not just weak), st
 [OUTLOOK] ~60 words (including bridge + label)
 Open with the single most important upcoming catalyst from the FACTS BLOCK (name it explicitly, include the day count). Then one sentence on what the listener should watch in the next 24 to 72 hours. End with one concrete takeaway the listener can repeat in a conversation. Three to four sentences total, all natural prose. This is the "finalize" section, the thing they walk away with.
 
-[CLOSE] ~10 words
+[CLOSE] ~9 words
 Locked sentence, verbatim, no variation:
-"That is today. See you tomorrow. BTC Today."
+"That is today. See you tomorrow, BTC Today."
 
 Total word count target: between 440 and 490 words. At ~120 WPM (comprehension-paced delivery, not rushed) this lands at 3:40 to 4:05 of audio, inside the under-4-minute promise without feeling clipped. Each section's target above INCLUDES its bridge and section label. Not less than 440, not more than 490. Comprehension beats brevity; feeling rushed is a failure mode. If you find yourself over 490, cut the SECOND elaboration on a point, cut a qualifier phrase, or compress two sentences into one natural sentence. Do NOT cut by clipping sentences into fragments or ticker-style beats — the script must still sound 100% natural, like a human host, even at the lower word count.
 
@@ -299,7 +299,7 @@ Required label phrasings per section (use one of these or a very close variant �
 - [INSTITUTIONAL FLOWS] — "Now, institutional flows." / "On to the institutional flows." / "Here is where the big money went."
 - [DEEP DIVE] — "Time for the deep dive." / "Now the deep dive." / "Here is the deep dive."
 - [OUTLOOK] — "Finally, the outlook." / "Now the outlook." / "On to what is ahead."
-- [CLOSE] — the locked "That is today..." line IS the closer, no separate bridge or label.
+- [CLOSE] — the locked "That is today. See you tomorrow, BTC Today." line IS the closer, no separate bridge or label.
 
 GOOD full openers (bridge + label, both parts present):
 - [MARKET SNAPSHOT] → "Let's start with the market snapshot."  (the locked OPEN line counts as the prior context, so no separate bridge needed here — this section may use label-only as its opener.)
