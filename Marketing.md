@@ -133,6 +133,32 @@ Every channel below is framed as an experiment with a hypothesis, a weekly time 
 - **Success metric:** 8 to 12 posts over 60 days, average 5+ subscribers per post.
 - **Kill criteria:** If after 6 posts the average drops below 2 subscribers per post, change format or channel.
 
+##### Launch arc: posts 1 to 4 (planned 2026-04-26)
+
+The first four Tuesday posts are sequenced as a single narrative, not four standalone pitches. Each does different work and earns the next. Continuity across the four is the point. Do not reorder.
+
+| # | Date | Format | Narrative job | Hook |
+|---|---|---|---|---|
+| 1 | 2026-04-21 | Founder narrative | **Origin.** "I had a problem and built this." | "A few months ago I got frustrated trying to keep up with Bitcoin." |
+| 2 | 2026-04-28 | Listening / pattern report | **Listening.** "You answered my question. Here's the pattern." Pays off Post 1's closing prompt. Surfaces three reader questions, maps each to a section of the brief, makes free-vs-Pro split feel earned. | "Last week I asked one question on this app... I read every reply. Here's the pattern." |
+| 3 | 2026-05-05 | Sharp take / conviction | **Conviction.** Pick ONE of the three reader questions from Post 2, go deep on it for *this week* using the actual brief content. Demonstrates the institutional lens. Earns intellectual respect, not just sympathy. Strongest candidate: "Are the institutions still buying, or quietly leaving?" because the deep-dive section already produces this answer daily. | "Most people are asking whether institutions are quietly leaving Bitcoin. Here's the honest answer this week." |
+| 4 | 2026-05-12 | Stakes / scarcity close | **Stakes.** "Founding is closing. Here's why I'm not raising the cap." Names the price publicly (already planted in Post 2). Hardest CTA of the four. Only post in the arc where scarcity does the heavy lifting. | "When the 100th seat is taken, the founding offer is gone. Here's why I'm not extending it." |
+
+**Continuity rules:**
+- Post 2 must callback Post 1's closing question verbatim ("What's the one thing you actually want to know about Bitcoin each day?").
+- Post 3 must callback one of Post 2's three reader questions verbatim.
+- Post 4 must callback the founding mechanic introduced in Post 1 and the price first surfaced in Post 2 ($59 a year).
+- Voice posture shifts each post: inward (1) → outward listening (2) → outward conviction (3) → direct address (4). Same person, four different stances.
+- One share-bait line per post. Post 2's: "They want to walk into their day already knowing what changed." Post 3 and Post 4 each need one line of equivalent quality before publishing.
+
+**Verification gate before each post ships:**
+- Real founding count pulled live (`getFoundingMemberStatus()` or Supabase query).
+- Every quoted reader sentiment must be from a real reply, not a composite. If a quote is composite, label it as such or remove it.
+- Every product claim (section names, read time, audio length) must match what the live brief shipped that day.
+- UTM tag the link: `utm_source=linkedin&utm_medium=post&utm_campaign=YYYY-MM-DD-<topic>`.
+
+**After Post 4:** review week 5 onward against the 5-format rotation in section 6.1 above. Do not extend the arc to Post 5 by default. Arcs that overstay get tuned out.
+
 #### 6.2 Direct outreach (LinkedIn DM and email)
 
 - **Hypothesis:** Personalized feedback-framed outreach to in-ICP professionals converts cold contacts to subscribers at a materially higher rate than post reach.
