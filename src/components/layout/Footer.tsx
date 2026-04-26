@@ -22,6 +22,13 @@ export function Footer() {
           <span className="h-3 w-px bg-[var(--color-border)]" />
           <Link href="/pricing" className="hover:text-[var(--color-accent)] transition-colors">Pricing</Link>
           <span className="h-3 w-px bg-[var(--color-border)]" />
+          <Link
+            href="/tip?source=footer"
+            className="hover:text-[var(--color-accent)] transition-colors"
+          >
+            Tip in sats
+          </Link>
+          <span className="h-3 w-px bg-[var(--color-border)]" />
           <a
             href="mailto:hello@btctoday.co"
             className="hover:text-[var(--color-accent)] transition-colors"

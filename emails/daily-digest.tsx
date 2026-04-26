@@ -671,6 +671,18 @@ export default function DailyDigest({
             return null;
           })()}
 
+          {/* ── Tip CTA ──────────────────────────────────────── */}
+          <Section style={s.tipSection}>
+            <Text style={s.tipLabel}>{"⚡"} Lightning</Text>
+            <Text style={s.tipText}>
+              Tips fund the pipeline. Send sats to{" "}
+              <code style={s.tipAddress}>btctoday@coinos.io</code>, or open the tip page.
+            </Text>
+            <Link href={`${siteUrl}/tip?source=newsletter`} style={s.tipButton}>
+              Tip in sats
+            </Link>
+          </Section>
+
           {/* ── Footer ──────────────────────────────────────── */}
           <Section style={s.footer}>
             <Text style={s.footerText}>
@@ -1076,5 +1088,50 @@ const s = {
     color: c.textSecondary,
     margin: "0",
     lineHeight: "1.5",
+  } as React.CSSProperties,
+
+  // ── Tip CTA ──────────────────────────────────
+  tipSection: {
+    textAlign: "center" as const,
+    padding: "16px 20px",
+    margin: "12px 0",
+    backgroundColor: c.bgElevated,
+    borderRadius: "8px",
+    border: `1px solid ${c.border}`,
+  } as React.CSSProperties,
+  tipLabel: {
+    fontSize: "10px",
+    fontWeight: "700" as const,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase" as const,
+    color: c.accent,
+    margin: "0 0 6px",
+  } as React.CSSProperties,
+  tipText: {
+    fontSize: "12px",
+    color: c.textSecondary,
+    margin: "0 0 10px",
+    lineHeight: "1.5",
+  } as React.CSSProperties,
+  tipAddress: {
+    fontFamily: "monospace",
+    fontSize: "11px",
+    color: c.textPrimary,
+    backgroundColor: c.bgSurface,
+    padding: "1px 4px",
+    borderRadius: "3px",
+  } as React.CSSProperties,
+  tipButton: {
+    display: "inline-block" as const,
+    backgroundColor: "transparent",
+    color: c.accent,
+    fontFamily: sans,
+    fontSize: "11px",
+    fontWeight: "600" as const,
+    textDecoration: "none",
+    padding: "8px 18px",
+    borderRadius: "6px",
+    border: `1px solid ${c.accent}`,
+    letterSpacing: "0.01em",
   } as React.CSSProperties,
 } as const;

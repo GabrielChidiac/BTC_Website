@@ -123,3 +123,15 @@ export const FOUNDING_MEMBER_LIMIT = 100;
 // ─── Pipeline ───────────────────────────────────────────────────────────────
 
 export const ARTICLE_MAX_AGE_HOURS = 24;
+
+// ─── Lightning tips ─────────────────────────────────────────────────────────
+
+/**
+ * Preset tip amounts in satoshis. 21k is on-brand for Bitcoin (max supply
+ * 21M); the smaller and larger options bracket it for choice without
+ * presenting a wall of buttons. Custom amount is always available via input.
+ */
+export const TIP_PRESETS_SATS = [1_000, 5_000, 21_000, 100_000] as const;
+export const TIP_MIN_SATS = 21;
+export const TIP_MAX_SATS = 1_000_000;
+export const TIP_MESSAGE_MAX_LEN = 200;

@@ -76,6 +76,39 @@ export const dateParamSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format");
 
+/** POST /api/tips/invoice — create a Lightning tip invoice */
+export const tipInvoiceSchema = z
+  .object({
+    amount_sats: z
+      .number()
+      .int("Amount must be a whole number of sats")
+      .min(21, "Minimum tip is 21 sats")
+      .max(1_000_000, "Maximum tip is 1,000,000 sats"),
+    tipper_name: z
+      .string()
+      .trim()
+      .max(80, "Name must be 80 characters or fewer")
+      .optional(),
+    message: z
+      .string()
+      .trim()
+      .max(200, "Message must be 200 characters or fewer")
+      .optional(),
+    source: z
+      .enum(["site", "newsletter", "archive", "footer"])
+      .default("site"),
+    briefing_date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format")
+      .optional(),
+  })
+  .strict();
+
+/** Path parameter on /api/tips/[hash] — CoinOS payment hash */
+export const paymentHashSchema = z
+  .string()
+  .regex(/^[a-f0-9]{32,128}$/i, "Invalid payment hash");
+
 /**
  * Parse a Request JSON body with a zod schema. Returns either the parsed
  * data or a ready-to-return 400 Response. Handles malformed JSON, missing

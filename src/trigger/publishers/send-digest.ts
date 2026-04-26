@@ -192,7 +192,7 @@ export const sendDigestTask = task({
       sections.push("EDITOR'S NOTE: Today's commentary is lighter than usual. Full analytical brief resumes tomorrow.");
     }
 
-    sections.push(`Listen (Pro audio brief): %%AUDIO_URL%%\nRead full briefing: %%BRIEFING_URL%%\nDownload PDF: %%PDF_URL%%\nUnsubscribe: %%UNSUBSCRIBE_URL%%\n\n- BTC Today`);
+    sections.push(`Listen (Pro audio brief): %%AUDIO_URL%%\nRead full briefing: %%BRIEFING_URL%%\nDownload PDF: %%PDF_URL%%\n\nTip in sats: ${siteUrl}/tip?source=newsletter or send to btctoday@coinos.io\n\nUnsubscribe: %%UNSUBSCRIBE_URL%%\n\n- BTC Today`);
 
     const textTemplate = sections.join("\n\n");
 

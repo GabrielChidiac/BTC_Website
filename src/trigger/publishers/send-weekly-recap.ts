@@ -180,6 +180,8 @@ Read the latest briefing: %%BRIEFING_URL%%
 Want the full picture? Go Pro for the daily email, PDF downloads, and full archive:
 ${siteUrl}/pricing
 
+Tip in sats: ${siteUrl}/tip?source=newsletter or send to btctoday@coinos.io
+
 Unsubscribe: %%UNSUBSCRIBE_URL%%
 
 - BTC Today`;

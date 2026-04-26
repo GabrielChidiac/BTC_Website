@@ -335,10 +335,7 @@ export default async function ArchiveDatePage({
 
               {briefing.fallback_used && <EditorsNote />}
 
-              <BriefEndState
-                shareText={briefing.hero_three_lines?.move ?? briefing.one_line ?? `Bitcoin brief for ${formatDisplayDate(date)}`}
-                shareUrl={`https://btctoday.co/archive/${date}`}
-              />
+              <BriefEndState shareUrl={`https://btctoday.co/archive/${date}`} />
             </>
           ) : (
             <>

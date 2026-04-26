@@ -482,10 +482,7 @@ export default async function Home() {
               Satisfies the 3-Minute Contract promise with a definitive
               "you are done" and turns finished readers into distribution.
              ═══════════════════════════════════════════════════════════════ */}
-          <BriefEndState
-            shareText={briefing.hero_three_lines?.move ?? briefing.one_line ?? "Today's Bitcoin brief"}
-            shareUrl="https://btctoday.co"
-          />
+          <BriefEndState shareUrl="https://btctoday.co" />
 
           {/* ═══════════════════════════════════════════════════════════════
               SUBSCRIBE CTA

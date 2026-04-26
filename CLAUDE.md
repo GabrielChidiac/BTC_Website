@@ -26,6 +26,7 @@ AI-curated daily Bitcoin intelligence for busy BTC holders who have jobs. A Trig
 | AI | Claude Sonnet (briefing) + Perplexity sonar-pro (enrichment) + OpenAI `gpt-4o-mini-tts` (audio) | Kie.ai fallback for Claude |
 | Payments | Stripe (Payment Links) | $7/month or $59/year |
 | Email | Resend + React Email | |
+| Tipping | Lightning Network via CoinOS | `btctoday@coinos.io`; auto-sweep to BitBox02 at 500k sats; polling not webhooks |
 | UI | shadcn/ui (base-nova), Framer Motion, GSAP | Animate only `transform`/`opacity` |
 | TA | trading-signals | RSI-14, SMA-50, SMA-200 |
 | Language | TypeScript (strict) | No tests or linter configured |
@@ -38,9 +39,6 @@ npm run start                 # Serve the production build
 npx trigger.dev@latest dev    # Trigger.dev local runner
 ```
 Path alias `@/*` → `./src/*`. No test runner, linter, or formatter is configured — `npm run build` is the only type-safety gate. CI deploys Trigger.dev on push to `main`. Project-local skills in `Skills/` (incl. `analyst-review` for periodic Synthesizer-rewrite-readiness checks). Supabase MCP is wired (read-only, OAuth-authed) — query `daily_briefings` directly during debugging instead of asking the user to paste rows. Seed a test briefing via `scripts/seed-test-briefing.sql`.
-
-## Documentation
-[docs/plan.md](docs/plan.md), [docs/architecture.md](docs/architecture.md), [docs/decisions.md](docs/decisions.md), [docs/orchestrator.md](docs/orchestrator.md), [docs/deployment.md](docs/deployment.md), [docs/design-brief.md](docs/design-brief.md).
 
 ## Working Rules
 - **Always verify before writing.** Read schemas, types, and existing code before writing any new code. Never assume a field, type, or pattern exists — confirm it first.
@@ -58,6 +56,7 @@ These are core product features or pipeline steps whose removal requires an expl
 - **Founding member mechanic:** `is_founding_member` flag, `FOUNDING_MEMBER_LIMIT`, `founding-welcome.tsx`, founding-count UI.
 - **Weekly recap email** for free tier.
 - **Predictions table + `resolve-predictions` cron** (day-60 accuracy scorecard feed).
+- **Lightning tipping:** `/tip` page, `/api/tips/invoice` + `/api/tips/[hash]`, `lightning_tips` table, `src/lib/lightning.ts` CoinOS wrapper, tip CTA in daily digest + weekly recap.
 If a task looks like it touches any of these, stop and confirm with the user before proceeding.
 
 ## Critical Patterns
@@ -113,12 +112,13 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 All keys live in `.env.example`. Services: Anthropic, Perplexity, Kie.ai (Claude fallback), OpenAI (TTS for the audio brief), CoinGecko, SearchAPI, Jina Reader, Trigger.dev, Resend, Supabase, Stripe.
 
 ## Database (Supabase)
-5 tables in [supabase/migrations/](supabase/migrations/). RLS: briefings publicly readable, all others service-role only.
+6 tables in [supabase/migrations/](supabase/migrations/). RLS: briefings publicly readable, all others service-role only.
 - `daily_briefings` — date PK + JSONB content
 - `subscribers` — email, tier, status, founding flag
 - `verification_codes` — magic-link tokens + session tokens
 - `predictions` — silent data collection for the day-60 accuracy scorecard. 2–3 directional claims per briefing. Auto-resolved daily at 03:00 UTC by [resolve-predictions.ts](src/trigger/publishers/resolve-predictions.ts): BTC-price metrics scored via CoinGecko historical close, ±2% flat band; other metrics marked `inconclusive` with a reason. No user-facing UI yet.
 - `rate_limits` — IP-bucketed counters for `src/lib/rate-limit.ts` (fail-open). Incremented via the `increment_rate_limit` Postgres RPC.
+- `lightning_tips` — Lightning tip invoices generated via CoinOS. `payment_hash` (unique), `bolt11`, `amount_sats`, optional `message` + `briefing_date`, `paid` flag flipped on poll confirmation. No FK on briefing_date (decoupled from briefing lifecycle).
 
 ## API Routes
 Routes in [src/app/api/](src/app/api/): subscribe + subscribe/verify, unsubscribe, revalidate (ISR), auth/verify-send + auth/verify-check, logout, webhooks/stripe, audio/[date] (Pro — returns a 1-hour signed Supabase Storage URL for the day's MP3; 404 if missing; redirects non-Pro to `/pricing`). `/pdf/[date]` is a **page** route at [src/app/pdf/[date]](src/app/pdf/[date]/) (renders via `@react-pdf/renderer`), not an API handler. Public routes go through `checkRateLimit()` + `getClientIp()` from [src/lib/rate-limit.ts](src/lib/rate-limit.ts) — the limiter fails **open** on errors, with HMAC/auth as a second layer.
