@@ -19,6 +19,19 @@ import type {
 
 const EXPERT_CONTEXT_ENABLED = process.env.EXPERT_CONTEXT_ENABLED !== "false";
 
+// Strip Perplexity citation noise from any user-facing string. Catches numeric
+// markers ([1], [1, 2]) and word markers ([intelligence], [market]) that leak
+// through despite system-prompt bans. Safe on parsed string values; never run
+// on raw JSON text where [ ] are structural.
+function stripCitationNoise(s: string): string {
+  return s
+    .replace(/\s*\[\d+(?:\s*,\s*\d+)*\]/g, "")
+    .replace(/\s*\[[a-zA-Z][a-zA-Z0-9 _,-]*\]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([.,;:!?])/g, "$1")
+    .trim();
+}
+
 // ─── Looking Ahead ──────────────────────────────────────────────────────────
 
 const LOOKING_AHEAD_SYSTEM = `You are a senior macro-financial analyst and Bitcoin strategist writing the forward-looking section for an institutional-grade daily briefing. Your audience is high-net-worth investors and business executives. Use your web search capabilities to find the very latest developments.
@@ -53,7 +66,7 @@ LENGTH AND STRUCTURE
   - The positioning or flow signal that ties the catalysts to current market state.
 - One idea per sentence. Do not pack two beats into one sentence to "fit" everything.
 - Do NOT use markdown, bullet points, headings, or paragraph breaks. Plain prose, single paragraph.
-- Do NOT include citation markers like [1], [2], [3] or any bracketed references. The pipeline strips them but it creates noise and retry risk.
+- Do NOT include citation markers of ANY kind. This includes numeric markers ([1], [2], [1, 2]), word markers ([intelligence], [market], [calendar], [source]), or any other bracketed reference. NEVER cite the source of a fact inline; integrate the fact directly. The output is plain prose for end readers, not an annotated document.
 - Never use em dashes or en dashes. Use commas, periods, or semicolons.
 
 CONTENT RULES
@@ -391,12 +404,7 @@ export const enrichmentTask = task({
           // same strip on their JSON output; looking_ahead is the one path
           // that ships straight to the homepage Outlook section, so the
           // markers render as visible noise ("...$126,000.[1][2]").
-          text = text
-            .replace(/\s*\[\d+(?:\s*,\s*\d+)*\]/g, "") // "[1]", "[1, 2]", "[1,2,3]"
-            .replace(/\s*\[\d+\](?:\s*\[\d+\])+/g, "") // "[1][2]" consecutive
-            .replace(/\s{2,}/g, " ") // collapse any double spaces left behind
-            .replace(/\s+([.,;:!?])/g, "$1") // tighten punctuation
-            .trim();
+          text = stripCitationNoise(text);
           output.looking_ahead = text;
           logger.info("Looking ahead complete", { length: text.length });
 
@@ -440,7 +448,10 @@ export const enrichmentTask = task({
           summary?: unknown;
           notable_moves?: unknown;
         };
-        const summary = typeof parsedRaw.summary === "string" ? parsedRaw.summary : "Data unavailable";
+        const summary =
+          typeof parsedRaw.summary === "string"
+            ? stripCitationNoise(parsedRaw.summary)
+            : "Data unavailable";
         const movesRaw = Array.isArray(parsedRaw.notable_moves) ? parsedRaw.notable_moves : [];
         const isValidUrl = (u: unknown): u is string => {
           if (typeof u !== "string") return false;
@@ -459,7 +470,7 @@ export const enrichmentTask = task({
             }
             if (m && typeof m === "object") {
               const mObj = m as { text?: unknown; source_url?: unknown };
-              const text = typeof mObj.text === "string" ? mObj.text.trim() : "";
+              const text = typeof mObj.text === "string" ? stripCitationNoise(mObj.text) : "";
               const url = typeof mObj.source_url === "string" ? mObj.source_url.trim() : "";
               if (!text) return null;
               if (!isValidUrl(url)) return null;
@@ -577,10 +588,10 @@ export const enrichmentTask = task({
       }
       const handle = insight.twitter_handle ?? undefined;
       verifiedExperts.push({
-        expert_name: insight.expert_name,
-        role: insight.role,
-        quote_or_summary: insight.quote_or_summary,
-        source: insight.source,
+        expert_name: stripCitationNoise(insight.expert_name),
+        role: stripCitationNoise(insight.role),
+        quote_or_summary: stripCitationNoise(insight.quote_or_summary),
+        source: stripCitationNoise(insight.source),
         source_url: insight.source_url,
         date: insight.date,
         twitter_handle: handle,
@@ -630,7 +641,7 @@ export const enrichmentTask = task({
           output.supply_dynamics = {
             exchange_reserve_trend:
               typeof parsedRaw.exchange_reserve_trend === "string"
-                ? parsedRaw.exchange_reserve_trend
+                ? stripCitationNoise(parsedRaw.exchange_reserve_trend)
                 : "Data unavailable",
             long_term_holder_pct:
               typeof parsedRaw.long_term_holder_pct === "number"
@@ -638,7 +649,7 @@ export const enrichmentTask = task({
                 : null,
             supply_narrative:
               typeof parsedRaw.supply_narrative === "string"
-                ? parsedRaw.supply_narrative
+                ? stripCitationNoise(parsedRaw.supply_narrative)
                 : "Supply data unavailable today.",
             source_url: sourceUrl,
           };
