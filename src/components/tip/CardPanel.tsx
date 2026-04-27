@@ -13,7 +13,7 @@ interface CardPanelProps {
   source: "site" | "newsletter" | "archive" | "footer";
 }
 
-const UI_MIN_CENTS = 1_000; // $10 floor in the UI; DB allows down to $1.
+const UI_MIN_CENTS = 500; // $5 floor in the UI; DB allows down to $1.
 
 // Same shape as src/lib/validation.ts emailBase — keep loose; server is the
 // authoritative validator. We just want to catch obvious typos client-side.
