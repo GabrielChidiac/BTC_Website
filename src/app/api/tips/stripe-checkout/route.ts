@@ -21,17 +21,21 @@ export async function POST(request: Request) {
   const parsed = await parseJson(tipStripeCheckoutSchema, request);
   if (!parsed.ok) return parsed.response;
 
-  const { amount_cents, tipper_name, message, source, briefing_date } = parsed.data;
+  const { amount_cents, tipper_email, tipper_name, message, source, briefing_date } = parsed.data;
   const cleanName = tipper_name?.trim() || null;
   const cleanMessage = message?.trim() || null;
 
   // ── Persist pending row first so we can pass tip_id to Stripe ────────
+  // tipper_email is captured upfront (rather than waiting for the webhook
+  // to surface session.customer_details.email) so a branded receipt can
+  // still be sent even if Stripe's webhook drops the customer block.
   const supabase = createServiceClient();
   const { data: row, error: insertError } = await supabase
     .from("stripe_tips")
     .insert({
       amount_cents,
       currency: "usd",
+      tipper_email,
       tipper_name: cleanName,
       message: cleanMessage,
       briefing_date: briefing_date ?? null,
@@ -51,6 +55,7 @@ export async function POST(request: Request) {
   const session = await createTipCheckoutSession({
     tipId: row.id,
     amountCents: amount_cents,
+    tipperEmail: tipper_email,
     tipperName: cleanName,
     message: cleanMessage,
     briefingDate: briefing_date ?? null,

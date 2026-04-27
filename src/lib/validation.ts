@@ -110,7 +110,11 @@ export const paymentHashSchema = z
   .regex(/^[a-f0-9]{32,128}$/i, "Invalid payment hash");
 
 /** POST /api/tips/stripe-checkout — create a one-time Stripe Checkout Session
- *  for a card tip. Mirrors tipInvoiceSchema; uses USD cents instead of sats. */
+ *  for a card tip. Mirrors tipInvoiceSchema; uses USD cents instead of sats.
+ *  tipper_email is REQUIRED so we can guarantee a receipt -- it pre-fills
+ *  Stripe Checkout (customer_email) and sets payment_intent.receipt_email
+ *  so Stripe always sends an automatic receipt regardless of dashboard
+ *  settings. Webhook also sends a branded thank-you email. */
 export const tipStripeCheckoutSchema = z
   .object({
     amount_cents: z
@@ -118,6 +122,7 @@ export const tipStripeCheckoutSchema = z
       .int("Amount must be a whole number of cents")
       .min(100, "Minimum tip is $1")
       .max(100_000, "Maximum tip is $1,000"),
+    tipper_email: emailBase,
     tipper_name: z
       .string()
       .trim()

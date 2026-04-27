@@ -6,6 +6,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getBaseUrl } from "@/lib/url";
 import { verifyStripeWebhook } from "@/lib/stripe";
 import ProWelcomeEmail from "../../../../../emails/pro-welcome";
+import TipReceiptEmail from "../../../../../emails/tip-receipt";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
@@ -19,10 +20,25 @@ function generateToken(): string {
     .join("");
 }
 
+function formatUsdCents(cents: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
+}
+
 /**
  * Reconcile a one-time tip payment to the stripe_tips table. Idempotent --
  * if the row is already paid, no-op. Stripe webhooks are at-least-once,
  * so this branch may be invoked more than once per session.
+ *
+ * After marking paid, sends a branded BTC Today thank-you receipt via
+ * Resend. This runs alongside the Stripe automatic email receipt
+ * (forced via payment_intent_data.receipt_email at checkout creation).
+ * Both send so a missed dashboard config or spam-filter quirk on either
+ * side cannot leave the tipper without confirmation.
  */
 async function handleTipPayment(
   session: Stripe.Checkout.Session,
@@ -31,22 +47,34 @@ async function handleTipPayment(
   const tipId = session.metadata?.tip_id ?? null;
   const sessionId = session.id;
 
-  // Look up the tip row by tip_id (preferred) or session id (fallback).
-  let row: { id: string; paid: boolean } | null = null;
+  // Look up the full tip row (including upfront-collected email + name +
+  // briefing_date) so the branded receipt has all the context it needs.
+  type TipRow = {
+    id: string;
+    paid: boolean;
+    amount_cents: number;
+    tipper_email: string | null;
+    tipper_name: string | null;
+    briefing_date: string | null;
+  };
+  const tipColumns =
+    "id, paid, amount_cents, tipper_email, tipper_name, briefing_date";
+
+  let row: TipRow | null = null;
   if (tipId) {
     const { data } = await supabase
       .from("stripe_tips")
-      .select("id, paid")
+      .select(tipColumns)
       .eq("id", tipId)
-      .maybeSingle();
+      .maybeSingle<TipRow>();
     row = data;
   }
   if (!row) {
     const { data } = await supabase
       .from("stripe_tips")
-      .select("id, paid")
+      .select(tipColumns)
       .eq("stripe_session_id", sessionId)
-      .maybeSingle();
+      .maybeSingle<TipRow>();
     row = data;
   }
 
@@ -63,16 +91,75 @@ async function handleTipPayment(
       ? session.payment_intent
       : session.payment_intent?.id ?? null;
 
+  // Prefer the upfront-collected email (always present). Fall back to
+  // the email Stripe captured on its hosted page in case of legacy rows.
+  const stripeEmail = session.customer_details?.email ?? null;
+  const receiptEmail = (row.tipper_email ?? stripeEmail)?.toLowerCase().trim() ?? null;
+  const paidAt = new Date().toISOString();
+
   await supabase
     .from("stripe_tips")
     .update({
       paid: true,
-      paid_at: new Date().toISOString(),
+      paid_at: paidAt,
       stripe_session_id: sessionId,
       stripe_payment_intent_id: paymentIntentId,
-      tipper_email: session.customer_details?.email ?? null,
+      tipper_email: receiptEmail,
     })
     .eq("id", row.id);
+
+  // ── Branded BTC Today receipt (non-fatal) ─────────────────────────
+  if (receiptEmail) {
+    const resendKey = process.env.RESEND_API_KEY;
+    if (resendKey) {
+      try {
+        const siteUrl = getBaseUrl();
+        const amountUsd = formatUsdCents(row.amount_cents);
+        const resend = new Resend(resendKey);
+        const html = await render(
+          TipReceiptEmail({
+            email: receiptEmail,
+            amountUsd,
+            tipperName: row.tipper_name,
+            briefingDate: row.briefing_date,
+            paidAt,
+            siteUrl,
+          })
+        );
+
+        const text = [
+          row.tipper_name ? `Thank you, ${row.tipper_name}.` : "Thank you.",
+          "",
+          `We received your tip of ${amountUsd}. This email is your BTC Today record of the payment. Stripe will also send a standard card receipt for your records.`,
+          row.briefing_date
+            ? `\nTip referenced the briefing from ${row.briefing_date}.`
+            : "",
+          "",
+          `Amount:    ${amountUsd}`,
+          `Paid:      ${new Date(paidAt).toUTCString()}`,
+          `Statement: BTC TODAY TIP`,
+          `Email:     ${receiptEmail}`,
+          "",
+          `Read today's brief: ${siteUrl}`,
+          "",
+          "Questions? Reply to this email or write hello@btctoday.co.",
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        await resend.emails.send({
+          from: "BTC Today <hello@btctoday.co>",
+          to: receiptEmail,
+          subject: `Tip received: ${amountUsd}`,
+          html,
+          text,
+        });
+      } catch {
+        // Non-fatal: payment is already recorded, Stripe also sent its
+        // own receipt via payment_intent.receipt_email.
+      }
+    }
+  }
 
   return NextResponse.json({ ok: true, action: "tip_paid", tip_id: row.id });
 }

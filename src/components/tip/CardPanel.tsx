@@ -15,6 +15,10 @@ interface CardPanelProps {
 
 const UI_MIN_CENTS = 1_000; // $10 floor in the UI; DB allows down to $1.
 
+// Same shape as src/lib/validation.ts emailBase — keep loose; server is the
+// authoritative validator. We just want to catch obvious typos client-side.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function formatUsd(cents: number): string {
   const dollars = cents / 100;
   return new Intl.NumberFormat("en-US", {
@@ -29,6 +33,7 @@ export function CardPanel({ briefingDate, source }: CardPanelProps) {
   const [amountCents, setAmountCents] = useState<number>(2_100);
   const [customAmount, setCustomAmount] = useState("");
   const [usingCustom, setUsingCustom] = useState(false);
+  const [tipperEmail, setTipperEmail] = useState("");
   const [tipperName, setTipperName] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,6 +50,12 @@ export function CardPanel({ briefingDate, source }: CardPanelProps) {
     e.preventDefault();
     setError(null);
 
+    const email = tipperEmail.trim().toLowerCase();
+    if (!email || !EMAIL_RE.test(email)) {
+      setError("Enter a valid email so we can send you a receipt.");
+      return;
+    }
+
     const cents = effectiveCents();
     if (cents < UI_MIN_CENTS) {
       setError(`Minimum tip is ${formatUsd(UI_MIN_CENTS)}`);
@@ -59,6 +70,7 @@ export function CardPanel({ briefingDate, source }: CardPanelProps) {
     try {
       const body: Record<string, unknown> = {
         amount_cents: cents,
+        tipper_email: email,
         source,
       };
       if (tipperName.trim()) body.tipper_name = tipperName.trim();
@@ -96,6 +108,42 @@ export function CardPanel({ briefingDate, source }: CardPanelProps) {
           "0 1px 0 rgba(255,255,255,0.6) inset, 0 12px 30px -16px rgba(0,0,0,0.12)",
       }}
     >
+      <div className="mb-5">
+        <div className="mb-2 flex items-baseline justify-between">
+          <label
+            htmlFor="card-tip-email"
+            className="font-mono text-[10px] uppercase tracking-[0.18em]"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            Email (required)
+          </label>
+          <span
+            className="font-mono text-[10px] uppercase tracking-[0.18em]"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            For receipt
+          </span>
+        </div>
+        <input
+          id="card-tip-email"
+          type="email"
+          required
+          autoComplete="email"
+          inputMode="email"
+          maxLength={254}
+          value={tipperEmail}
+          onChange={(e) => setTipperEmail(e.target.value)}
+          placeholder="you@example.com"
+          className="h-10 w-full rounded-lg border px-3 text-sm outline-none placeholder:text-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-accent)]/50"
+          style={{
+            backgroundColor: "var(--color-bg-base)",
+            borderColor: "var(--color-border)",
+            color: "var(--color-text-primary)",
+            transition: "border-color 150ms ease, box-shadow 150ms ease",
+          }}
+        />
+      </div>
+
       <div className="mb-6">
         <div className="mb-2 flex items-baseline justify-between">
           <label
