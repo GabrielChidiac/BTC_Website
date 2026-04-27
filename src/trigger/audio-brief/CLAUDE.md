@@ -31,7 +31,7 @@ Acronyms must be phonetically spelled with spaces or fully written out:
 - SEC, CPI, PCE, PPI, GDP, RSI → spelled with spaces
 
 ## Voice steering
-[../lib/openai-tts.ts](../lib/openai-tts.ts) holds the `VOICE_INSTRUCTIONS` block fed to OpenAI TTS as steering. Voice: `coral`. Edit there, not in prompts.ts.
+[../lib/openai-tts.ts](../lib/openai-tts.ts) holds the `VOICE_INSTRUCTIONS` block fed to OpenAI TTS as steering. Voice: `ash`. Edit there, not in prompts.ts.
 
 ## Anti-patterns
 - Never raise WPM to fit a shorter target.

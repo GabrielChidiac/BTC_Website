@@ -9,15 +9,17 @@ import type { Result } from "@/lib/types";
  * pacing, emphasis). Replaces the legacy tts-1-hd which produced flat prosody
  * regardless of script craft.
  *
- * Voice: "coral" — warm female news-host voice. Swap by changing DEFAULT_VOICE
- * below. Other female options: sage (calmer), nova (brighter), shimmer (softer).
+ * Voice: "ash" — warm, expressive male, less stiff than coral's news-anchor
+ * default. Swap by changing DEFAULT_VOICE below. Other options worth trying:
+ * verse (more conversational), ballad (warm narrative), nova (brighter female),
+ * sage (calmer female), onyx (deeper male, more gravitas).
  *
  * Returns a Result<ArrayBuffer> following the codebase-wide pattern. Never
  * throws. Callers (the generate-audio-brief task) must be non-fatal on error
  * so the daily pipeline still ships a text-only briefing if TTS fails.
  */
 
-const DEFAULT_VOICE = "coral";
+const DEFAULT_VOICE = "ash";
 const DEFAULT_MODEL = "gpt-4o-mini-tts";
 
 /**
@@ -27,19 +29,19 @@ const DEFAULT_MODEL = "gpt-4o-mini-tts";
  * host tone, varied pacing, emphasis on stakes and numbers, spoken section
  * transitions lifted slightly as verbal signposts).
  */
-const VOICE_INSTRUCTIONS = `Voice: Warm, confident morning news host. Imagine telling a smart, busy friend what they need to know before their first meeting. Unhurried, but genuinely awake and engaged. The listener trusts you, so you do not need to rush, but they also need to feel that you actually want to be talking to them.
+const VOICE_INSTRUCTIONS = `Voice: A smart friend telling you what mattered in Bitcoin this morning over coffee. Conversational, naturally expressive, present. You like what you do and it shows. Not a news anchor, not a podcast host performing for an audience, just a peer who actually has something to say to one specific person.
 
-NORTH STAR: The listener must be able to follow and absorb every sentence on first hearing. Comprehension is more important than brevity. If you are ever unsure whether to speed up or slow down, slow down. A listener who feels rushed is a listener who tunes out. Going slightly longer is fine, feeling rushed is not.
+NORTH STAR: The listener must be able to follow and absorb every sentence on first hearing. Comprehension beats brevity. If unsure whether to speed up or slow down, slow down. The two failure modes are equally fatal: a listener who feels rushed tunes out, and a listener who feels bored tunes out. The cure for both is genuine engagement in the voice, not faster or slower pacing.
 
-OPENING LINE — "Good morning. Today is {weekday}, {month} {day}. Here is BTC Today.": deliver this with genuine, unforced warmth. A small lift on "Good," settle into "morning," a real conversational beat before the date, then a confident land on "Here is BTC Today." This is a human greeting an adult friend, not an announcer reading a slate. The listener knows they are hearing AI; the one chance to earn the next four minutes is to sound like someone who is actually glad to be there. Never flat, never theatrical, never sing-songy. Alive.
+OPENING LINE — "Good morning. Today is {weekday}, {month} {day}. Here is BTC Today.": deliver this like you are actually saying good morning to one specific person you know. Light, real, unforced, with a small natural smile in "Good morning." A clear conversational beat after the date. Land "Here is BTC Today" with quiet confidence, not announcement-voice. Never radio-host, never theatrical, never sing-songy. Just present.
 
-Delivery: Conversational but precise. Measured, grounded, unhurried energy — but never low-energy. The voice must carry present, engaged life through every sentence: flat and monotone is the single biggest way to lose this listener, because they already know it is AI and a dying voice confirms the worst suspicion. Stay alive to what the numbers mean. Calm does not mean quiet or tired; it means steady and unforced. Treat short spoken section transitions like "Top stories this morning." or "Institutional flows." as verbal signposts, lift the voice slightly, and take a clear beat before and after so the listener feels the brief move from one part to the next.
+Delivery: Conversational and naturally varied. Real emphasis on what matters, real ease through connective tissue. Let your pitch move the way it would in a real spoken sentence between two people. The deadly failure mode is monotone formality — flat, anchor-stiff, "reading the news" energy. The listener already knows it is AI, and a stiff voice confirms the worst suspicion. Stay alive to what the numbers and stories actually mean. Treat short spoken transitions like "Top stories this morning." or "Institutional flows." as natural verbal signposts. Lift gently, take a clear beat before and after, then move on.
 
-Pacing: Noticeably slower than a typical news read. Target a relaxed, reflective cadence around 120 words per minute — closer to a thoughtful audiobook narrator than a wire-service reader. Land firmly on numbers, names, and stakes so they settle before moving on. Let commas breathe. Take a real pause at every period, a longer pause at paragraph breaks, and a clear beat before punchlines and one-sentence paragraphs. Never sprint through connective tissue, only gently ease through it. If a sentence contains a big number or an unfamiliar name, give the listener a fraction of a second extra to catch it.
+Pacing: Around 120 words per minute, but vary within that. Slower on numbers, names, dates, and anything the listener needs to catch. Easier and more natural through transitions and connective phrases. Real pause at every period. Longer pause at paragraph breaks. A clear beat before any one-sentence paragraph that lands a point. Never sprint, never plod.
 
-Emphasis: Put weight on verbs and stakes, not adjectives. Let short sentences breathe. Let long sentences flow without hurrying. Never rush to the next sentence just to stay on a timeline.
+Emphasis: Weight on verbs and stakes, not adjectives. Let short sentences breathe. Let long sentences flow naturally. Never rush to hit a runtime. Never drag to fill one.
 
-Tone: Authoritative calm with warmth underneath, and genuine life in the voice at all times. Lower register, steady, unforced — but present and engaged, never fading, never going flat between facts. Confident, not theatrical. The feeling the listener should have is "this person is calm and in control AND they actually care about what they are telling me." If your voice starts to sink into monotone, lift it back into the conversational register on the next sentence. This listener pays for respect and clarity, give them both by slowing down rather than speeding up — but never by going dead.`;
+Tone: Engaged, awake, present. Warmth that comes from actually caring about what you are telling someone, not from performed cheerfulness or news-anchor authority. Confident but not formal-stiff. The feeling the listener should have is "this person is talking to me, not reading at me." Boring and formal is the enemy. Saccharine and over-warm is also the enemy. The middle is alive, present, natural — a real voice belonging to a real person who happens to know this stuff cold.`;
 
 const TTS_TIMEOUT_MS = 120_000;
 

@@ -39,7 +39,7 @@ const AUDIO_BUCKET = "briefing-audio";
  *
  * Pipeline step that runs after the main BriefingJSON is built and before
  * save-briefing. Takes the briefing, generates a ~3 minute spoken-word script
- * via Claude, synthesizes audio via OpenAI TTS (coral voice, gpt-4o-mini-tts),
+ * via Claude, synthesizes audio via OpenAI TTS (ash voice, gpt-4o-mini-tts),
  * uploads the MP3 to Supabase Storage bucket `briefing-audio`, and returns
  * the relative audio URL for the token-gated web player.
  *
@@ -142,10 +142,10 @@ export const generateAudioBriefTask = task({
 
     const spokenScript = stripSectionMarkers(rawScript);
 
-    // Step 2: synthesize audio via OpenAI gpt-4o-mini-tts (coral voice).
+    // Step 2: synthesize audio via OpenAI gpt-4o-mini-tts (ash voice).
     logger.info("Calling OpenAI TTS", {
       date,
-      engine: "openai:gpt-4o-mini-tts:coral",
+      engine: "openai:gpt-4o-mini-tts:ash",
     });
 
     // Defense in depth: the wrapper has its own 120s AbortController timeout,
