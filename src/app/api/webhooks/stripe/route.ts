@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { render } from "@react-email/render";
+import type Stripe from "stripe";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getBaseUrl } from "@/lib/url";
 import { verifyStripeWebhook } from "@/lib/stripe";
 import ProWelcomeEmail from "../../../../../emails/pro-welcome";
+
+type ServiceClient = ReturnType<typeof createServiceClient>;
 
 const MAGIC_LINK_EXPIRY_DAYS = 7;
 
@@ -14,6 +17,64 @@ function generateToken(): string {
   return Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+/**
+ * Reconcile a one-time tip payment to the stripe_tips table. Idempotent --
+ * if the row is already paid, no-op. Stripe webhooks are at-least-once,
+ * so this branch may be invoked more than once per session.
+ */
+async function handleTipPayment(
+  session: Stripe.Checkout.Session,
+  supabase: ServiceClient
+) {
+  const tipId = session.metadata?.tip_id ?? null;
+  const sessionId = session.id;
+
+  // Look up the tip row by tip_id (preferred) or session id (fallback).
+  let row: { id: string; paid: boolean } | null = null;
+  if (tipId) {
+    const { data } = await supabase
+      .from("stripe_tips")
+      .select("id, paid")
+      .eq("id", tipId)
+      .maybeSingle();
+    row = data;
+  }
+  if (!row) {
+    const { data } = await supabase
+      .from("stripe_tips")
+      .select("id, paid")
+      .eq("stripe_session_id", sessionId)
+      .maybeSingle();
+    row = data;
+  }
+
+  if (!row) {
+    return NextResponse.json({ ok: true, action: "ignored_unknown_tip" });
+  }
+
+  if (row.paid) {
+    return NextResponse.json({ ok: true, action: "ignored_already_paid" });
+  }
+
+  const paymentIntentId =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id ?? null;
+
+  await supabase
+    .from("stripe_tips")
+    .update({
+      paid: true,
+      paid_at: new Date().toISOString(),
+      stripe_session_id: sessionId,
+      stripe_payment_intent_id: paymentIntentId,
+      tipper_email: session.customer_details?.email ?? null,
+    })
+    .eq("id", row.id);
+
+  return NextResponse.json({ ok: true, action: "tip_paid", tip_id: row.id });
 }
 
 export async function POST(req: NextRequest) {
@@ -27,13 +88,17 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServiceClient();
 
-  // ── New subscription (checkout completed) ─────────────────────────
+  // ── Checkout completed (route on session.mode) ────────────────────
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
 
-    // Only handle subscription checkouts
+    // One-time card tips run in mode='payment' and reconcile to stripe_tips.
+    if (session.mode === "payment") {
+      return handleTipPayment(session, supabase);
+    }
+
     if (session.mode !== "subscription") {
-      return NextResponse.json({ ok: true, action: "ignored_non_subscription" });
+      return NextResponse.json({ ok: true, action: "ignored_unknown_mode" });
     }
 
     const email = session.customer_details?.email?.toLowerCase().trim();

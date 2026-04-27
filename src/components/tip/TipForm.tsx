@@ -8,12 +8,17 @@ import {
   TIP_MIN_SATS,
   TIP_MAX_SATS,
   TIP_MESSAGE_MAX_LEN,
+  BTC_TIP_ADDRESS,
 } from "@/lib/constants";
+import { MethodSelector, type TipMethod } from "./MethodSelector";
+import { CardPanel } from "./CardPanel";
+import { OnChainPanel } from "./OnChainPanel";
 
 interface TipFormProps {
   briefingDate?: string;
   source: "site" | "newsletter" | "archive" | "footer";
   initialAmount?: number;
+  initialMethod?: TipMethod;
 }
 
 interface InvoiceData {
@@ -39,7 +44,8 @@ function formatTimeLeft(ms: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export function TipForm({ briefingDate, source, initialAmount }: TipFormProps) {
+export function TipForm({ briefingDate, source, initialAmount, initialMethod = "lightning" }: TipFormProps) {
+  const [method, setMethod] = useState<TipMethod>(initialMethod);
   const [state, setState] = useState<ScreenState>("form");
   const [amountSats, setAmountSats] = useState<number>(initialAmount ?? 21_000);
   const [customAmount, setCustomAmount] = useState(
@@ -189,6 +195,16 @@ export function TipForm({ briefingDate, source, initialAmount }: TipFormProps) {
 
   return (
     <div className="relative">
+      <MethodSelector
+        method={method}
+        onChange={setMethod}
+        disabled={method === "lightning" && state === "invoice"}
+      />
+
+      {method === "card" && <CardPanel briefingDate={briefingDate} source={source} />}
+      {method === "onchain" && <OnChainPanel address={BTC_TIP_ADDRESS} />}
+
+      {method === "lightning" && (
       <AnimatePresence mode="wait" initial={false}>
         {state === "form" && (
           <motion.div
@@ -268,6 +284,7 @@ export function TipForm({ briefingDate, source, initialAmount }: TipFormProps) {
           </motion.div>
         )}
       </AnimatePresence>
+      )}
     </div>
   );
 }

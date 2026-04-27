@@ -1,14 +1,17 @@
 import { TipForm } from "@/components/tip/TipForm";
+import type { TipMethod } from "@/components/tip/MethodSelector";
 
 interface TipPageProps {
   searchParams: Promise<{
     date?: string;
     source?: string;
     amount?: string;
+    method?: string;
   }>;
 }
 
 const VALID_SOURCES = ["site", "newsletter", "archive", "footer"] as const;
+const VALID_METHODS = ["lightning", "card", "onchain"] as const;
 type TipSource = (typeof VALID_SOURCES)[number];
 
 function isValidDate(d: string | undefined): d is string {
@@ -29,10 +32,17 @@ function parseAmount(s: string | undefined): number | undefined {
   return n;
 }
 
+function parseMethod(s: string | undefined): TipMethod {
+  if (s && (VALID_METHODS as readonly string[]).includes(s)) {
+    return s as TipMethod;
+  }
+  return "lightning";
+}
+
 export const metadata = {
-  title: "Tip in sats | BTC Today",
+  title: "Tip | BTC Today",
   description:
-    "Send a Lightning Network tip to BTC Today. Tips fund the pipeline.",
+    "Send a tip to BTC Today via Lightning, card, or on-chain BTC. Tips fund the pipeline.",
 };
 
 export default async function TipPage({ searchParams }: TipPageProps) {
@@ -40,6 +50,7 @@ export default async function TipPage({ searchParams }: TipPageProps) {
   const briefingDate = isValidDate(params.date) ? params.date : undefined;
   const source = parseSource(params.source);
   const initialAmount = parseAmount(params.amount);
+  const initialMethod = parseMethod(params.method);
 
   return (
     <main className="relative min-h-[calc(100vh-200px)] px-4 pt-16 pb-24">
@@ -68,7 +79,7 @@ export default async function TipPage({ searchParams }: TipPageProps) {
               className="font-mono text-[10px] uppercase tracking-[0.18em]"
               style={{ color: "var(--color-text-muted)" }}
             >
-              Lightning Network
+              Reader-funded
             </span>
           </div>
 
@@ -76,7 +87,7 @@ export default async function TipPage({ searchParams }: TipPageProps) {
             className="mb-3 font-[family-name:var(--font-heading)] text-4xl font-medium leading-[1.05] tracking-[-0.04em] sm:text-5xl"
             style={{ color: "var(--color-text-primary)" }}
           >
-            Tip in sats.
+            Power the brief.
           </h1>
 
           <p
@@ -94,6 +105,7 @@ export default async function TipPage({ searchParams }: TipPageProps) {
           briefingDate={briefingDate}
           source={source}
           initialAmount={initialAmount}
+          initialMethod={initialMethod}
         />
       </div>
     </main>

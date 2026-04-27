@@ -109,6 +109,40 @@ export const paymentHashSchema = z
   .string()
   .regex(/^[a-f0-9]{32,128}$/i, "Invalid payment hash");
 
+/** POST /api/tips/stripe-checkout — create a one-time Stripe Checkout Session
+ *  for a card tip. Mirrors tipInvoiceSchema; uses USD cents instead of sats. */
+export const tipStripeCheckoutSchema = z
+  .object({
+    amount_cents: z
+      .number()
+      .int("Amount must be a whole number of cents")
+      .min(100, "Minimum tip is $1")
+      .max(100_000, "Maximum tip is $1,000"),
+    tipper_name: z
+      .string()
+      .trim()
+      .max(80, "Name must be 80 characters or fewer")
+      .optional(),
+    message: z
+      .string()
+      .trim()
+      .max(200, "Message must be 200 characters or fewer")
+      .optional(),
+    source: z
+      .enum(["site", "newsletter", "archive", "footer"])
+      .default("site"),
+    briefing_date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format")
+      .optional(),
+  })
+  .strict();
+
+/** Path parameter on /api/tips/stripe/[session_id] — Stripe Checkout session ID */
+export const stripeSessionIdSchema = z
+  .string()
+  .regex(/^cs_(live|test)_[a-zA-Z0-9]+$/, "Invalid session id");
+
 /**
  * Parse a Request JSON body with a zod schema. Returns either the parsed
  * data or a ready-to-return 400 Response. Handles malformed JSON, missing

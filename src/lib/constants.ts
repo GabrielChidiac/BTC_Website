@@ -135,3 +135,25 @@ export const TIP_PRESETS_SATS = [1_000, 5_000, 21_000, 100_000] as const;
 export const TIP_MIN_SATS = 21;
 export const TIP_MAX_SATS = 1_000_000;
 export const TIP_MESSAGE_MAX_LEN = 200;
+
+// ─── Card tips (Stripe one-time Checkout) ───────────────────────────────────
+
+/**
+ * Preset tip amounts in USD cents. $21 keeps the Bitcoin "21M cap" anchor;
+ * $10 floor keeps Stripe's per-transaction fee under ~6% of the tip.
+ * Custom amount available via input. UI floor is $10; DB floor is $1
+ * (TIP_MIN_CENTS) so a manual cents value below preset still validates.
+ */
+export const TIP_PRESETS_CENTS = [1_000, 2_100, 5_000, 10_000] as const;
+export const TIP_MIN_CENTS = 100;
+export const TIP_MAX_CENTS = 100_000;
+
+// ─── On-chain BTC tip ───────────────────────────────────────────────────────
+
+/**
+ * Mainnet receive address for fire-and-forget on-chain tips. We do not
+ * track on-chain payments per row -- the address is advertised on /tip and
+ * tippers send directly. Set at deploy time in Vercel env; rotate manually
+ * by updating the env var.
+ */
+export const BTC_TIP_ADDRESS = process.env.NEXT_PUBLIC_BTC_TIP_ADDRESS ?? "";
