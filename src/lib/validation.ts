@@ -111,10 +111,9 @@ export const paymentHashSchema = z
 
 /** POST /api/tips/stripe-checkout — create a one-time Stripe Checkout Session
  *  for a card tip. Mirrors tipInvoiceSchema; uses USD cents instead of sats.
- *  tipper_email is REQUIRED so we can guarantee a receipt -- it pre-fills
- *  Stripe Checkout (customer_email) and sets payment_intent.receipt_email
- *  so Stripe always sends an automatic receipt regardless of dashboard
- *  settings. Webhook also sends a branded thank-you email. */
+ *  tipper_email and tipper_name are optional: Stripe Checkout collects email
+ *  natively, the webhook reads session.customer_details.email and sends the
+ *  branded thank-you from there. Stripe also sends its own receipt by default. */
 export const tipStripeCheckoutSchema = z
   .object({
     amount_cents: z
@@ -122,12 +121,13 @@ export const tipStripeCheckoutSchema = z
       .int("Amount must be a whole number of cents")
       .min(100, "Minimum tip is $1")
       .max(100_000, "Maximum tip is $1,000"),
-    tipper_email: emailBase,
+    tipper_email: emailBase.optional(),
     tipper_name: z
       .string()
       .trim()
-      .min(1, "Name is required")
-      .max(80, "Name must be 80 characters or fewer"),
+      .min(1, "Name must be at least 1 character if provided")
+      .max(80, "Name must be 80 characters or fewer")
+      .optional(),
     message: z
       .string()
       .trim()

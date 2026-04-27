@@ -199,39 +199,39 @@ function buildHeroThreeLines(args: {
   } = args;
 
   // MOVE: price + 24h move + 30d context, all numeric, no hedge words.
-  const rangeLine =
-    price30dHigh != null && price30dLow != null
-      ? ` Inside its 30-day range of $${roundToK(price30dLow)}–$${roundToK(price30dHigh)}.`
-      : "";
   const moveDirection = change24h >= 0 ? "up" : "down";
-  let move = `BTC at $${roundToK(price)}, ${moveDirection} ${formatPct(change24h)} on the day.${rangeLine}`;
-  move = truncate140(move);
+  const rangeSentence =
+    price30dHigh != null && price30dLow != null
+      ? `That keeps it inside its 30-day range of $${roundToK(price30dLow)} to $${roundToK(price30dHigh)}.`
+      : `Magnitude is inside the normal day-to-day band of the past month.`;
+  let move = `BTC trades at $${roundToK(price)}, ${moveDirection} ${formatPct(change24h)} on the day. ${rangeSentence}`;
+  move = truncateHeroLine(move);
 
   // SIGNAL: three-branch classifier on (funding percentile, RSI, F&G delta).
   // We commit to one real read, anchored in a number. No hedging.
   let signal: string;
   if (fundingPercentile != null && fundingPercentile >= 80) {
-    signal = `Funding in the ${Math.round(fundingPercentile)}th percentile of the last 30 days. Positioning is stretched, not the move itself.`;
+    signal = `Funding sits in the ${Math.round(fundingPercentile)}th percentile of the last 30 days. Positioning is stretched, not the move itself, which usually unwinds before price extends further.`;
   } else if (fundingPercentile != null && fundingPercentile <= 20) {
-    signal = `Funding in the ${Math.round(fundingPercentile)}th percentile of the last 30 days. Shorts crowded, setup for a squeeze if a catalyst hits.`;
+    signal = `Funding sits in the ${Math.round(fundingPercentile)}th percentile of the last 30 days. Shorts are crowded, setting up a squeeze if any catalyst forces a flip in positioning.`;
   } else if (rsi >= 70) {
-    signal = `Momentum reading at ${Math.round(rsi)}, in overbought territory. Consolidation more likely than continuation near-term.`;
+    signal = `Momentum reads ${Math.round(rsi)} on the 14-day RSI, deep in overbought territory. Consolidation is the more likely path near-term than another leg higher without a fresh catalyst.`;
   } else if (rsi <= 30) {
-    signal = `Momentum reading at ${Math.round(rsi)}, oversold. Historically this zone marks bottoms more often than continuation lower.`;
+    signal = `Momentum reads ${Math.round(rsi)} on the 14-day RSI, in oversold territory. Historically this zone marks bottoms more often than the start of further continuation lower.`;
   } else if (fearGreedDelta != null && Math.abs(fearGreedDelta) >= 15) {
     const direction = fearGreedDelta > 0 ? "hotter" : "colder";
-    signal = `Sentiment has shifted ${direction} by ${Math.abs(Math.round(fearGreedDelta))} points versus the 30-day mean. Flow of funds likely follows mood.`;
+    signal = `Sentiment has shifted ${direction} by ${Math.abs(Math.round(fearGreedDelta))} points versus the 30-day mean. Flow of funds tends to follow mood with a lag, so positioning will likely confirm the shift in coming sessions.`;
   } else if (fearGreedValue != null) {
-    signal = `Fear and Greed at ${fearGreedValue}, near its 30-day mean. No sentiment dislocation; watch the tape, not the mood.`;
+    signal = `Fear and Greed sits at ${fearGreedValue}, near its 30-day mean. There is no sentiment dislocation to trade against, so watch the tape rather than the mood.`;
   } else {
-    signal = `Price action inside normal range, momentum neutral, positioning balanced. A quiet day for Bitcoin.`;
+    signal = `Price action sits inside its normal range, momentum is neutral, and positioning is balanced. A routine session, with no structural change to the setup.`;
   }
-  signal = truncate140(signal);
+  signal = truncateHeroLine(signal);
 
   // WATCH: nearest upcoming catalyst from the calendar-derived countdown
   // events. Guaranteed real dates because countdownEvents came from the
   // authoritative calendar, not yesterday's (possibly stale) briefing.
-  const watch = truncate140(buildWatchLine(countdownEvents));
+  const watch = truncateHeroLine(buildWatchLine(countdownEvents));
 
   return { move, signal, watch };
 }
@@ -244,10 +244,11 @@ function buildWatchLine(countdownEvents: CountdownEvent[]): string {
   if (upcoming.length > 0) {
     const next = upcoming[0];
     const daysLabel = next.days_away === 1 ? "tomorrow" : `in ${next.days_away} days`;
-    return `${next.name} ${daysLabel}: ${next.description ?? "watch for impact on positioning"}.`;
+    const why = next.description ?? "Positioning into the print is the read worth tracking, not the headline itself.";
+    return `${next.name} ${daysLabel}. ${why}`;
   }
 
-  return "No near-term catalysts on the calendar. Next scheduled anchor: the 2028 Bitcoin halving.";
+  return "No near-term catalysts sit on the calendar. With nothing scheduled to force a move, flows and positioning will set the next leg until the 2028 halving comes into view.";
 }
 
 function buildCountdownFromCalendar(date: string): CountdownEvent[] {
@@ -548,7 +549,7 @@ function roundToK(price: number): string {
   return rounded.toLocaleString("en-US");
 }
 
-function truncate140(s: string): string {
-  if (s.length <= 140) return s;
-  return s.slice(0, 137).trimEnd() + "...";
+function truncateHeroLine(s: string): string {
+  if (s.length <= 260) return s;
+  return s.slice(0, 257).trimEnd() + "...";
 }

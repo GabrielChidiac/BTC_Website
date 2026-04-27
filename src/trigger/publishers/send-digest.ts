@@ -110,6 +110,15 @@ export const sendDigestTask = task({
     sections.push(`BTC Today | ${date}`);
     if (briefing.one_line) sections.push(briefing.one_line);
 
+    // 3-Minute Contract hero — verdict before the data
+    if (briefing.hero_three_lines) {
+      sections.push(
+        `THE MOVE: ${briefing.hero_three_lines.move}\n` +
+        `THE SIGNAL: ${briefing.hero_three_lines.signal}\n` +
+        `THE WATCH: ${briefing.hero_three_lines.watch}`
+      );
+    }
+
     sections.push(
       `${daily_diff.price_change}\n` +
       `Market: $${market_snapshot.price_usd.toLocaleString("en-US")} | 24h: ${fmtPct(market_snapshot.change_24h_pct)} | 7d: ${fmtPct(market_snapshot.change_7d_pct)}\n` +

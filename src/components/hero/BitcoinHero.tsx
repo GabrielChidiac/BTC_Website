@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import type { MarketSnapshot, DailyDiff, NarrativeConsensus } from "@/lib/types";
+import type { MarketSnapshot, HeroThreeLines } from "@/lib/types";
 import { formatPctChange, formatReadTime } from "@/lib/utils";
 import { BitcoinCoin } from "./BitcoinCoin";
 
@@ -34,9 +34,9 @@ function useCountUp(to: number, duration = 1200) {
 }
 
 function truncateToSentences(text: string, max: number): string {
-  const sentences = text.match(/[^.!?]+[.!?]+/g);
+  const sentences = text.match(/[\s\S]+?[.!?]+(?=\s|$)/g);
   if (!sentences) return text;
-  return sentences.slice(0, max).join(" ").trim();
+  return sentences.slice(0, max).join("").trim();
 }
 
 function formatUSDAnimated(amount: number): string {
@@ -48,13 +48,11 @@ function formatUSDAnimated(amount: number): string {
 
 export function BitcoinHero({
   market,
-  dailyDiff,
-  consensus,
+  hero,
   readTimeSeconds,
 }: {
   market: MarketSnapshot;
-  dailyDiff: DailyDiff;
-  consensus?: NarrativeConsensus;
+  hero?: HeroThreeLines;
   readTimeSeconds?: number;
 }) {
   const animatedPrice = useCountUp(market.price_usd);
@@ -91,14 +89,6 @@ export function BitcoinHero({
 
     return () => ctx.revert();
   }, []);
-
-  const sentimentColor = consensus
-    ? consensus.score >= 25
-      ? "text-[var(--color-bullish)]"
-      : consensus.score <= -25
-        ? "text-[var(--color-bearish)]"
-        : "text-[var(--color-text-secondary)]"
-    : "";
 
   return (
     <section
@@ -159,33 +149,29 @@ export function BitcoinHero({
           <BitcoinCoin className="shrink-0 size-10 sm:size-14 drop-shadow-[0_4px_20px_rgba(247,147,26,0.3)]" />
         </div>
 
-        {/* Headline + sentiment */}
-        <div ref={contentRef} className="mt-5" style={{ opacity: 0 }}>
-          <h1 className="font-[family-name:var(--font-heading)] text-xl sm:text-2xl font-bold text-[var(--color-text-primary)] tracking-[-0.02em] leading-snug max-w-2xl">
-            {dailyDiff.price_change}
-          </h1>
-
-          <p className="mt-2 text-sm text-[var(--color-text-secondary)] leading-relaxed max-w-xl">
-            {dailyDiff.sentiment_shift}
-          </p>
-
-          {consensus && (
-            <>
-              <p className="mt-2 text-xs font-medium font-[family-name:var(--font-heading)] uppercase tracking-[0.1em]">
-                <span className="text-[var(--color-text-muted)]">BTC Today read</span>
-                {" "}
-                <span className={sentimentColor}>{consensus.label}</span>
-              </p>
-              {consensus.rationale && (
-                <p className="mt-1.5 text-xs leading-relaxed text-[var(--color-text-secondary)] max-w-xl">
-                  {truncateToSentences(consensus.rationale, 2)}
-                </p>
-              )}
-            </>
-          )}
-        </div>
+        {/* Three-line briefing: The Move / The Signal / The Watch */}
+        {hero && (
+          <div ref={contentRef} className="mt-6 space-y-4 max-w-2xl" style={{ opacity: 0 }}>
+            <HeroLine label="The Move" text={truncateToSentences(hero.move, 2)} />
+            <HeroLine label="The Signal" text={truncateToSentences(hero.signal, 2)} />
+            <HeroLine label="The Watch" text={truncateToSentences(hero.watch, 2)} />
+          </div>
+        )}
 
       </div>
     </section>
+  );
+}
+
+function HeroLine({ label, text }: { label: string; text: string }) {
+  return (
+    <div>
+      <p className="font-[family-name:var(--font-heading)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-accent)] mb-1.5">
+        {label}
+      </p>
+      <p className="text-sm text-[var(--color-text-primary)] leading-relaxed">
+        {text}
+      </p>
+    </div>
   );
 }

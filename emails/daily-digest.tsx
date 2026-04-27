@@ -325,6 +325,20 @@ export default function DailyDigest({
             <Text style={s.greeting}>{greeting}</Text>
           </Section>
 
+          {/* ── 3-Minute Contract hero (Move / Signal / Watch) ──
+              The reader's verdict block. Shown above the price banner so the
+              answer to "did anything happen today?" comes before the data. */}
+          {briefing.hero_three_lines && (
+            <Section style={s.heroBlock}>
+              <Text style={s.heroLabel}>The Move</Text>
+              <Text style={s.heroText}>{briefing.hero_three_lines.move}</Text>
+              <Text style={s.heroLabel}>The Signal</Text>
+              <Text style={s.heroText}>{briefing.hero_three_lines.signal}</Text>
+              <Text style={s.heroLabel}>The Watch</Text>
+              <Text style={{ ...s.heroText, marginBottom: "0" }}>{briefing.hero_three_lines.watch}</Text>
+            </Section>
+          )}
+
           {/* ── Price Banner ────────────────────────────────── */}
           <Section style={s.banner}>
             <Text style={s.bannerPrice}>{daily_diff.price_change}</Text>
@@ -781,6 +795,35 @@ const s = {
   listenButtonDuration: {
     fontWeight: "500" as const,
     opacity: 0.75,
+  } as React.CSSProperties,
+
+  // ── 3-Minute Contract hero (Move / Signal / Watch) ──
+  heroBlock: {
+    backgroundColor: c.bgSurface,
+    border: `1px solid ${c.border}`,
+    borderLeft: `4px solid ${c.accent}`,
+    padding: "14px 16px",
+    margin: "12px 0",
+    borderRadius: "6px",
+  } as React.CSSProperties,
+
+  heroLabel: {
+    fontFamily: sans,
+    fontSize: "10px",
+    fontWeight: "700",
+    color: c.accent,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.18em",
+    margin: "10px 0 4px",
+    lineHeight: "1.2",
+  } as React.CSSProperties,
+
+  heroText: {
+    fontFamily: serif,
+    fontSize: "14px",
+    color: c.textPrimary,
+    margin: "0 0 6px",
+    lineHeight: "1.5",
   } as React.CSSProperties,
 
   // ── Banner ───────────────────────────────────

@@ -204,9 +204,9 @@ export interface MarketSignal {
 // ─── 3-Minute Contract hero (Pillar 1) ─────────────────────────────────────
 
 export interface HeroThreeLines {
-  move: string;   // max 140 chars: what BTC did in last 24h + most likely catalyst
-  signal: string; // max 140 chars: what matters under the noise (interpretation, not headline)
-  watch: string;  // max 140 chars: single next catalyst with date or timeframe
+  move: string;   // exactly 2 sentences, max ~260 chars: what BTC did in last 24h + most likely catalyst
+  signal: string; // exactly 2 sentences, max ~260 chars: what matters under the noise (interpretation, not headline)
+  watch: string;  // exactly 2 sentences, max ~260 chars: single next catalyst with date or timeframe
 }
 
 // ─── Silent prediction tracking (background task, day-60 scorecard) ────────

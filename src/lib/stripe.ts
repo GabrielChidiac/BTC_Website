@@ -33,7 +33,7 @@ export function verifyStripeWebhook(
 export interface CreateTipCheckoutInput {
   tipId: string;
   amountCents: number;
-  tipperEmail: string;
+  tipperEmail?: string | null;
   tipperName?: string | null;
   message?: string | null;
   briefingDate?: string | null;
@@ -64,9 +64,10 @@ export async function createTipCheckoutSession(
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
-      // Pre-fills the email on Stripe Checkout so the user does not have
-      // to retype it. Also persisted as the buyer email on the session.
-      customer_email: input.tipperEmail,
+      // Pre-fill email only if we collected it client-side. When omitted,
+      // Stripe Checkout collects it natively and the webhook reads it from
+      // session.customer_details.email.
+      ...(input.tipperEmail ? { customer_email: input.tipperEmail } : {}),
       line_items: [
         {
           price_data: {
@@ -83,18 +84,18 @@ export async function createTipCheckoutSession(
         },
       ],
       payment_intent_data: {
-        // Forces Stripe to send an automatic email receipt on success
-        // regardless of dashboard "email customers for successful
-        // payments" toggle. Belt-and-suspenders: the webhook also sends
-        // a branded BTC Today thank-you via Resend.
-        receipt_email: input.tipperEmail,
+        // Pin the receipt email up front when we have it. Without it,
+        // Stripe still sends its automatic receipt to the email collected
+        // at checkout (dashboard default). The webhook also sends a
+        // branded BTC Today thank-you via Resend regardless.
+        ...(input.tipperEmail ? { receipt_email: input.tipperEmail } : {}),
         statement_descriptor_suffix: "BTC TODAY TIP",
         metadata: {
           tip_id: input.tipId,
           source: input.source,
           briefing_date: input.briefingDate ?? "",
           tipper_name: input.tipperName ?? "",
-          tipper_email: input.tipperEmail,
+          tipper_email: input.tipperEmail ?? "",
         },
       },
       metadata: { tip_id: input.tipId },

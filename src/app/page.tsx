@@ -209,8 +209,7 @@ export default async function Home() {
             <SectionLabel number="01" title="Today&rsquo;s Insight" className="mb-4" />
             <BitcoinHero
               market={market}
-              dailyDiff={briefing.daily_diff}
-              consensus={briefing.narrative_consensus}
+              hero={briefing.hero_three_lines}
               readTimeSeconds={briefing.read_time_seconds}
             />
           </div>
