@@ -56,6 +56,12 @@ export function CardPanel({ briefingDate, source }: CardPanelProps) {
       return;
     }
 
+    const name = tipperName.trim();
+    if (!name) {
+      setError("Add a first name so we can address you properly.");
+      return;
+    }
+
     const cents = effectiveCents();
     if (cents < UI_MIN_CENTS) {
       setError(`Minimum tip is ${formatUsd(UI_MIN_CENTS)}`);
@@ -71,9 +77,9 @@ export function CardPanel({ briefingDate, source }: CardPanelProps) {
       const body: Record<string, unknown> = {
         amount_cents: cents,
         tipper_email: email,
+        tipper_name: name,
         source,
       };
-      if (tipperName.trim()) body.tipper_name = tipperName.trim();
       if (message.trim()) body.message = message.trim();
       if (briefingDate) body.briefing_date = briefingDate;
 
@@ -151,7 +157,7 @@ export function CardPanel({ briefingDate, source }: CardPanelProps) {
             className="font-mono text-[10px] uppercase tracking-[0.18em]"
             style={{ color: "var(--color-text-muted)" }}
           >
-            Name (optional)
+            First name (required)
           </label>
           <span
             className="font-mono text-[10px] tabular-nums"
@@ -163,10 +169,12 @@ export function CardPanel({ briefingDate, source }: CardPanelProps) {
         <input
           id="card-tip-name"
           type="text"
+          required
+          autoComplete="given-name"
           maxLength={80}
           value={tipperName}
           onChange={(e) => setTipperName(e.target.value)}
-          placeholder="Anonymous"
+          placeholder="Your first name"
           className="h-10 w-full rounded-lg border px-3 text-sm outline-none placeholder:text-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-accent)]/50"
           style={{
             backgroundColor: "var(--color-bg-base)",

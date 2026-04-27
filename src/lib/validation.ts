@@ -126,8 +126,8 @@ export const tipStripeCheckoutSchema = z
     tipper_name: z
       .string()
       .trim()
-      .max(80, "Name must be 80 characters or fewer")
-      .optional(),
+      .min(1, "Name is required")
+      .max(80, "Name must be 80 characters or fewer"),
     message: z
       .string()
       .trim()

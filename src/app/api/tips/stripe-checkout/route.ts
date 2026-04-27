@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   if (!parsed.ok) return parsed.response;
 
   const { amount_cents, tipper_email, tipper_name, message, source, briefing_date } = parsed.data;
-  const cleanName = tipper_name?.trim() || null;
+  const cleanName = tipper_name.trim();
   const cleanMessage = message?.trim() || null;
 
   // ── Persist pending row first so we can pass tip_id to Stripe ────────
