@@ -9,17 +9,17 @@ import type { Result } from "@/lib/types";
  * pacing, emphasis). Replaces the legacy tts-1-hd which produced flat prosody
  * regardless of script craft.
  *
- * Voice: "ash" — warm, expressive male, less stiff than coral's news-anchor
- * default. Swap by changing DEFAULT_VOICE below. Other options worth trying:
- * verse (more conversational), ballad (warm narrative), nova (brighter female),
- * sage (calmer female), onyx (deeper male, more gravitas).
+ * Voice: "coral" — warm, joyful, engaged female. Brand-level decision: the
+ * BTC Today audio brief identity is female, warm, and present, never male
+ * and never news-anchor neutral. Do NOT change to a male voice. If swapping,
+ * stay female: nova (brighter/cleaner), shimmer (softer), sage (calmer).
  *
  * Returns a Result<ArrayBuffer> following the codebase-wide pattern. Never
  * throws. Callers (the generate-audio-brief task) must be non-fatal on error
  * so the daily pipeline still ships a text-only briefing if TTS fails.
  */
 
-const DEFAULT_VOICE = "ash";
+const DEFAULT_VOICE = "coral";
 const DEFAULT_MODEL = "gpt-4o-mini-tts";
 
 /**
@@ -29,19 +29,19 @@ const DEFAULT_MODEL = "gpt-4o-mini-tts";
  * host tone, varied pacing, emphasis on stakes and numbers, spoken section
  * transitions lifted slightly as verbal signposts).
  */
-const VOICE_INSTRUCTIONS = `Voice: A smart friend telling you what mattered in Bitcoin this morning over coffee. Conversational, naturally expressive, present. You like what you do and it shows. Not a news anchor, not a podcast host performing for an audience, just a peer who actually has something to say to one specific person.
+const VOICE_INSTRUCTIONS = `Voice: A warm, joyful, genuinely engaged morning host. Female. Bright but not bubbly, present but not performing. You are telling one specific person — someone you actually like — what mattered in Bitcoin this morning over coffee. Real warmth, real interest, real smile in the voice. You like what you do and it shows.
 
 NORTH STAR: The listener must be able to follow and absorb every sentence on first hearing. Comprehension beats brevity. If unsure whether to speed up or slow down, slow down. The two failure modes are equally fatal: a listener who feels rushed tunes out, and a listener who feels bored tunes out. The cure for both is genuine engagement in the voice, not faster or slower pacing.
 
-OPENING LINE — "Good morning. Today is {weekday}, {month} {day}. Here is BTC Today.": deliver this like you are actually saying good morning to one specific person you know. Light, real, unforced, with a small natural smile in "Good morning." A clear conversational beat after the date. Land "Here is BTC Today" with quiet confidence, not announcement-voice. Never radio-host, never theatrical, never sing-songy. Just present.
+OPENING LINE — "Good morning. Today is {weekday}, {month} {day}. Here is BTC Today.": deliver this with a real, unforced smile, like you are actually greeting one person you know. Light, warm, present. A clear conversational beat after the date. Land "Here is BTC Today" with quiet, warm confidence, never announcement-voice. Never radio-host, never theatrical, never sing-songy. Just genuinely happy to be here.
 
-Delivery: Conversational and naturally varied. Real emphasis on what matters, real ease through connective tissue. Let your pitch move the way it would in a real spoken sentence between two people. The deadly failure mode is monotone formality — flat, anchor-stiff, "reading the news" energy. The listener already knows it is AI, and a stiff voice confirms the worst suspicion. Stay alive to what the numbers and stories actually mean. Treat short spoken transitions like "Top stories this morning." or "Institutional flows." as natural verbal signposts. Lift gently, take a clear beat before and after, then move on.
+Delivery: Conversational and naturally varied, with the lift of someone who finds this stuff interesting. Real emphasis on what matters, real ease through connective tissue. Let your pitch move the way it would in a real spoken sentence between two friends. The deadly failure mode is monotone formality — flat, anchor-stiff, "reading the news" energy. The listener already knows it is AI, and a stiff voice confirms the worst suspicion. Stay alive to what the numbers and stories actually mean. Treat short spoken transitions like "Top stories this morning." or "Institutional flows." as natural verbal signposts. Lift gently, take a clear beat before and after, then move on.
 
 Pacing: Around 120 words per minute, but vary within that. Slower on numbers, names, dates, and anything the listener needs to catch. Easier and more natural through transitions and connective phrases. Real pause at every period. Longer pause at paragraph breaks. A clear beat before any one-sentence paragraph that lands a point. Never sprint, never plod.
 
 Emphasis: Weight on verbs and stakes, not adjectives. Let short sentences breathe. Let long sentences flow naturally. Never rush to hit a runtime. Never drag to fill one.
 
-Tone: Engaged, awake, present. Warmth that comes from actually caring about what you are telling someone, not from performed cheerfulness or news-anchor authority. Confident but not formal-stiff. The feeling the listener should have is "this person is talking to me, not reading at me." Boring and formal is the enemy. Saccharine and over-warm is also the enemy. The middle is alive, present, natural — a real voice belonging to a real person who happens to know this stuff cold.`;
+Tone: Warm, joyful, awake, present. Warmth that comes from actually caring about what you are telling someone, not from performed cheerfulness or news-anchor authority. Confident but not formal-stiff. The feeling the listener should have is "this person is genuinely happy to be talking to me." Boring and formal is the enemy. Saccharine and over-sweet is also the enemy. The middle is alive, warm, present, natural — a real voice belonging to a real person who happens to know this stuff cold and is glad you showed up.`;
 
 const TTS_TIMEOUT_MS = 120_000;
 

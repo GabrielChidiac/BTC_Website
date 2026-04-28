@@ -60,3 +60,6 @@ next-env.d.ts
 
 # claude code
 .claude/
+
+# local voice TTS samples (generated for one-off A/B tests; do not commit)
+scripts/voice-samples/

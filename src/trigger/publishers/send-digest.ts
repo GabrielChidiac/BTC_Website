@@ -179,7 +179,7 @@ export const sendDigestTask = task({
     if (macro_context?.narrative) outlookLines.push(macro_context.narrative.split(/\.\s/)[0] + ".");
     if (macro_context?.btc_correlation_note) outlookLines.push(macro_context.btc_correlation_note.split(/\.\s/)[0] + ".");
     if (macro_context?.key_macro_events?.length) outlookLines.push(macro_context.key_macro_events.join(" · "));
-    if (looking_ahead && !looking_ahead.toLowerCase().includes("unavailable")) outlookLines.push(looking_ahead.split(/\.\s/)[0] + ".");
+    if (looking_ahead && !looking_ahead.toLowerCase().includes("unavailable")) outlookLines.push(looking_ahead.trim());
     if (outlookLines.length > 0) sections.push(`--- OUTLOOK ---\n${outlookLines.join("\n")}`);
 
     // VS Everything
