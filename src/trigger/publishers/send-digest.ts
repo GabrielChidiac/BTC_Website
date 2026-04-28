@@ -52,10 +52,10 @@ export const sendDigestTask = task({
     // Step 3: Build email content
     const siteUrl = getBaseUrl();
     const {
-      market_snapshot, top_stories, daily_diff, technical_signals,
+      market_snapshot, top_stories, technical_signals,
       network_health, institutional_flows, supply_dynamics, expert_insights,
       macro_context, looking_ahead, btc_vs_everything, regulatory, adoption,
-      narrative_consensus, etf_flows,
+      etf_flows,
     } = briefing;
 
     // Subject line: prefer the Move sentence from hero_three_lines (3-Minute
@@ -120,10 +120,8 @@ export const sendDigestTask = task({
     }
 
     sections.push(
-      `${daily_diff.price_change}\n` +
       `Market: $${market_snapshot.price_usd.toLocaleString("en-US")} | 24h: ${fmtPct(market_snapshot.change_24h_pct)} | 7d: ${fmtPct(market_snapshot.change_7d_pct)}\n` +
-      `Mkt Cap: $${compact(market_snapshot.market_cap_usd)} | Vol: $${compact(market_snapshot.volume_24h_usd)} | Dom: ${market_snapshot.dominance_pct.toFixed(1)}%` +
-      `\nBTC Today read: ${narrative_consensus.score > 0 ? "+" : ""}${narrative_consensus.score} (${narrative_consensus.label})`
+      `Mkt Cap: $${compact(market_snapshot.market_cap_usd)} | Vol: $${compact(market_snapshot.volume_24h_usd)} | Dom: ${market_snapshot.dominance_pct.toFixed(1)}%`
     );
 
     // Flows

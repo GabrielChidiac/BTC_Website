@@ -128,12 +128,6 @@ function isAvailable(text: string | null | undefined): boolean {
   return !t.includes("unavailable") && !t.includes("no data") && t.length > 10;
 }
 
-function consColor(s: number): string {
-  if (s > 15) return c.green;
-  if (s < -15) return c.red;
-  return c.textMuted;
-}
-
 function rsiColor(v: number): string {
   if (v < 30 || v > 70) return c.red;
   return c.green;
@@ -244,7 +238,6 @@ export default function DailyDigest({
   const {
     market_snapshot: mkt,
     top_stories,
-    daily_diff,
     regulatory,
     adoption,
     technical_signals: tech,
@@ -252,7 +245,6 @@ export default function DailyDigest({
     supply_dynamics: supply,
     expert_insights: experts,
     macro_context: macro,
-    narrative_consensus: consensus,
     etf_flows: etf,
     institutional_flows: instFlows,
     looking_ahead,
@@ -262,7 +254,6 @@ export default function DailyDigest({
   const stories = top_stories.slice(0, 3);
   const briefingUrl = "%%BRIEFING_URL%%";
   const greeting = name ? `Good morning, ${name}.` : "Good morning.";
-  const oneLine = briefing.one_line ?? daily_diff.sentiment_shift;
   const expert = experts?.[0];
   const marketSignals = Array.isArray(briefing.market_signals) ? briefing.market_signals : [];
 
@@ -326,8 +317,8 @@ export default function DailyDigest({
           </Section>
 
           {/* ── 3-Minute Contract hero (Move / Signal / Watch) ──
-              The reader's verdict block. Shown above the price banner so the
-              answer to "did anything happen today?" comes before the data. */}
+              The reader's verdict block. Answers "did anything happen today?"
+              before the rest of the data. */}
           {briefing.hero_three_lines && (
             <Section style={s.heroBlock}>
               <Text style={s.heroLabel}>The Move</Text>
@@ -338,19 +329,6 @@ export default function DailyDigest({
               <Text style={{ ...s.heroText, marginBottom: "0" }}>{briefing.hero_three_lines.watch}</Text>
             </Section>
           )}
-
-          {/* ── Price Banner ────────────────────────────────── */}
-          <Section style={s.banner}>
-            <Text style={s.bannerPrice}>{daily_diff.price_change}</Text>
-            <Text style={s.bannerOneLine}>{oneLine}</Text>
-            <Text style={s.bannerMeta}>
-              <span style={{ color: c.textMuted }}>BTC Today read: </span>
-              <span style={{ fontWeight: "700", color: consColor(consensus.score) }}>
-                {consensus.score > 0 ? "+" : ""}
-                {consensus.score} {consensus.label}
-              </span>
-            </Text>
-          </Section>
 
           <Hr style={s.hr} />
 
@@ -824,40 +802,6 @@ const s = {
     color: c.textPrimary,
     margin: "0 0 6px",
     lineHeight: "1.5",
-  } as React.CSSProperties,
-
-  // ── Banner ───────────────────────────────────
-  banner: {
-    backgroundColor: c.bgSurface,
-    borderLeft: `4px solid ${c.accent}`,
-    padding: "12px 14px",
-    margin: "12px 0",
-    borderRadius: "6px",
-  } as React.CSSProperties,
-
-  bannerPrice: {
-    fontFamily: sans,
-    fontSize: "18px",
-    fontWeight: "700",
-    color: c.textPrimary,
-    margin: "0 0 2px",
-    lineHeight: "1.3",
-  } as React.CSSProperties,
-
-  bannerOneLine: {
-    fontSize: "13px",
-    fontStyle: "italic" as const,
-    color: c.textSecondary,
-    margin: "4px 0 0",
-    lineHeight: "1.4",
-  } as React.CSSProperties,
-
-  bannerMeta: {
-    fontFamily: sans,
-    fontSize: "11px",
-    color: c.textMuted,
-    margin: "6px 0 0",
-    lineHeight: "1.4",
   } as React.CSSProperties,
 
   // ── Section ──────────────────────────────────
