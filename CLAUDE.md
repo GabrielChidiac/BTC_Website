@@ -158,7 +158,7 @@ collectors (news + market, parallel via batch.triggerAndWait)
 **BriefingJSON composition** (see [src/lib/types.ts](src/lib/types.ts)):
 - Synthesizer generates the base structure (stories, market, technical, narrative, macro, etc.) plus `looking_ahead_predictions` (2–3 testable directional claims).
 - Enrichment overwrites `looking_ahead`, `institutional_flows`, `expert_insights`, `supply_dynamics`. `institutional_flows` focuses on **non-ETF** activity (corporate treasury, whales, fund allocations, OTC, mining). `etf_flows` comes straight from the market collector (not Synthesizer or enrichment).
-- `read_time_seconds` is computed by `computeReadTimeSeconds()` ([src/lib/utils.ts](src/lib/utils.ts)) after enrichment — powers the 3-minute contract display.
+- `read_time_seconds` is computed by `computeReadTimeSeconds()` ([src/lib/utils.ts](src/lib/utils.ts)) but **no longer displayed anywhere user-facing** (removed 2026-04-28 to avoid promising a read time we cannot guarantee). Field kept in schema; do not re-add display surfaces without explicit user request.
 - `hero_three_lines`, `audio_url`, `audio_duration_seconds`, `audio_script` are populated by the audio brief step.
 - `looking_ahead_predictions` is also persisted to the `predictions` table by [save-briefing.ts](src/trigger/publishers/save-briefing.ts) (try/catch wrapped — failure does not block the briefing save).
 

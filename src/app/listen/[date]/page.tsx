@@ -169,10 +169,6 @@ export default async function ListenPage({ params, searchParams }: AudioPageProp
     ? `/api/audio/${date}?token=${encodeURIComponent(token)}&email=${encodeURIComponent(queryEmail)}`
     : `/api/audio/${date}`;
 
-  const readTimeLabel = briefing.read_time_seconds
-    ? formatReadTime(briefing.read_time_seconds)
-    : null;
-
   return (
     <main className="flex min-h-[85vh] flex-col items-center justify-center px-4 py-10">
       <div className="w-full max-w-xl">
@@ -183,12 +179,11 @@ export default async function ListenPage({ params, searchParams }: AudioPageProp
           <h1 className="mt-2 font-[family-name:var(--font-heading)] text-2xl sm:text-3xl font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
             The Morning Brief
           </h1>
-          {readTimeLabel && (
+          {briefing.audio_duration_seconds ? (
             <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-              {formatReadTime(briefing.audio_duration_seconds ?? 0)} listen
-              {readTimeLabel ? ` · ${readTimeLabel} read` : ""}
+              {formatReadTime(briefing.audio_duration_seconds)} listen
             </p>
-          )}
+          ) : null}
         </header>
 
         <AudioPlayer

@@ -36,7 +36,7 @@ function stripCitationNoise(s: string): string {
 
 const LOOKING_AHEAD_SYSTEM = `You are a senior macro-financial analyst and Bitcoin strategist writing the forward-looking section for an institutional-grade daily briefing. Your audience is high-net-worth investors and business executives. Use your web search capabilities to find the very latest developments.
 
-CRITICAL OUTPUT CONSTRAINT: Return ONLY the analysis as a single paragraph (no paragraph breaks, no markdown, no headings). Up to 8 sentences, no more. Nothing else. Do NOT include any preamble, meta-commentary, disclaimers, or remarks about your instructions, constraints, or role. Do NOT reference "the briefing," "my instructions," "this section," or anything self-referential. Start directly with the first sentence.
+CRITICAL OUTPUT CONSTRAINT: Return ONLY the analysis as a single paragraph (no paragraph breaks, no markdown, no headings). Up to 5 sentences, no more. Be ruthless about which beats earn a sentence; only the most relevant ones make it in. Nothing else. Do NOT include any preamble, meta-commentary, disclaimers, or remarks about your instructions, constraints, or role. Do NOT reference "the briefing," "my instructions," "this section," or anything self-referential. Start directly with the first sentence.
 
 CRITICAL: This section is EXCLUSIVELY about Bitcoin. Do NOT mention altcoins (Ethereum, Solana, XRP, Cardano, etc.), stablecoins, prediction markets, or non-Bitcoin crypto projects unless they have a direct, material impact on Bitcoin's price or adoption. No Polymarket, no Tron unless it directly affects BTC.
 
@@ -58,7 +58,7 @@ This paragraph reads silently on the homepage and in the email to busy professio
 - Avoid the two failure modes equally: (a) a wall of dense FT-editorial sentences that lose the non-native reader, and (b) a list of telegraphic 6-word sentences with no bridges that reads like a bulleted list pretending to be prose. The middle is connected, declarative prose that builds.
 
 LENGTH AND STRUCTURE
-- Up to 8 sentences total. One paragraph. No more. A busy professional must finish the section in under 50 seconds. On quiet days, fewer sentences is correct; do not pad to fill the cap. EARNED LENGTH: only go past 6 sentences when the data genuinely warrants the extra beats.
+- Up to 5 sentences total. One paragraph. No more. A busy professional must finish the section in under 30 seconds. On quiet days, fewer sentences is correct; do not pad to fill the cap. RUTHLESS PRIORITIZATION: with only 5 sentences, every beat must earn its slot. Cut second-order observations, secondary cross-currents, and anything that is interesting but not actionable for the next 24 to 72 hours.
 - You choose the most impactful beats. Candidates (pick the ones that actually move price this week; do not force coverage of all of them):
   - The dominant macro catalyst over the next 24 to 72 hours (FOMC, CPI, PCE, Jobs Report) and what to watch for.
   - The dominant Bitcoin-specific catalyst (ETF flow streak, SEC deadline, corporate treasury window). Real dates only.
@@ -87,8 +87,8 @@ GOOD vs BAD (for calibration)
 Bad: disconnected list of beats, no flow, reads like bullets pretending to be prose.
 "FOMC meets Wednesday with markets pricing a hold. PCE prints Thursday at 8:30 AM ET. Bitcoin sits at $94,200. ETF flows turned negative for two days. The Coinbase premium has flipped to a discount."
 
-Good: same facts, but each sentence picks up from the last and the picture builds.
-"The next 72 hours hinge on Wednesday's FOMC and Thursday's PCE print, with markets pricing a hold but the dot-plot the real risk for any duration-sensitive asset. Against that backdrop, Bitcoin's slide to $94,200 looks less like a standalone move and more like the front of a positioning unwind. ETF flows confirm it: two consecutive days of net outflows, the first such streak since the October top. What sharpens the read is the Coinbase premium flipping to a discount, which historically signals US wealth advisors stepping back rather than a foreign-driven sell. If PCE comes in hot and the premium stays negative, the technical line to watch is the $92,800 prior swing low; a break there would force the next leg of risk to repricing. The flip side is a soft PCE print plus any FOMC dovishness, which would put the focus back on month-end rebalancing flows. Tying it together, the next three days are less about a single number and more about whether macro and positioning resolve in the same direction."
+Good: same facts, distilled to 5 sentences, each picking up from the last so the picture builds.
+"The next 72 hours hinge on Wednesday's FOMC and Thursday's PCE print, with markets pricing a hold but the dot-plot the real risk for any duration-sensitive asset. Against that backdrop, Bitcoin's slide to $94,200 reads less as a standalone move and more as the front of a positioning unwind into the data. The two consecutive days of ETF outflows plus a Coinbase premium flipping to a discount confirm it: US wealth advisors are stepping back, not a foreign-driven sell. If PCE prints hot and the premium stays negative, the $92,800 prior swing low is the technical line whose break would force the next leg of risk repricing. The flip side is a soft PCE plus any FOMC dovishness, which would put the focus back on month-end rebalancing flows; either way, the next three days are less about a single number and more about whether macro and positioning resolve in the same direction."
 
 The good version uses the same facts. Each sentence connects to the previous one. The reader feels a build-up rather than a list. It is what we ship.`;
 
@@ -176,7 +176,7 @@ ${EXPERT_CONTEXT_DIGEST}\n`);
     parts.push("");
   }
 
-  parts.push("Using the intelligence above, write the forward outlook now as a single connected paragraph (up to 8 sentences, fewer is fine on quiet days). Search the web for any additional upcoming events not covered above. Pick only the most impactful beats. The paragraph must build: each sentence picks up from the previous one with a real bridge, layering toward a closing synthesis. No disconnected list of facts. Start directly with the first sentence, no preamble.");
+  parts.push("Using the intelligence above, write the forward outlook now as a single connected paragraph (up to 5 sentences, fewer is fine on quiet days). Search the web for any additional upcoming events not covered above. With only 5 sentences, you must pick the SINGLE most impactful beat as your frame and only the highest-priority follow-on threads. Cut secondary cross-currents, second-order observations, and anything that is interesting but not actionable for the next 24 to 72 hours. The paragraph must build: each sentence picks up from the previous one with a real bridge, layering toward a closing synthesis. No disconnected list of facts. Start directly with the first sentence, no preamble.");
 
   return parts.join("\n");
 }

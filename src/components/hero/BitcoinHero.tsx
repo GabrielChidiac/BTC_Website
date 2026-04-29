@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import type { MarketSnapshot, HeroThreeLines } from "@/lib/types";
-import { formatPctChange, formatReadTime } from "@/lib/utils";
+import { formatPctChange } from "@/lib/utils";
 import { BitcoinCoin } from "./BitcoinCoin";
 
 function pctColor(pct: number): string {
@@ -49,11 +49,9 @@ function formatUSDAnimated(amount: number): string {
 export function BitcoinHero({
   market,
   hero,
-  readTimeSeconds,
 }: {
   market: MarketSnapshot;
   hero?: HeroThreeLines;
-  readTimeSeconds?: number;
 }) {
   const animatedPrice = useCountUp(market.price_usd);
   const heroRef = useRef<HTMLElement>(null);
@@ -135,14 +133,6 @@ export function BitcoinHero({
               <span className={pctColor(market.change_7d_pct)}>
                 7d {formatPctChange(market.change_7d_pct)}
               </span>
-              {readTimeSeconds ? (
-                <>
-                  <span className="text-[var(--color-border)]">|</span>
-                  <span className="text-[var(--color-text-muted)] font-[family-name:var(--font-body)]">
-                    {formatReadTime(readTimeSeconds)} read
-                  </span>
-                </>
-              ) : null}
             </div>
           </div>
 

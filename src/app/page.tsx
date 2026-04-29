@@ -210,7 +210,6 @@ export default async function Home() {
             <BitcoinHero
               market={market}
               hero={briefing.hero_three_lines}
-              readTimeSeconds={briefing.read_time_seconds}
             />
           </div>
 
