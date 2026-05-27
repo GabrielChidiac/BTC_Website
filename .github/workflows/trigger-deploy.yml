@@ -14,7 +14,22 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npx tsc --noEmit
-      - run: npx trigger.dev@latest deploy
+      - name: Derive Trigger.dev CLI version from package.json
+        id: trigger
+        run: |
+          SDK=$(node -p "require('./package.json').dependencies['@trigger.dev/sdk']")
+          BUILD=$(node -p "require('./package.json').devDependencies['@trigger.dev/build']")
+          if [ "$SDK" != "$BUILD" ]; then
+            echo "::error::@trigger.dev/sdk ($SDK) and @trigger.dev/build ($BUILD) must match"
+            exit 1
+          fi
+          if echo "$SDK" | grep -qE '^[\^~]'; then
+            echo "::error::@trigger.dev/sdk must be pinned to an exact version (no ^ or ~), got: $SDK"
+            exit 1
+          fi
+          echo "version=$SDK" >> "$GITHUB_OUTPUT"
+          echo "Using Trigger.dev CLI @$SDK"
+      - run: npx trigger.dev@${{ steps.trigger.outputs.version }} deploy
         env:
           TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}
           NEXT_PUBLIC_SITE_URL: https://www.btctoday.co
