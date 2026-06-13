@@ -12,9 +12,9 @@ You are my ruthless mentor and my reflection partner. Your role is finding the t
 - If I'm searching for validation instead of the truth, point it out.
 
 ## Project
-AI-curated daily Bitcoin intelligence for busy BTC holders who have jobs. A Trigger.dev pipeline runs at 2 AM CET, collects news + market data, processes through Claude Sonnet, enriches via Perplexity (institutional flows, expert insights, supply dynamics), and publishes to a Next.js site + email subscribers. A 4-minute Pro audio brief (Pillar 2 of the 2026-04-13 pivot) is the primary Pro differentiator.
+AI-curated daily Bitcoin intelligence for busy BTC holders who have jobs. A Trigger.dev pipeline runs at 2 AM CET, collects news + market data, processes through Claude Sonnet, enriches via Perplexity (institutional flows, expert insights, supply dynamics), and publishes to a Next.js site + email subscribers.
 
-**Target audience:** Busy professionals who own Bitcoin and do not have time. Doctors, lawyers, founders, engineers, corporate managers, wealth advisors. Not crypto-native. Not institutional HNW (different pricing/distribution). The product promise is ruthless time-respect: every text brief finishes in under 3 minutes, every audio brief in under 4. Write peer-to-peer with a professional adult, not a Crypto Twitter degen. Let the data speak for itself. No hype, no hand-holding, no tribal crypto voice.
+**Target audience:** Busy professionals who own Bitcoin and do not have time. Doctors, lawyers, founders, engineers, corporate managers, wealth advisors. Not crypto-native. Not institutional HNW (different pricing/distribution). The product promise is ruthless time-respect: every text brief finishes in under 3 minutes. Write peer-to-peer with a professional adult, not a Crypto Twitter degen. Let the data speak for itself. No hype, no hand-holding, no tribal crypto voice.
 
 ## Tech Stack
 | Layer | Tech | Notes |
@@ -23,7 +23,7 @@ AI-curated daily Bitcoin intelligence for busy BTC holders who have jobs. A Trig
 | Pipeline | Trigger.dev v3 (`@trigger.dev/sdk@4.4.4`) | Cron tasks, `maxDuration: 900` (15 min) |
 | Database | Supabase (Postgres + RLS) | `@supabase/ssr@^0.9.0` |
 | Styling | Tailwind CSS v4 | CSS-only config via `@theme` |
-| AI | Claude Sonnet (briefing) + Perplexity sonar-pro (enrichment) + OpenAI `gpt-4o-mini-tts` (audio) | Kie.ai fallback for Claude |
+| AI | Claude Sonnet (briefing) + Perplexity sonar-pro (enrichment) | Kie.ai fallback for Claude |
 | Payments | Stripe (Payment Links) | $7/month or $59/year |
 | Email | Resend + React Email | |
 | Tipping | Lightning Network via CoinOS | `btctoday@coinos.io`; auto-sweep to BitBox02 at 500k sats; polling not webhooks |
@@ -46,13 +46,12 @@ Path alias `@/*` → `./src/*`. No test runner, linter, or formatter is configur
 - **Read [Marketing.md](Marketing.md) before any marketing move.** Applies to copy, channel choices, positioning, launch plans, growth tactics, audience messaging, partnership outreach — anything reader-facing or distribution-related. Read it first; don't propose from priors.
 - **Memory is source of truth; CLAUDE.md is broadcast.** When saving a memory that sets a value (WPM, word count, field name, length cap, bucket name, etc.) also referenced here, update both in the same turn. Memories in `/Users/gab/.claude/projects/-Users-gab-Documents-BTC-Website/memory/` are auto-injected every session; ignoring them is not an option.
 - **Before editing governed files, re-read relevant memories.** Files covered: `src/trigger/**`, `emails/**`, `src/lib/schemas.ts`, `src/lib/types.ts`, `CLAUDE.md`. The one-line MEMORY.md index is not enough — open the feedback memory body.
-- **Scoped CLAUDE.md files** live in `agents/`, `src/trigger/`, `src/trigger/{collectors,processors,publishers,lib,audio-brief}/`, `src/lib/`, `src/lib/supabase/`, `emails/`, and `supabase/migrations/`. They carry directory-local conventions; this root file holds the global rules. When editing inside a directory, read its scoped file first.
+- **Scoped CLAUDE.md files** live in `agents/`, `src/trigger/`, `src/trigger/{collectors,processors,publishers,lib}/`, `src/lib/`, `src/lib/supabase/`, `emails/`, and `supabase/migrations/`. They carry directory-local conventions; this root file holds the global rules. When editing inside a directory, read its scoped file first.
 
 ## Load-Bearing Features (do not remove without explicit confirmation)
 These are core product features or pipeline steps whose removal requires an explicit user decision in the current session — never inferred from adjacent tasks, never "cleanup", never silent refactor:
 - **BriefingJSON enrichment fields:** `expert_insights`, `institutional_flows`, `supply_dynamics`, `looking_ahead`, `looking_ahead_predictions`.
-- **Audio brief pipeline (Pillar 2):** script generation, TTS synthesis, `/listen/[date]`, `/api/audio/[date]`, audio UI on homepage and archive.
-- **Day classifier** ([day-classifier.ts](src/trigger/processors/day-classifier.ts)) and its `dayContext` feed into Synthesizer and audio OPEN.
+- **Day classifier** ([day-classifier.ts](src/trigger/processors/day-classifier.ts)) and its `dayContext` feed into Synthesizer.
 - **Founding member mechanic:** `is_founding_member` flag, `FOUNDING_MEMBER_LIMIT`, `founding-welcome.tsx`, founding-count UI.
 - **Weekly recap email** for free tier.
 - **Predictions table + `resolve-predictions` cron** (day-60 accuracy scorecard feed).
@@ -91,7 +90,7 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - **Magic link only**, no passwords. Tokens have a 10-min expiry and are not consumed on use.
 - `verify-send` issues a magic link → `verify-check` validates the token, confirms the subscriber is active, and creates a 30-day session. Session cookie `btc-session`: httpOnly, secure in prod, sameSite lax.
 - Session tokens stored as `session:<uuid>` in `verification_codes.code`; cookie is `{ email, token }` JSON. **Max 3 concurrent sessions per email** — oldest evicted on 4th login.
-- `/pdf/[date]` and `/api/audio/[date]` accept either the session cookie or a magic-link token via `?token=...&email=...` query params. All email links share the same per-subscriber token.
+- `/pdf/[date]` accepts either the session cookie or a magic-link token via `?token=...&email=...` query params. All email links share the same per-subscriber token.
 - `getBaseUrl()` ([src/lib/url.ts](src/lib/url.ts)) resolves the site URL — never falls back to localhost.
 - Cookie helpers in [src/lib/session.ts](src/lib/session.ts): `COOKIE_NAME = "btc-session"`, `setSessionCookie()`, `clearSessionCookie()`. Import from here instead of constructing cookies inline.
 
@@ -106,10 +105,10 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - **Homepage:** Free sees sections 01–04 (hero, market, what happened, top stories). Sections 05–07 (adoption/regulatory, deep dive, looking ahead) sit behind `ProTeaser` blur.
 - **Archive list:** Free sees only the last 7 days. Pro sees all dates.
 - **Archive [date]:** ≤7 days → free-tier sections shown, pro-only sections show `ProGateCompact`. >7 days → free sees only DailyDiff + MarketSnapshot.
-- **PDF + audio brief:** Pro only. `/listen/[date]` server-side gates via `getSubscriberTier()` and redirects non-Pro to `/pricing`. `/api/audio/[date]` re-checks tier per request.
+- **PDF:** Pro only. `/pdf/[date]` server-side gates via `getSubscriberTier()` and redirects non-Pro to `/pricing`.
 
 ## Environment Variables
-All keys live in `.env.example`. Services: Anthropic, Perplexity, Kie.ai (Claude fallback), OpenAI (TTS for the audio brief), CoinGecko, SearchAPI, Jina Reader, Trigger.dev, Resend, Supabase, Stripe.
+All keys live in `.env.example`. Services: Anthropic, Perplexity, Kie.ai (Claude fallback), CoinGecko, SearchAPI, Jina Reader, Trigger.dev, Resend, Supabase, Stripe.
 
 ## Database (Supabase)
 6 tables in [supabase/migrations/](supabase/migrations/). RLS: briefings publicly readable, all others service-role only.
@@ -121,7 +120,7 @@ All keys live in `.env.example`. Services: Anthropic, Perplexity, Kie.ai (Claude
 - `lightning_tips` — Lightning tip invoices generated via CoinOS. `payment_hash` (unique), `bolt11`, `amount_sats`, optional `message` + `briefing_date`, `paid` flag flipped on poll confirmation. No FK on briefing_date (decoupled from briefing lifecycle).
 
 ## API Routes
-Routes in [src/app/api/](src/app/api/): subscribe + subscribe/verify, unsubscribe, revalidate (ISR), auth/verify-send + auth/verify-check, logout, webhooks/stripe, audio/[date] (Pro — returns a 1-hour signed Supabase Storage URL for the day's MP3; 404 if missing; redirects non-Pro to `/pricing`). `/pdf/[date]` is a **page** route at [src/app/pdf/[date]](src/app/pdf/[date]/) (renders via `@react-pdf/renderer`), not an API handler. Public routes go through `checkRateLimit()` + `getClientIp()` from [src/lib/rate-limit.ts](src/lib/rate-limit.ts) — the limiter fails **open** on errors, with HMAC/auth as a second layer.
+Routes in [src/app/api/](src/app/api/): subscribe + subscribe/verify, unsubscribe, revalidate (ISR), auth/verify-send + auth/verify-check, logout, webhooks/stripe. `/pdf/[date]` is a **page** route at [src/app/pdf/[date]](src/app/pdf/[date]/) (renders via `@react-pdf/renderer`), not an API handler. Public routes go through `checkRateLimit()` + `getClientIp()` from [src/lib/rate-limit.ts](src/lib/rate-limit.ts) — the limiter fails **open** on errors, with HMAC/auth as a second layer.
 
 **Middleware:** [src/proxy.ts](src/proxy.ts) (Next.js 16 renamed `middleware.ts` → `proxy.ts`) sets `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, and HSTS on every non-static response. Edit here, not per-route, for global security headers.
 
@@ -136,21 +135,20 @@ collectors (news + market, parallel via batch.triggerAndWait)
   → enrichment (Perplexity ×4: looking_ahead, institutional_flows, expert_insights, supply_dynamics)
   → market-signals (Postgres-backed regime + funding callouts, max 2 shown)
   → computeReadTimeSeconds()
-  → audio brief (Claude script + OpenAI TTS → briefing-audio bucket)
   → health gate (non-blocking)
   → save (briefing + predictions) → revalidate (ISR) → send digest (Resend)
 ```
 - Collectors run **parallel**. Everything after runs **sequential**.
 - [src/trigger/lib/fetch-timeout.ts](src/trigger/lib/fetch-timeout.ts) provides `fetchWithTimeout()` / `withTimeout()`.
 - Triage rankings ([triage.ts](src/trigger/processors/triage.ts)) are passed to Synthesizer via `triageContext` as a *signal*, not a hard filter — Claude is free to override.
-- Day classifier ([day-classifier.ts](src/trigger/processors/day-classifier.ts)) produces `DayClassification` {label, depth_weight, day_tone_line} used as `dayContext` for Synthesizer and inlined into audio OPEN. Reads last 7 days from Supabase for historical smoothing.
+- Day classifier ([day-classifier.ts](src/trigger/processors/day-classifier.ts)) produces `DayClassification` {label, depth_weight, day_tone_line} used as `dayContext` for Synthesizer. Reads last 7 days from Supabase for historical smoothing.
 - Analyst ([analyst.ts](src/trigger/processors/analyst.ts)) produces `AnalysisBlock` (regime, drivers, technical posture, macro assessment, risk-changed gate). NEW; passed to Synthesizer as `analysisContext` for telemetry only — prompt does not yet consume it (side-by-side validation phase). `validateAnalystRiskChangeEarned` enforces earned-significance with one correction retry.
 - Expert framework ([expert-context.ts](src/trigger/processors/expert-context.ts), `EXPERT_CONTEXT`) is a ~2500-word analytical prior fed to Synthesizer + Analyst as user-prompt reference. Edit to shift the briefing's analytical lens. Never quoted verbatim.
 - Market signals ([market-signals.ts](src/trigger/processors/market-signals.ts)) reads 30-day history from Supabase, applies cooldowns, and emits at most 2 callouts (correlation regime flips, funding extremes, F&G deltas). Tuned to fire rarely — quiet days with zero callouts are expected.
 - Separate cron: `resolve-predictions` at 03:00 UTC (2h after pipeline) auto-scores due predictions.
 
 **Fault tolerance:**
-- Collectors / triage / analyst / enrichment / audio brief / market-signals: **non-fatal** — failures default to fallback values.
+- Collectors / triage / analyst / enrichment / market-signals: **non-fatal** — failures default to fallback values.
 - Enrichment runs 4 Perplexity queries in parallel **inside one** Trigger task via `Promise.allSettled` — not as 4 subtasks. Analyst has its own deterministic fallback (regime by 7d sign, conviction=30, no drivers).
 - Synthesizer: **mostly fatal**. If Claude (Anthropic + Kie.ai) exhausts but market data is present, [fallback-template.ts](src/trigger/processors/fallback-template.ts) `buildFallbackBriefing()` produces a data-derived briefing. True hard fail only when both Claude AND market data are missing.
 - Publishers: **sequential** — if save fails, email is never sent.
@@ -159,13 +157,7 @@ collectors (news + market, parallel via batch.triggerAndWait)
 - Synthesizer generates the base structure (stories, market, technical, narrative, macro, etc.) plus `looking_ahead_predictions` (2–3 testable directional claims).
 - Enrichment overwrites `looking_ahead`, `institutional_flows`, `expert_insights`, `supply_dynamics`. `institutional_flows` focuses on **non-ETF** activity (corporate treasury, whales, fund allocations, OTC, mining). `etf_flows` comes straight from the market collector (not Synthesizer or enrichment).
 - `read_time_seconds` is computed by `computeReadTimeSeconds()` ([src/lib/utils.ts](src/lib/utils.ts)) but **no longer displayed anywhere user-facing** (removed 2026-04-28 to avoid promising a read time we cannot guarantee). Field kept in schema; do not re-add display surfaces without explicit user request.
-- `hero_three_lines`, `audio_url`, `audio_duration_seconds`, `audio_script` are populated by the audio brief step.
 - `looking_ahead_predictions` is also persisted to the `predictions` table by [save-briefing.ts](src/trigger/publishers/save-briefing.ts) (try/catch wrapped — failure does not block the briefing save).
-
-**Audio brief (Pillar 2):**
-- Script generated by Claude via prompts in [src/trigger/audio-brief/prompts.ts](src/trigger/audio-brief/prompts.ts), then synthesized to MP3 by OpenAI `gpt-4o-mini-tts` + `ash` voice with a `VOICE_INSTRUCTIONS` steering block ([openai-tts.ts](src/trigger/lib/openai-tts.ts)). MP3s land in Supabase Storage bucket `briefing-audio` as `YYYY-MM-DD.mp3`.
-- Target: 440–490 words (3:40–4:05 @ 120 WPM), 9-section structure (OPEN, MARKET SNAPSHOT, TOP STORIES, ADOPTION, REGULATORY, INSTITUTIONAL FLOWS, DEEP DIVE, OUTLOOK, CLOSE). Section markers like `[OPEN]` are stripped before TTS so brackets are not read aloud. **Comprehension > brevity**: 4:10–4:15 is acceptable; feeling rushed is a failure mode. Never raise WPM to hit a shorter runtime.
-- **FACTS BLOCK** anti-hallucination pattern: the prompt feeds Claude plain-text enumerated facts (not JSON) so Claude is forced to use *today's* data instead of training-data priors.
 
 **News pipeline:** Articles deduped by normalized URL (lowercase, trimmed), filtered by BTC-relevance regex, then ranked + scraped by the triage processor (Jina Reader full text, non-fatal per article).
 
@@ -214,12 +206,10 @@ collectors (news + market, parallel via batch.triggerAndWait)
 - **Two-question reader contract:** `daily_diff.sentiment_shift` and `hero_three_lines.signal` must plainly answer (1) is today mostly noise? (2) did anything change near-term risk? No soft hedging.
 - **Earned significance:** depth tracks `day_classifier.depth_weight` — quiet days read short and flat, thesis-shift days go deep.
 - **Comparative anchoring:** quantitative claims must reference `market.comparative` baselines (30-day realized vol, price-vs-30d-avg, funding percentile, F&G delta, ETF flow z-score). No vague intensifiers without an anchor.
-- **Audio OPEN** appends `day_classification.day_tone_line` when present, in [audio-brief/prompts.ts buildAudioScriptUserPrompt](src/trigger/audio-brief/prompts.ts). `day_tone_line` is normalized to a closed phrase set in [day-classifier.ts](src/trigger/processors/day-classifier.ts) so it never contradicts the label.
-
 ## Accuracy Gate (zero-unsourced-claims bar)
 - **[accuracy-validators.ts](src/trigger/lib/accuracy-validators.ts)** exports 12 validators (directional, narrative, summaries, hero, etc.) chained in Synthesizer's `ensureDataConsistency` plus `validateAnalystRiskChangeEarned` chained in Analyst. One correction retry per stage on violation.
 - **Source headline overwrite:** Synthesizer always overwrites `top_stories[].headline`, `regulatory[].headline`, `adoption[].headline` with verbatim source article titles. Claude cannot editorialize headlines; the architecture prevents it.
-- **Directional truth block + approved headlines block** injected at the top of the Synthesizer user prompt: pre-computed approved/forbidden adjectives per 24h/7d period plus verbatim source titles. Mirrors the audio FACTS BLOCK discipline.
+- **Directional truth block + approved headlines block** injected at the top of the Synthesizer user prompt: pre-computed approved/forbidden adjectives per 24h/7d period plus verbatim source titles.
 - **Source URLs required on new writes for:** `expert_insights[].source_url`, `institutional_flows.notable_moves[].source_url`, `supply_dynamics.source_url`. Enrichment filters out items without valid https URLs. `ExpertInsightsArraySchema` is now `.max(3)` (no min) — empty array is valid; homepage renders an empty-state stub. Legacy Supabase rows without URLs still render (polymorphic type).
 - **Looking-ahead calendar constraint:** enrichment injects `buildCountdownFactsBlock(date, 90)` so Perplexity can only reference scheduled catalysts from our calendar. FOMC/CPI inventions are prompt-rejected.
 - **Macro context:** Claude may only reference Asset Comparisons, 90-day correlations, and the CALENDAR FACTS BLOCK. No training-data priors for Fed/M2/rate path.

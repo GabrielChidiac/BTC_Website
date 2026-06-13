@@ -71,7 +71,7 @@ export const verifyCheckSchema = z
   })
   .strict();
 
-/** Date path parameter on /pdf/[date], /api/audio/[date], etc. */
+/** Date path parameter on /pdf/[date], /archive/[date], etc. */
 export const dateParamSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format");

@@ -10,7 +10,7 @@ Third stage. Replaces (in role) the current AI Brain at [src/trigger/processors/
 [1] Scraper Agent → ScraperOutput
 [2] Analyst Agent → AnalysisBlock
 [3] Synthesizer Agent (this) → BriefingJSON
-[4] Enrichment + market-signals + audio + save + distribute (downstream, unchanged)
+[4] Enrichment + market-signals + save + distribute (downstream, unchanged)
 ```
 
 ## Input contract
@@ -38,7 +38,7 @@ interface SynthesizerInput {
 3. Overwrite every `headline` field with the verbatim `RawArticle.title`. Synthesizer cannot editorialize headlines by architecture.
 4. Generate `looking_ahead_predictions` (2-3 testable directional claims) from `analysis.primary_drivers` + calendar block.
 5. Run all 12 accuracy validators via `ensureDataConsistency` (existing). One correction retry on violations; ship better-of-two.
-6. Return the partial `BriefingJSON`; downstream enrichment fills the four enrichment fields, market-signals adds callouts, audio brief adds audio fields, save publishes.
+6. Return the partial `BriefingJSON`; downstream enrichment fills the four enrichment fields, market-signals adds callouts, save publishes.
 
 ## System prompt outline
 - Frame: "You write the briefing for busy BTC holders. The analyst has already decided what today means; your job is to translate that into the briefing voice without adding analytical claims of your own."
@@ -89,4 +89,3 @@ All exist today in the AI Brain implementation; refactor in place rather than re
 ## Out of scope
 - The 12 accuracy validators stay where they are. Refactor target is the prompt, not the validators.
 - The enrichment task and its source-URL gates stay unchanged.
-- The audio brief pipeline stays unchanged; audio FACTS BLOCK already has the strongest grounding in the system.

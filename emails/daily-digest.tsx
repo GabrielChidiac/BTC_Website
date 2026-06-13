@@ -15,7 +15,7 @@ import {
   Img,
 } from "@react-email/components";
 import type { BriefingJSON, TopStoryCategory } from "../src/lib/types";
-import { formatReadTime, flowMoveText, flowMoveUrl } from "../src/lib/utils";
+import { flowMoveText, flowMoveUrl } from "../src/lib/utils";
 
 const CATEGORY_LABELS: Record<TopStoryCategory, string> = {
   market: "Market",
@@ -218,8 +218,6 @@ const previewBriefing: BriefingJSON = {
       detail: "90-day S&P correlation at +0.54, up from +0.28 a week ago. Less safe-haven hedge, more leveraged equity beta.",
     },
   ],
-  audio_url: "/api/audio/2026-03-24",
-  audio_duration_seconds: 212,
   read_time_seconds: 165,
   hero_three_lines: {
     move: "Bitcoin rallied 3.4 percent to 91,247 dollars on record ETF inflows and a softer dollar.",
@@ -285,28 +283,6 @@ export default function DailyDigest({
           <Section style={s.header}>
             <Img src={`${siteUrl}/logo.png`} width="120" height="144" alt="BTC Today" style={{ margin: "0 auto 8px", width: "80px", height: "auto" }} />
             <Text style={s.date}>{formatDisplayDate(briefing.date)}</Text>
-          </Section>
-
-          <Hr style={s.hr} />
-
-          {/* ── Pro Listen Button (always rendered, Pro-only email) ───
-              Sits at the top of the email as the first content element so
-              the listen option is the FIRST thing a Pro subscriber sees.
-              Unconditional: audio is a paid feature and must never be hidden.
-              %%AUDIO_URL%% is substituted per-subscriber by send-digest.ts
-              to a token-carrying /listen/[date] URL; the listen page itself
-              handles the "audio unavailable today" fallback gracefully when
-              the pipeline's audio generation step fails. */}
-          <Section style={s.listenSection}>
-            <Link href="%%AUDIO_URL%%" style={s.listenButton}>
-              🎧 Listen to today&rsquo;s brief
-              {briefing.audio_duration_seconds != null && (
-                <span style={s.listenButtonDuration}>
-                  {" · "}
-                  {formatReadTime(briefing.audio_duration_seconds)}
-                </span>
-              )}
-            </Link>
           </Section>
 
           <Hr style={s.hr} />
@@ -749,30 +725,6 @@ const s = {
     color: c.textSecondary,
     margin: "0",
     lineHeight: "1.4",
-  } as React.CSSProperties,
-
-  // ── Pro Listen Button ─────────────────────────
-  listenSection: {
-    padding: "6px 0 14px",
-    textAlign: "center" as const,
-  } as React.CSSProperties,
-
-  listenButton: {
-    display: "inline-block" as const,
-    backgroundColor: c.accent,
-    color: "#000000",
-    fontFamily: sans,
-    fontSize: "14px",
-    fontWeight: "700" as const,
-    textDecoration: "none",
-    padding: "12px 28px",
-    borderRadius: "8px",
-    letterSpacing: "0.01em",
-  } as React.CSSProperties,
-
-  listenButtonDuration: {
-    fontWeight: "500" as const,
-    opacity: 0.75,
   } as React.CSSProperties,
 
   // ── 3-Minute Contract hero (Move / Signal / Watch) ──

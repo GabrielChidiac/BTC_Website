@@ -25,7 +25,7 @@ Rejected alternatives: full split into Analyst + Synthesizer (2-3x cost, real co
        ↓
 [4] Enrichment (Perplexity ×4, parallel, unchanged)
        ↓
-[5] Validators (12, unchanged) → Audio → Save → Distribute
+[5] Validators (12, unchanged) → Save → Distribute
 ```
 
 ## When editing these specs

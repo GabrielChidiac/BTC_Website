@@ -1,8 +1,8 @@
 # BTC Today
 
-AI-curated daily Bitcoin intelligence for busy BTC holders. A 2 AM CET pipeline collects news + market data, runs it through Claude Sonnet, enriches with Perplexity, generates a 4-minute audio brief, and publishes to a Next.js site + email subscribers.
+AI-curated daily Bitcoin intelligence for busy BTC holders. A 2 AM CET pipeline collects news + market data, runs it through Claude Sonnet, enriches with Perplexity, and publishes to a Next.js site + email subscribers.
 
-**Promise:** every text brief reads in under 3 minutes, every audio brief in under 4. No hype, no tribal crypto voice, no ELI5. Peer-to-peer with a professional adult.
+**Promise:** every text brief reads in under 3 minutes. No hype, no tribal crypto voice, no ELI5. Peer-to-peer with a professional adult.
 
 **Audience:** doctors, lawyers, founders, engineers, wealth advisors who own Bitcoin and have no time to follow the market. Not crypto-native, not institutional HNW.
 
@@ -17,7 +17,7 @@ npm run dev                           # Next.js at http://localhost:3000
 npx trigger.dev@latest dev            # pipeline runner (separate terminal)
 ```
 
-Required services: Anthropic, Perplexity, Kie.ai (Claude fallback), OpenAI (TTS), CoinGecko, SearchAPI, Jina Reader, Trigger.dev, Resend, Supabase, Stripe, CoinOS (Lightning tipping).
+Required services: Anthropic, Perplexity, Kie.ai (Claude fallback), CoinGecko, SearchAPI, Jina Reader, Trigger.dev, Resend, Supabase, Stripe, CoinOS (Lightning tipping).
 
 `npm run build` is the only type-safety gate — no test runner, linter, or formatter is configured.
 
@@ -29,7 +29,7 @@ Required services: Anthropic, Perplexity, Kie.ai (Claude fallback), OpenAI (TTS)
 | Pipeline | Trigger.dev v3 (cron tasks, `maxDuration: 900`) |
 | Database | Supabase (Postgres + RLS), `@supabase/ssr` |
 | Styling | Tailwind CSS v4 (CSS-only config via `@theme`) |
-| AI | Claude Sonnet (briefing) + Perplexity sonar-pro (enrichment) + OpenAI `gpt-4o-mini-tts` (audio) |
+| AI | Claude Sonnet (briefing) + Perplexity sonar-pro (enrichment) |
 | Payments | Stripe Payment Links ($7/mo or $59/yr) |
 | Email | Resend + React Email |
 | Tipping | Lightning Network via CoinOS |
@@ -39,15 +39,14 @@ Required services: Anthropic, Perplexity, Kie.ai (Claude fallback), OpenAI (TTS)
 
 ```
 src/
-  app/              Next.js App Router (pages, API routes, /listen, /pdf)
+  app/              Next.js App Router (pages, API routes, /pdf)
   components/       React components (shadcn/ui + custom)
   lib/              Supabase clients, schemas, tier gating, session, lightning
   trigger/          Trigger.dev pipeline tasks
     collectors/       news + market data fetchers
     processors/       triage, day-classifier, analyst, synthesizer, market-signals
     publishers/       save-briefing, send-digest, send-weekly-recap, resolve-predictions
-    audio-brief/      script prompts + TTS orchestration
-    lib/              anthropic, openai-tts, fetch-timeout
+    lib/              anthropic, fetch-timeout
   proxy.ts          Next.js 16 middleware (security headers)
 emails/             React Email templates (daily digest, weekly recap, welcome)
 supabase/migrations Schema migrations
@@ -68,14 +67,13 @@ collectors (news + market, parallel)
   → synthesizer (Claude → BriefingJSON; data-derived fallback if Claude fails)
   → enrichment (Perplexity ×4: looking_ahead, institutional_flows, expert_insights, supply_dynamics)
   → market-signals (Postgres-backed regime + funding callouts, max 2)
-  → audio brief (Claude script + OpenAI TTS → briefing-audio bucket)
   → health gate (non-blocking)
   → save (briefing + predictions) → revalidate (ISR) → send digest (Resend)
 ```
 
 A separate `resolve-predictions` cron runs at 03:00 UTC (2h after the pipeline) to auto-score directional predictions for the day-60 accuracy scorecard.
 
-**Fault tolerance:** collectors, triage, analyst, enrichment, audio brief, and market-signals are non-fatal — failures default to fallback values. Synthesizer is mostly fatal but has a deterministic data-derived fallback when Claude exhausts. Publishers are sequential: if save fails, the email is never sent.
+**Fault tolerance:** collectors, triage, analyst, enrichment, and market-signals are non-fatal — failures default to fallback values. Synthesizer is mostly fatal but has a deterministic data-derived fallback when Claude exhausts. Publishers are sequential: if save fails, the email is never sent.
 
 ## Subscription tiers
 
@@ -84,7 +82,6 @@ A separate `resolve-predictions` cron runs at 03:00 UTC (2h after the pipeline) 
 | Homepage | Sections 01–04 | All sections |
 | Archive | Last 7 days | All dates |
 | PDF | — | Yes |
-| Audio brief | — | Yes |
 | Weekly recap | Yes | — |
 
 Founding members (`is_founding_member` flag, capped by `FOUNDING_MEMBER_LIMIT`) get a different welcome email. Auth is magic-link only (10-min token expiry, 30-day session cookie, max 3 concurrent sessions per email).

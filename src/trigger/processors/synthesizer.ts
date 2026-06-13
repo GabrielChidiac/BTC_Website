@@ -481,8 +481,7 @@ function buildComparisons(
  * Claude cannot confabulate the sign of weekly/daily moves. Pre-computes
  * approved and forbidden adjectives per time period so the LLM has an
  * unambiguous reference instead of having to infer direction from raw
- * percentages. This is the synthesizer equivalent of the audio brief FACTS
- * BLOCK pattern — every accuracy claim ties back here.
+ * percentages. A FACTS BLOCK pattern — every accuracy claim ties back here.
  */
 function buildDirectionalTruthBlock(market: MarketCollectorOutput | null): string {
   if (!market) return "";

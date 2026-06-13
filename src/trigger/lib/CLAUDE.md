@@ -3,12 +3,11 @@
 Scoped guidance for pipeline lib. See [/CLAUDE.md](/CLAUDE.md) for global rules and [../CLAUDE.md](../CLAUDE.md) for pipeline orchestration.
 
 ## Scope
-Single-purpose utilities used by collectors, processors, publishers, and audio-brief. Each file wraps one external API or one piece of logic. **Pure / side-effect-free / `Result<T>` return.**
+Single-purpose utilities used by collectors, processors, and publishers. Each file wraps one external API or one piece of logic. **Pure / side-effect-free / `Result<T>` return.**
 
 ## API wrappers (all return `Result<T>`, all use `fetchWithTimeout`, none throw)
 - [anthropic.ts](anthropic.ts) — `callClaudeJSON<T>()` with chain Anthropic SDK → Kie.ai on 429/5xx → parse → optional `schema` (zod) validation → optional `retryOnSchemaError` correction retry.
 - [perplexity.ts](perplexity.ts) — `queryPerplexity({ system, prompt })` against `sonar-pro`.
-- [openai-tts.ts](openai-tts.ts) — `gpt-4o-mini-tts` with `ash` voice + `VOICE_INSTRUCTIONS` steering block. **120 WPM target.**
 - [coingecko.ts](coingecko.ts), [sosovalue.ts](sosovalue.ts), [alternativeme.ts](alternativeme.ts), [mempool.ts](mempool.ts), [funding-rate.ts](funding-rate.ts) — single-vendor wrappers.
 - [comparison.ts](comparison.ts) — S&P 500, NASDAQ, Gold, DXY, ETH, SOL via Yahoo Finance.
 - [correlation.ts](correlation.ts) — 90-day rolling correlation matrix from price series.

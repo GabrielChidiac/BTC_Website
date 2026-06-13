@@ -11,7 +11,7 @@ Code shared between the Trigger.dev pipeline and the Next.js website. Edits here
 - Adding a field: update both files in the same change; `npm run build` catches drift.
 
 ## Reader-visible utilities
-- [utils.ts](utils.ts) — `computeReadTimeSeconds(briefing)` (200 WPM, hardcoded; **silent — no longer displayed since 2026-04-28**), `formatReadTime(seconds)` (still used for audio listen duration), `halvingProgress`, `flowMoveText/Url`.
+- [utils.ts](utils.ts) — `computeReadTimeSeconds(briefing)` (200 WPM, hardcoded; **silent — no longer displayed since 2026-04-28**), `formatReadTime(seconds)`, `halvingProgress`, `flowMoveText/Url`.
 - [dedupe-stories.ts](dedupe-stories.ts) — `dedupeBriefingStories` removes near-duplicate items across `top_stories + regulatory + adoption`. Run by the Synthesizer post-generation.
 
 ## Subscription / auth

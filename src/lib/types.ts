@@ -186,7 +186,7 @@ export interface CorrelationMatrix {
 }
 
 // ─── Market Signals (trigger-based editorial callouts) ────────────────────
-// Surfaced in the daily digest email + audio brief only when a threshold +
+// Surfaced in the daily digest email only when a threshold +
 // cooldown check fires. Silent on quiet days. See processors/market-signals.ts.
 
 export type MarketSignalType =
@@ -220,9 +220,8 @@ export interface LookingAheadPrediction {
 
 // ─── Day classification (precursor signal to AI brain) ─────────────────────
 // Lightweight Claude call that classifies each day before the AI brain runs.
-// Feeds into buildUserPrompt as a depth-weighting signal and into the audio
-// brief's OPEN section as a calibrating line. Persisted on the briefing so
-// the distribution over time becomes internal telemetry.
+// Feeds into buildUserPrompt as a depth-weighting signal. Persisted on the
+// briefing so the distribution over time becomes internal telemetry.
 
 export type DayClassificationLabel =
   | "thesis_shift"
@@ -329,15 +328,6 @@ export interface BriefingJSON {
   one_line?: string; // Single-sentence key insight for the day
   hero_three_lines?: HeroThreeLines; // Pillar 1: 3-Minute Contract hero
   read_time_seconds?: number;        // Pillar 1: word count at 200 wpm
-  // Pillar 2: Morning Audio Brief. audio_url holds an internal path
-  // (e.g. "/api/audio/2026-04-14") served by the token-gated audio route.
-  // Null or undefined means audio generation failed or did not run.
-  audio_url?: string | null;
-  audio_duration_seconds?: number | null;
-  // Full generated spoken-word script, saved alongside the audio so the
-  // briefing can be audited (read the script from the DB, verify the data
-  // is accurate) without downloading and transcribing the MP3.
-  audio_script?: string | null;
   top_stories: TopStory[];
   market_snapshot: MarketSnapshot;
   technical_signals: TechnicalSignals;
@@ -361,16 +351,16 @@ export interface BriefingJSON {
   fear_greed?: FearGreedIndex | null;
   correlation_matrix?: CorrelationMatrix | null;
   // Trigger-based editorial callouts. Empty/null on quiet days by design.
-  // Populated by processors/market-signals.ts after enrichment, before audio brief.
+  // Populated by processors/market-signals.ts after enrichment.
   market_signals?: MarketSignal[] | null;
   // Internal signal from the day classifier (runs before AI brain). Steers
-  // brief depth and drives the audio OPEN calibrating sentence. Not exposed
-  // in the UI; stored for internal telemetry (noise vs signal distribution).
+  // brief depth. Not exposed in the UI; stored for internal telemetry
+  // (noise vs signal distribution).
   day_classification?: DayClassification | null;
   // Comparative baselines from the market collector (realized vol, 30d avg,
-  // flow z-scores, percentile ranks). Merged onto the briefing so the audio
-  // FACTS BLOCK can render them and so they're persisted for diagnostics.
-  // Not rendered in the UI.
+  // flow z-scores, percentile ranks). Merged onto the briefing so the
+  // Synthesizer FACTS BLOCK can render them and so they're persisted for
+  // diagnostics. Not rendered in the UI.
   comparative?: ComparativeBaselines | null;
   // True when the Synthesizer fell back to the data-derived template (Claude +
   // Kie.ai both unavailable). Surfaces as an "editor's note" on the email

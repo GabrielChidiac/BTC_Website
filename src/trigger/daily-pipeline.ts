@@ -10,7 +10,6 @@ import { scrapeArticles } from "./lib/jina";
 import { saveBriefingTask } from "./publishers/save-briefing";
 import { revalidateSiteTask } from "./publishers/revalidate-site";
 import { sendDigestTask } from "./publishers/send-digest";
-import { generateAudioBriefTask } from "./audio-brief/generate-audio-brief";
 import { computeMarketSignals } from "./processors/market-signals";
 import { sendOwnerAlert } from "./lib/alert";
 import { computeReadTimeSeconds } from "@/lib/utils";
@@ -108,8 +107,7 @@ export const dailyPipelineTask = schedules.task({
 
     // ── Step 1.8: Day classifier (non-fatal, precursor signal to Synthesizer)
     // Lightweight Claude call that labels today as thesis_shift / risk_change /
-    // mostly_noise / mixed with historical smoothing. Steers Synthesizer depth
-    // and provides the OPEN calibrating line for the audio brief.
+    // mostly_noise / mixed with historical smoothing. Steers Synthesizer depth.
     let dayClassification: DayClassification | null = null;
     try {
       const classifierRun = await dayClassifierTask.triggerAndWait({
@@ -244,7 +242,6 @@ export const dailyPipelineTask = schedules.task({
 
     // ── Step 3.25: Market Signals (non-fatal) ────────────────────────────
     // Trigger-based editorial callouts. Silent on quiet days by design.
-    // Runs before audio brief so the script can reference fired signals.
     // Never throws; failure returns [] and ships the brief without signals.
     finalBriefing.market_signals = await computeMarketSignals({
       date,
@@ -261,32 +258,6 @@ export const dailyPipelineTask = schedules.task({
       hasHeroLines: Boolean(finalBriefing.hero_three_lines),
       predictionCount: finalBriefing.looking_ahead_predictions?.length ?? 0,
     });
-
-    // ── Step 3.5: Audio Brief (non-fatal) ─────────────────────────────────
-    // Pillar 2: generate the 4-minute Pro audio brief. Runs before save so
-    // audio_url can be persisted in the same write. Failure is non-fatal:
-    // the pipeline continues and the daily digest email ships without a
-    // listen button.
-    try {
-      const audioRun = await generateAudioBriefTask
-        .triggerAndWait({ date, briefing: finalBriefing });
-      if (audioRun.ok) {
-        finalBriefing.audio_url = audioRun.output.audio_url;
-        finalBriefing.audio_duration_seconds = audioRun.output.audio_duration_seconds;
-        finalBriefing.audio_script = audioRun.output.audio_script;
-        logger.info("Audio brief complete", {
-          audio_url: finalBriefing.audio_url,
-          duration: finalBriefing.audio_duration_seconds,
-          scriptWords: finalBriefing.audio_script?.split(/\s+/).filter(Boolean).length ?? 0,
-        });
-      } else {
-        logger.warn("Audio brief task failed — shipping without audio");
-      }
-    } catch (err) {
-      logger.warn("Audio brief threw — shipping without audio", {
-        error: (err as Error).message,
-      });
-    }
 
     // ── Step 3.9: Health gate (non-blocking) ──────────────────────────────
     // Summarize the brief's completeness and alert the owner when degraded.
@@ -341,7 +312,6 @@ interface BriefingHealth {
   storyCount: number;
   hasMarket: boolean;
   hasHeroLines: boolean;
-  hasAudio: boolean;
   hasExperts: boolean;
   hasFlows: boolean;
   hasLookingAhead: boolean;
@@ -365,7 +335,6 @@ function summarizeBriefingHealth(briefing: BriefingJSON): BriefingHealth {
     briefing.top_stories.length + briefing.regulatory.length + briefing.adoption.length;
   const hasMarket = Number(briefing.market_snapshot?.price_usd) > 0;
   const hasHeroLines = Boolean(briefing.hero_three_lines?.move);
-  const hasAudio = Boolean(briefing.audio_url);
   const hasExperts = (briefing.expert_insights?.length ?? 0) > 0;
   const flowsSummary = briefing.institutional_flows?.summary;
   const flowsMoves = briefing.institutional_flows?.notable_moves ?? [];
@@ -380,18 +349,16 @@ function summarizeBriefingHealth(briefing: BriefingJSON): BriefingHealth {
   if (storyCount === 0) degradedReasons.push("Zero stories across top_stories + regulatory + adoption");
   if (!hasHeroLines) degradedReasons.push("No hero_three_lines (3-Minute Contract hero missing)");
   if (!hasMarket) degradedReasons.push("No market_snapshot price (collector failed)");
-  if (!hasAudio) degradedReasons.push("No audio_url (audio brief failed)");
   if (!hasExperts) degradedReasons.push("No expert_insights (Perplexity failed or returned empty)");
 
   // Alert if either the fallback fired, or 2+ independent signals are degraded.
-  // A single non-fatal failure on a normal day (e.g. audio flake) doesn't page.
+  // A single non-fatal failure on a normal day doesn't page.
   const degraded = fallbackUsed || degradedReasons.length >= 2;
 
   return {
     storyCount,
     hasMarket,
     hasHeroLines,
-    hasAudio,
     hasExperts,
     hasFlows,
     hasLookingAhead,

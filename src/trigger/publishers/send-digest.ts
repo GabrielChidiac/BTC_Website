@@ -199,7 +199,7 @@ export const sendDigestTask = task({
       sections.push("EDITOR'S NOTE: Today's commentary is lighter than usual. Full analytical brief resumes tomorrow.");
     }
 
-    sections.push(`Listen (Pro audio brief): %%AUDIO_URL%%\nRead full briefing: %%BRIEFING_URL%%\nDownload PDF: %%PDF_URL%%\n\nTip in sats: ${siteUrl}/tip?source=newsletter or send to btctoday@coinos.io\n\nUnsubscribe: %%UNSUBSCRIBE_URL%%\n\n- BTC Today`);
+    sections.push(`Read full briefing: %%BRIEFING_URL%%\nDownload PDF: %%PDF_URL%%\n\nTip in sats: ${siteUrl}/tip?source=newsletter or send to btctoday@coinos.io\n\nUnsubscribe: %%UNSUBSCRIBE_URL%%\n\n- BTC Today`);
 
     const textTemplate = sections.join("\n\n");
 
@@ -252,18 +252,6 @@ export const sendDigestTask = task({
           ? `${pdfUrl}?token=${token}&email=${encodeURIComponent(email)}`
           : pdfUrl;
 
-        // Listen URL is ALWAYS built for Pro subscribers — audio is a paid
-        // feature and the Listen button in the email always renders. Token
-        // forwarded so the listen page can pass it through to the token-gated
-        // audio stream route. On rare days when briefing.audio_url is null
-        // (audio generation failed), the /listen/[date] page itself shows an
-        // "audio unavailable today" message, so the link still goes somewhere
-        // sane instead of a dead href.
-        const listenBaseUrl = `${siteUrl}/listen/${date}`;
-        const subscriberListenUrl = token
-          ? `${listenBaseUrl}?token=${token}&email=${encodeURIComponent(email)}`
-          : listenBaseUrl;
-
         const unsubscribeUrl = token
           ? `${siteUrl}/sign-in?token=${token}&email=${encodeURIComponent(email)}`
           : `${siteUrl}/sign-in`;
@@ -271,11 +259,9 @@ export const sendDigestTask = task({
         let html = htmlTemplate
           .replace(/%%PDF_URL%%/g, subscriberPdfUrl)
           .replace(/%%BRIEFING_URL%%/g, briefingUrl)
-          .replace(/%%AUDIO_URL%%/g, subscriberListenUrl)
           .replace(/%%UNSUBSCRIBE_URL%%/g, unsubscribeUrl);
         let text = textTemplate
           .replace(/%%BRIEFING_URL%%/g, briefingUrl)
-          .replace(/%%AUDIO_URL%%/g, subscriberListenUrl)
           .replace(/%%UNSUBSCRIBE_URL%%/g, unsubscribeUrl);
 
         if (subscriberPdfUrl) {

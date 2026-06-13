@@ -23,7 +23,6 @@ SELECT
   (content -> 'narrative_consensus' ->> 'score')::int AS narrative_score,
   content -> 'hero_three_lines' ->> 'signal' AS hero_signal,
   content ->> 'fallback_used' AS fallback_used,
-  content ->> 'audio_duration_seconds' AS audio_seconds,
   jsonb_array_length(coalesce(content -> 'expert_insights', '[]'::jsonb)) AS expert_count,
   jsonb_array_length(coalesce(content -> 'top_stories', '[]'::jsonb)) AS top_story_count,
   jsonb_array_length(coalesce(content -> 'looking_ahead_predictions', '[]'::jsonb)) AS prediction_count
@@ -54,7 +53,6 @@ This is the report's headline output. Compute:
 
 ### Section C — General pipeline health (5-day window)
 - Fallback rate: count of `fallback_used=true`. Should be 0; >0 means Claude+Kie.ai both exhausted.
-- Audio duration distribution: min/max/median `audio_duration_seconds`. Target 220-265s (3:40-4:25). Flag if any row >280s (rushed-feeling territory) or <200s (too short to deliver value).
 - Enrichment empty rate: count where `expert_count=0` OR `looking_ahead` matches "unavailable". Empty is valid on quiet days; flag only if >1 day in 5.
 - Top story count: should be 3-5 per the combined-cap rule. Flag rows with 0 or 1 (story-starvation) or 6+ (cap broken).
 

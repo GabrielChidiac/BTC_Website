@@ -112,7 +112,7 @@ on previous days. Use it:
   signal you've been over-classifying, not that Bitcoin is unusually active.
 
 ═══════════════════════════════════════════════════════════════════════════
-day_tone_line (the sentence that opens the audio brief)
+day_tone_line (a one-line tone summary for the day)
 ═══════════════════════════════════════════════════════════════════════════
 
 CLOSED SET: day_tone_line MUST be EXACTLY one of the approved phrases below, copied verbatim. Free-form generation risks the tone contradicting the label (e.g., label "mostly_noise" with tone "Risk is rising.") and gets overwritten by the pipeline. Pick the phrase that best matches the classification; the pipeline will normalize any off-list string to a label-default anyway.
@@ -291,8 +291,7 @@ export const dayClassifierTask = task({
     // Normalize day_tone_line to the closed set. If Claude returned an off-list
     // phrase, pick a deterministic default keyed to the classification label.
     // This prevents the failure mode where label says "mostly_noise" but the
-    // tone line says "Risk is rising.", which would then open the audio brief
-    // with a contradiction.
+    // tone line says "Risk is rising.", a self-contradiction.
     classification.day_tone_line = normalizeDayToneLine(
       classification.day_tone_line,
       classification.label,

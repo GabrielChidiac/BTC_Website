@@ -10,7 +10,6 @@ This directory contains the daily 2 AM CET cron pipeline. The entry point is [da
 - [processors/](processors/) — AI-driven and rule-based transforms
 - [publishers/](publishers/) — DB writes + email + ISR revalidation
 - [lib/](lib/) — API wrappers, validators, calendar; all return `Result<T>`
-- [audio-brief/](audio-brief/) — Pillar 2 audio script generation + TTS
 
 ## Orchestration rules
 - Use `batch.triggerAndWait()` for parallel sub-tasks. **Never** `Promise.all` over individual `triggerAndWait` calls.
@@ -28,12 +27,11 @@ collectors (parallel)
   → enrichment (Perplexity ×4 inside one task)
   → market-signals (Postgres-backed)
   → computeReadTimeSeconds
-  → audio brief
   → save (briefing + predictions) → revalidate (ISR) → send digest
 ```
 
 ## Fault tolerance posture
-- Collectors / triage / analyst / enrichment / audio brief / market-signals: **non-fatal** — failures default to fallback values.
+- Collectors / triage / analyst / enrichment / market-signals: **non-fatal** — failures default to fallback values.
 - Synthesizer: mostly fatal; `buildFallbackBriefing` produces a data-derived briefing when Claude exhausts. Hard-fail only if both Claude AND market data are missing.
 - Publishers: sequential; if save fails, email is not sent.
 

@@ -42,12 +42,6 @@ export const PerplexityCrossRefOutputSchema = z.object({
   stories: z.array(PerplexityCrossRefItemSchema),
 });
 
-// ─── Audio brief script ────────────────────────────────────────────────────
-
-export const AudioScriptSchema = z.object({
-  script: z.string().min(100),
-});
-
 // ─── AI Brain sub-schemas (mirror types.ts) ───────────────────────────────
 
 export const TopStorySchema = z.object({
