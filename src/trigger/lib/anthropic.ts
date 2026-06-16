@@ -8,6 +8,13 @@ import { fetchWithTimeout } from "./fetch-timeout";
 // calls, but the pipeline runs Claude calls sequentially, so this is fine.
 export let lastProviderUsed: "anthropic" | "kieai" | null = null;
 
+// Single source of truth for the Claude model. Used for BOTH the Anthropic SDK
+// call and the Kie.ai fallback (Kie.ai proxies the same model name). When a
+// model is retired, both providers 404 simultaneously — update this one
+// constant. Retirement dates are published in Anthropic's migration guide;
+// `claude-sonnet-4-20250514` retired 2026-06-15 and was replaced here.
+export const CLAUDE_MODEL = "claude-sonnet-4-6";
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -45,7 +52,7 @@ export async function callClaude(params: {
     try {
       const client = new Anthropic();
       const response = await client.messages.create({
-        model: "claude-sonnet-4-20250514",
+        model: CLAUDE_MODEL,
         max_tokens: maxTokens,
         system: params.system,
         messages: [{ role: "user", content: params.prompt }],
@@ -91,7 +98,7 @@ export async function callClaude(params: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: CLAUDE_MODEL,
           messages: [
             { role: "system", content: params.system },
             { role: "user", content: params.prompt },
@@ -237,5 +244,31 @@ async function callClaudeWithJsonRetry(params: {
     return { data: JSON.parse(retryResult.data!), error: null };
   } catch (e) {
     return { data: null, error: `[anthropic] Failed to parse JSON after retry: ${(e as Error).message}` };
+  }
+}
+
+// Lightweight canary that confirms CLAUDE_MODEL is still served by Anthropic.
+// Distinguishes a retired/invalid model (404 not_found_error) from transient
+// errors so the model-preflight task can alert loudly on a retirement without
+// crying wolf on a network blip or rate limit. Makes the smallest possible
+// billable call (4 output tokens). Used only by the preflight cron, never the
+// hot pipeline path.
+export async function pingModel(): Promise<
+  { ok: true } | { ok: false; retired: boolean; detail: string }
+> {
+  try {
+    const client = new Anthropic();
+    await client.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 4,
+      messages: [{ role: "user", content: "Reply with: ok" }],
+    });
+    return { ok: true };
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    // 404 from Anthropic = model id not found = retired/invalid. Anything else
+    // (429, 5xx, network) is transient and must not trigger a retirement alert.
+    const retired = err.status === 404;
+    return { ok: false, retired, detail: `${err.status ?? "?"}: ${err.message}` };
   }
 }
