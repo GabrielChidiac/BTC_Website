@@ -20,7 +20,7 @@ AI-curated daily Bitcoin intelligence for busy BTC holders who have jobs. A Trig
 | Layer | Tech | Notes |
 |---|---|---|
 | Framework | Next.js 16 (App Router, ISR) | `next@16.2.3`, React 19 |
-| Pipeline | Trigger.dev v3 (`@trigger.dev/sdk@4.4.4`) | Cron tasks, `maxDuration: 900` (15 min) |
+| Pipeline | Trigger.dev v3 (`@trigger.dev/sdk@4.5.15`) | Cron tasks, `maxDuration: 900` (15 min), `runtime: "node-24"` |
 | Database | Supabase (Postgres + RLS) | `@supabase/ssr@^0.9.0` |
 | Styling | Tailwind CSS v4 | CSS-only config via `@theme` |
 | AI | Claude Sonnet (briefing) + Perplexity sonar-pro (enrichment) | Kie.ai fallback for Claude |
