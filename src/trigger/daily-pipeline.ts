@@ -345,11 +345,15 @@ function summarizeBriefingHealth(briefing: BriefingJSON): BriefingHealth {
   const fallbackUsed = Boolean(briefing.fallback_used);
 
   const degradedReasons: string[] = [];
-  if (fallbackUsed) degradedReasons.push("Synthesizer fallback fired (both Anthropic and Kie.ai exhausted)");
+  if (fallbackUsed) degradedReasons.push("Synthesizer fallback fired (both Anthropic and Kie.ai exhausted; see tonight's model-preflight run for the cause)");
   if (storyCount === 0) degradedReasons.push("Zero stories across top_stories + regulatory + adoption");
   if (!hasHeroLines) degradedReasons.push("No hero_three_lines (3-Minute Contract hero missing)");
   if (!hasMarket) degradedReasons.push("No market_snapshot price (collector failed)");
   if (!hasExperts) degradedReasons.push("No expert_insights (Perplexity failed or returned empty)");
+  // Computed for months but never alerted on, which hid ~2 months of
+  // Perplexity 429 losses (looking_ahead empty ~70% of days). Now counted.
+  if (!hasFlows) degradedReasons.push("No institutional_flows (Perplexity failed or returned empty)");
+  if (!hasLookingAhead) degradedReasons.push("No looking_ahead (Perplexity failed or output rejected)");
 
   // Alert if either the fallback fired, or 2+ independent signals are degraded.
   // A single non-fatal failure on a normal day doesn't page.

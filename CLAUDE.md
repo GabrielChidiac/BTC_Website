@@ -81,7 +81,7 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 
 ### Claude API
 - Used only inside the Trigger.dev pipeline. No user-facing chat endpoint.
-- `callClaudeJSON<T>()` ([src/trigger/lib/anthropic.ts](src/trigger/lib/anthropic.ts)) chain: Anthropic SDK → Kie.ai on 429/5xx → parse → optional `schema` (zod) validation → optional `retryOnSchemaError` correction retry. All return `Result<T>`.
+- `callClaudeJSON<T>()` ([src/trigger/lib/anthropic.ts](src/trigger/lib/anthropic.ts)) chain: Anthropic SDK → Kie.ai fallback (any Anthropic failure; ~111s gateway cutoff makes it unreliable for Synthesizer) → parse → optional `schema` (zod) validation → optional `retryOnSchemaError` correction retry. All return `Result<T>`.
 - Zod schemas for every Claude output live in [src/lib/schemas.ts](src/lib/schemas.ts). Keep in sync with types.ts. Pass `retryOnSchemaError: true` on fatal/load-bearing tasks (Synthesizer, Analyst); non-fatal tasks save the retry tokens.
 - **Task payload guards:** every Trigger task that receives structured payloads normalizes `payload?.field ?? default` at entry. Never assume the dashboard test payload is well-formed.
 - All HTTP uses native `fetch` — no axios.
@@ -149,7 +149,7 @@ collectors (news + market, parallel via batch.triggerAndWait)
 
 **Fault tolerance:**
 - Collectors / triage / analyst / enrichment / market-signals: **non-fatal** — failures default to fallback values.
-- Enrichment runs 4 Perplexity queries in parallel **inside one** Trigger task via `Promise.allSettled` — not as 4 subtasks. Analyst has its own deterministic fallback (regime by 7d sign, conviction=30, no drivers).
+- Enrichment runs 4 Perplexity queries **sequentially inside one** Trigger task (Perplexity limit = 1 concurrent request). `model-preflight` (00:30 UTC) pings Anthropic + Kie.ai and alerts on billing/auth/retired. Analyst has its own deterministic fallback (regime by 7d sign, conviction=30, no drivers).
 - Synthesizer: **mostly fatal**. If Claude (Anthropic + Kie.ai) exhausts but market data is present, [fallback-template.ts](src/trigger/processors/fallback-template.ts) `buildFallbackBriefing()` produces a data-derived briefing. True hard fail only when both Claude AND market data are missing.
 - Publishers: **sequential** — if save fails, email is never sent.
 

@@ -352,22 +352,38 @@ export const enrichmentTask = task({
       calendar_facts: calendarFacts,
     };
 
-    // Run all Perplexity queries in parallel (non-fatal individually)
+    // Run Perplexity queries SEQUENTIALLY (non-fatal individually). The
+    // account's sonar-pro limit is 1 concurrent request; parallel calls lost
+    // 3 of 4 to 429 on most days (verified 2026-10-06). ~7s each, so serial
+    // costs ~30s total, well inside the task budget.
+    const settleInOrder = async <T,>(
+      thunks: Array<() => Promise<T>>,
+    ): Promise<PromiseSettledResult<T>[]> => {
+      const results: PromiseSettledResult<T>[] = [];
+      for (const thunk of thunks) {
+        try {
+          results.push({ status: "fulfilled", value: await thunk() });
+        } catch (reason) {
+          results.push({ status: "rejected", reason });
+        }
+      }
+      return results;
+    };
     const [lookingAheadResult, flowsResult, expertsResult, supplyResult] =
-      await Promise.allSettled([
-        queryPerplexity({
+      await settleInOrder([
+        () => queryPerplexity({
           system: LOOKING_AHEAD_SYSTEM,
           prompt: buildLookingAheadPrompt(lookingAheadCtx),
         }),
-        queryPerplexity({
+        () => queryPerplexity({
           system: FLOWS_SYSTEM,
           prompt: "What are the most notable non-ETF institutional Bitcoin moves in the last 7 days? Focus on corporate treasury purchases (MicroStrategy, Metaplanet, etc.), large whale wallet movements, fund allocation changes, OTC desk activity, and mining company treasury decisions. Do NOT include ETF flow data.",
         }),
-        queryPerplexity({
+        () => queryPerplexity({
           system: EXPERTS_SYSTEM,
           prompt: "What are the 3 most impactful and substantive things said about Bitcoin in the last 7 days by people deeply in the Bitcoin space? Search across all sources: Substack newsletters (Lyn Alden, Dylan LeClair, Luke Gromen, Jeff Park, Willy Woo, James Check, etc.), YouTube interviews, podcasts, TV appearances, X posts, and conference talks. Prioritize depth of insight over fame of the speaker. Include well-known figures like Saylor or Cathie Wood only if their commentary was genuinely substantive, not just a retweet or generic bullishness.",
         }),
-        queryPerplexity({
+        () => queryPerplexity({
           system: SUPPLY_SYSTEM,
           prompt: "What are the latest Bitcoin on-chain supply metrics? Include exchange reserves, long-term holder percentage, and any notable supply dynamics.",
         }),

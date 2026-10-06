@@ -6,8 +6,8 @@ Scoped guidance for pipeline lib. See [/CLAUDE.md](/CLAUDE.md) for global rules 
 Single-purpose utilities used by collectors, processors, and publishers. Each file wraps one external API or one piece of logic. **Pure / side-effect-free / `Result<T>` return.**
 
 ## API wrappers (all return `Result<T>`, all use `fetchWithTimeout`, none throw)
-- [anthropic.ts](anthropic.ts) — `callClaudeJSON<T>()` with chain Anthropic SDK → Kie.ai on 429/5xx → parse → optional `schema` (zod) validation → optional `retryOnSchemaError` correction retry.
-- [perplexity.ts](perplexity.ts) — `queryPerplexity({ system, prompt })` against `sonar-pro`.
+- [anthropic.ts](anthropic.ts) — `callClaudeJSON<T>()` with chain Anthropic SDK → Kie.ai fallback (`/claude/v1/messages`; ignores `system` so it is folded into the user turn; ~111s gateway cutoff, so unreliable for the Synthesizer) → parse → optional `schema` (zod) validation → optional `retryOnSchemaError` correction retry.
+- [perplexity.ts](perplexity.ts) — `queryPerplexity({ system, prompt })` against `sonar-pro`. Retries 429s using the server's rate-limit reset header; callers should still serialize calls.
 - [coingecko.ts](coingecko.ts), [sosovalue.ts](sosovalue.ts), [alternativeme.ts](alternativeme.ts), [mempool.ts](mempool.ts), [funding-rate.ts](funding-rate.ts) — single-vendor wrappers.
 - [comparison.ts](comparison.ts) — S&P 500, NASDAQ, Gold, DXY, ETH, SOL via Yahoo Finance.
 - [correlation.ts](correlation.ts) — 90-day rolling correlation matrix from price series.

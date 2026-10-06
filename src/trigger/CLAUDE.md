@@ -13,7 +13,7 @@ This directory contains the daily 2 AM CET cron pipeline. The entry point is [da
 
 ## Orchestration rules
 - Use `batch.triggerAndWait()` for parallel sub-tasks. **Never** `Promise.all` over individual `triggerAndWait` calls.
-- `Promise.allSettled` inside a single task body is fine (e.g., enrichment runs 4 Perplexity queries in parallel inside one task).
+- `Promise.allSettled` inside a single task body is fine (but NOT for Perplexity: the account allows 1 concurrent request, so enrichment runs its 4 queries sequentially).
 - Cron `"0 1 * * *"` (1 UTC = 2 CET) runs daily-pipeline.ts. `resolve-predictions` runs separately at 03:00 UTC. `send-weekly-recap` runs Sunday 09:00 UTC.
 - `maxDuration: 900` (15 min) is the global cap. Stay well under it.
 
