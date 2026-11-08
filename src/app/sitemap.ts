@@ -1,19 +1,11 @@
 import type { MetadataRoute } from "next";
 import { getBaseUrl } from "@/lib/url";
-import { createServiceClient } from "@/lib/supabase/server";
+import { getBriefingDates } from "@/lib/briefings";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getBaseUrl();
 
-  const supabase = createServiceClient();
-  const { data } = await supabase
-    .from("daily_briefings")
-    .select("date")
-    .order("date", { ascending: false });
-
-  const briefingDates: string[] = (data ?? []).map(
-    (row: { date: string }) => row.date
-  );
+  const briefingDates = await getBriefingDates();
 
   const latestDate = briefingDates[0];
 

@@ -29,6 +29,27 @@ export async function createServerClient() {
 }
 
 /**
+ * Cookie-less anon client for publicly readable tables (RLS still applies).
+ * Safe inside `unstable_cache`, where `cookies()` is not allowed.
+ */
+export function createPublicClient() {
+  return _createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return [];
+        },
+        setAll() {
+          // Public client doesn't need cookies
+        },
+      },
+    }
+  );
+}
+
+/**
  * Service-role client for server-side writes (pipeline, API routes).
  * Bypasses RLS — use only in trusted server contexts.
  */

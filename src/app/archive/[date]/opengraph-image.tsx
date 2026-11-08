@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
-import { createServiceClient } from "@/lib/supabase/server";
-import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
+import { getBriefingByDate } from "@/lib/briefings";
 import { formatDisplayDate } from "@/lib/utils";
 
 export const runtime = "nodejs";
@@ -11,14 +10,8 @@ export const contentType = "image/png";
 export default async function Image({ params }: { params: { date: string } }) {
   const { date } = params;
 
-  const supabase = createServiceClient();
-  const { data } = await supabase
-    .from("daily_briefings")
-    .select("content")
-    .eq("date", date)
-    .maybeSingle();
-
-  const briefing = data ? (data as DailyBriefingRow).content : null;
+  const data = await getBriefingByDate(date);
+  const briefing = data?.content ?? null;
 
   const price = briefing
     ? `$${briefing.market_snapshot.price_usd.toLocaleString("en-US", { maximumFractionDigits: 0 })}`

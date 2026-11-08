@@ -1,17 +1,14 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { createServerClient } from "@/lib/supabase/server";
 import { getSubscriberTier } from "@/lib/tier";
 import { getFoundingMemberStatus } from "@/lib/founding";
-import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
+import { getArchiveIndex } from "@/lib/briefings";
 import { safeJsonLd } from "@/lib/json-ld";
 
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Container } from "@/components/layout/Container";
 import { ArchiveList, type ArchiveEntry } from "@/components/archive/ArchiveList";
-
-export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Bitcoin Daily Intelligence Archive | BTC Today",
@@ -42,34 +39,16 @@ export default async function ArchivePage() {
   const founding = isPro ? null : await getFoundingMemberStatus();
   const isFoundingActive = founding?.isOfferActive ?? false;
 
-  const supabase = await createServerClient();
-
-  let query = supabase
-    .from("daily_briefings")
-    .select("*")
-    .order("date", { ascending: false });
+  const index = await getArchiveIndex();
 
   // Free users only see the last 7 days
+  let entries: ArchiveEntry[] = index;
   if (!isPro) {
     const cutoff = new Date();
     cutoff.setUTCDate(cutoff.getUTCDate() - 7);
-    query = query.gte("date", cutoff.toISOString().split("T")[0]);
+    const cutoffDate = cutoff.toISOString().split("T")[0];
+    entries = index.filter((row) => row.date >= cutoffDate);
   }
-
-  const { data: rows } = await query;
-  const briefings = (rows as DailyBriefingRow[] | null) ?? [];
-
-  // Serialize briefing data for the client component
-  const entries: ArchiveEntry[] = briefings.map((row) => {
-    const b: BriefingJSON = row.content;
-    return {
-      date: row.date,
-      price: b.market_snapshot.price_usd,
-      change24h: b.market_snapshot.change_24h_pct,
-      oneLine: b.one_line ?? null,
-      consensusLabel: b.narrative_consensus?.label ?? null,
-    };
-  });
 
   const baseUrl = "https://www.btctoday.co";
 
@@ -97,11 +76,11 @@ export default async function ArchivePage() {
               Archive
             </h1>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              {briefings.length} briefing{briefings.length !== 1 ? "s" : ""}{!isPro && " · Last 7 days"}
+              {entries.length} briefing{entries.length !== 1 ? "s" : ""}{!isPro && " · Last 7 days"}
             </p>
           </div>
 
-          {briefings.length === 0 ? (
+          {entries.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] py-16">
               <p className="text-sm text-[var(--color-text-secondary)]">
                 No briefings yet. The first one publishes at 2 AM CET.

@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
-import { createServiceClient } from "@/lib/supabase/server";
-import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
+import { getLatestBriefing } from "@/lib/briefings";
 
 export const runtime = "nodejs";
 export const alt = "BTC Today | AI-Curated Bitcoin Intelligence";
@@ -8,15 +7,8 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function Image() {
-  const supabase = createServiceClient();
-  const { data } = await supabase
-    .from("daily_briefings")
-    .select("content")
-    .order("date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const briefing = data ? (data as DailyBriefingRow).content : null;
+  const data = await getLatestBriefing();
+  const briefing = data?.content ?? null;
 
   const price = briefing
     ? `$${briefing.market_snapshot.price_usd.toLocaleString("en-US", { maximumFractionDigits: 0 })}`

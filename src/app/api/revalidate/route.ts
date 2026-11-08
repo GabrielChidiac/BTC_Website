@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { BRIEFINGS_TAG } from "@/lib/briefings";
 
 export async function POST(request: Request) {
   const secret = process.env.REVALIDATION_SECRET;
@@ -17,6 +18,8 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Expire cached briefing reads immediately so the new briefing shows on the next request
+    revalidateTag(BRIEFINGS_TAG, { expire: 0 });
     revalidatePath("/");
     revalidatePath("/archive");
 

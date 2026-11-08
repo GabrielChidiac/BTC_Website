@@ -6,9 +6,10 @@ Scoped guidance for Supabase clients. See [/CLAUDE.md](/CLAUDE.md) for global ru
 Three client constructors. **Always import from this directory; never import `@supabase/supabase-js` directly.**
 
 ## Files
-- [server.ts](server.ts) — exports two:
+- [server.ts](server.ts) — exports three:
   - `createServerClient()` — for **Server Components**. Respects RLS via the request cookie.
   - `createServiceClient()` — for **Trigger.dev tasks + API route handlers**. Bypasses RLS using `SUPABASE_SERVICE_ROLE_KEY`.
+  - `createPublicClient()` — cookie-less anon client for public tables. Used inside `unstable_cache` (where `cookies()` is forbidden) by [../briefings.ts](../briefings.ts).
 - [client.ts](client.ts) — exports `createClient()` for **client components**.
 
 ## Picking the right client

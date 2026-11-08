@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { createServerClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import { getSubscriberTier } from "@/lib/tier";
-import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
+import { getLatestBriefing } from "@/lib/briefings";
+import type { BriefingJSON } from "@/lib/types";
 import { dedupeBriefingStories } from "@/lib/dedupe-stories";
 import { compactNumber } from "@/lib/utils";
 import { BLOCKED_EVENT_KEYWORDS } from "@/lib/constants";
@@ -40,16 +41,8 @@ import { ProTeaser } from "@/components/premium/ProTeaser";
 import { getFoundingMemberStatus, type FoundingMemberStatus } from "@/lib/founding";
 
 
-export const revalidate = 3600;
-
 export async function generateMetadata(): Promise<Metadata> {
-  const supabase = await createServerClient();
-  const { data } = await supabase
-    .from("daily_briefings")
-    .select("content")
-    .order("date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const data = await getLatestBriefing();
 
   if (!data) {
     return {
@@ -60,7 +53,7 @@ export async function generateMetadata(): Promise<Metadata> {
     };
   }
 
-  const briefing: BriefingJSON = (data as DailyBriefingRow).content;
+  const briefing: BriefingJSON = data.content;
   const market = briefing.market_snapshot;
   const pctSign = market.change_24h_pct >= 0 ? "+" : "";
   const price = `$${market.price_usd.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
@@ -100,13 +93,7 @@ function formatFlowUSD(amount: number): string {
 }
 
 export default async function Home() {
-  const supabase = await createServerClient();
-  const { data } = await supabase
-    .from("daily_briefings")
-    .select("*")
-    .order("date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const data = await getLatestBriefing();
 
   if (!data) {
     return (
@@ -133,9 +120,7 @@ export default async function Home() {
     );
   }
 
-  const briefing: BriefingJSON = dedupeBriefingStories(
-    (data as DailyBriefingRow).content
-  );
+  const briefing: BriefingJSON = dedupeBriefingStories(data.content);
   const market = briefing.market_snapshot;
   let { tier, email: sessionEmail } = await getSubscriberTier();
   const isLoggedIn = !!sessionEmail;
@@ -178,7 +163,7 @@ export default async function Home() {
     "@type": "Article",
     headline: briefing.one_line || `Bitcoin Market Analysis | ${briefing.date}`,
     datePublished: `${briefing.date}T01:00:00Z`,
-    dateModified: (data as DailyBriefingRow).updated_at || `${briefing.date}T01:00:00Z`,
+    dateModified: data.updated_at || `${briefing.date}T01:00:00Z`,
     author: { "@type": "Organization", name: "BTC Today", url: baseUrl },
     publisher: {
       "@type": "Organization",

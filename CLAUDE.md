@@ -74,6 +74,7 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - `@supabase/ssr` only — never import `@supabase/supabase-js` directly.
 - `createServerClient()` for Server Components (respects RLS). `createServiceClient()` for Trigger tasks + API route handlers (bypasses RLS via `SUPABASE_SERVICE_ROLE_KEY`). `createClient()` for client components. All in `src/lib/supabase/`.
 - **Always `.maybeSingle()`** for single-row queries — never `.single()` (throws on 0 results).
+- **Website reads `daily_briefings` only via cached helpers in [src/lib/briefings.ts](src/lib/briefings.ts)** (egress quota blown 2026-11-08 by uncached per-request full-row reads).
 
 ### Tailwind v4
 - Config lives in `src/app/globals.css` via `@import "tailwindcss"` + `@theme inline`. **No `tailwind.config.js`.**

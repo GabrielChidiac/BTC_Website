@@ -14,6 +14,9 @@ Code shared between the Trigger.dev pipeline and the Next.js website. Edits here
 - [utils.ts](utils.ts) — `computeReadTimeSeconds(briefing)` (200 WPM, hardcoded; **silent — no longer displayed since 2026-04-28**), `formatReadTime(seconds)`, `halvingProgress`, `flowMoveText/Url`.
 - [dedupe-stories.ts](dedupe-stories.ts) — `dedupeBriefingStories` removes near-duplicate items across `top_stories + regulatory + adoption`. Run by the Synthesizer post-generation.
 
+## Website data
+- [briefings.ts](briefings.ts) — `unstable_cache`d reads of `daily_briefings` (`getLatestBriefing`, `getBriefingByDate`, `getBriefingDates`, `getArchiveIndex`), tagged `BRIEFINGS_TAG`, busted by `/api/revalidate`. **Website pages must read briefings through here, never query `daily_briefings` directly.** Pages are dynamic (tier cookie), so route-level `revalidate` is a no-op; uncached reads blew the Supabase free-tier egress quota on 2026-11-08.
+
 ## Subscription / auth
 - [tier.ts](tier.ts) — `getSubscriberTier()` reads session cookie → checks tier. Used by Server Components.
 - [session.ts](session.ts) — `COOKIE_NAME = "btc-session"`, `setSessionCookie()`, `clearSessionCookie()`. **Always import from here**, never construct cookies inline.

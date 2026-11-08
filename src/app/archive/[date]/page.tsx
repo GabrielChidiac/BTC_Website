@@ -2,10 +2,10 @@ import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { createServerClient, createServiceClient } from "@/lib/supabase/server";
 import { getSubscriberTier } from "@/lib/tier";
 import { COOKIE_NAME } from "@/lib/session";
-import type { BriefingJSON, DailyBriefingRow } from "@/lib/types";
+import { getBriefingByDate, getBriefingDates } from "@/lib/briefings";
+import type { BriefingJSON } from "@/lib/types";
 import { dedupeBriefingStories } from "@/lib/dedupe-stories";
 import { formatDisplayDate } from "@/lib/utils";
 import { safeJsonLd } from "@/lib/json-ld";
@@ -55,18 +55,13 @@ export async function generateMetadata({
   const displayDate = formatDisplayDate(date);
 
   // Fetch briefing for dynamic metadata
-  const supabase = createServiceClient();
-  const { data } = await supabase
-    .from("daily_briefings")
-    .select("content")
-    .eq("date", date)
-    .maybeSingle();
+  const data = await getBriefingByDate(date);
 
   let title = `Bitcoin Market Analysis | ${displayDate} | BTC Today`;
   let description = `AI-curated Bitcoin market analysis for ${displayDate} with institutional flows, technical signals, and expert insights.`;
 
   if (data) {
-    const briefing: BriefingJSON = (data as DailyBriefingRow).content;
+    const briefing: BriefingJSON = data.content;
     const market = briefing.market_snapshot;
     const pctSign = market.change_24h_pct >= 0 ? "+" : "";
     const price = `$${market.price_usd.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
@@ -101,13 +96,8 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-  const supabase = createServiceClient();
-  const { data } = await supabase
-    .from("daily_briefings")
-    .select("date")
-    .order("date", { ascending: false });
-
-  return (data ?? []).map((row: { date: string }) => ({ date: row.date }));
+  const dates = await getBriefingDates();
+  return dates.map((date) => ({ date }));
 }
 
 export default async function ArchiveDatePage({
@@ -125,18 +115,11 @@ export default async function ArchiveDatePage({
     isLoggedIn = !!cookieStore.get(COOKIE_NAME)?.value;
   } catch { /* no session */ }
 
-  const supabase = await createServerClient();
-  const { data } = await supabase
-    .from("daily_briefings")
-    .select("*")
-    .eq("date", date)
-    .maybeSingle();
+  const data = await getBriefingByDate(date);
 
   if (!data) notFound();
 
-  const briefing: BriefingJSON = dedupeBriefingStories(
-    (data as DailyBriefingRow).content
-  );
+  const briefing: BriefingJSON = dedupeBriefingStories(data.content);
 
   const { tier } = await getSubscriberTier();
   const isPro = tier === "pro";
@@ -158,32 +141,10 @@ export default async function ArchiveDatePage({
 
   const cutoffDate = isPro ? undefined : sevenDaysAgo.toISOString().split("T")[0];
 
-  let prevQuery = supabase
-    .from("daily_briefings")
-    .select("date")
-    .lt("date", date)
-    .order("date", { ascending: false })
-    .limit(1);
-
-  let nextQuery = supabase
-    .from("daily_briefings")
-    .select("date")
-    .gt("date", date)
-    .order("date", { ascending: true })
-    .limit(1);
-
-  // Free users can only navigate within the 7-day window
-  if (cutoffDate) {
-    prevQuery = prevQuery.gte("date", cutoffDate);
-  }
-
-  const [{ data: prevRows }, { data: nextRows }] = await Promise.all([
-    prevQuery,
-    nextQuery,
-  ]);
-
-  const prevDate = prevRows?.[0]?.date as string | undefined;
-  const nextDate = nextRows?.[0]?.date as string | undefined;
+  // Dates are newest first. Free users can only navigate within the 7-day window.
+  const allDates = await getBriefingDates();
+  const prevDate = allDates.find((d) => d < date && (!cutoffDate || d >= cutoffDate));
+  const nextDate = [...allDates].reverse().find((d) => d > date);
 
   const baseUrl = "https://www.btctoday.co";
   const articleJsonLd = {
@@ -191,7 +152,7 @@ export default async function ArchiveDatePage({
     "@type": "Article",
     headline: briefing.one_line || `Bitcoin Market Analysis | ${formatDisplayDate(date)}`,
     datePublished: `${date}T01:00:00Z`,
-    dateModified: (data as DailyBriefingRow).updated_at || `${date}T01:00:00Z`,
+    dateModified: data.updated_at || `${date}T01:00:00Z`,
     author: { "@type": "Organization", name: "BTC Today", url: baseUrl },
     publisher: {
       "@type": "Organization",
