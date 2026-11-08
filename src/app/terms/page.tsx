@@ -47,8 +47,11 @@ export default function TermsPage() {
               <p>
                 BTC Today offers a free tier and a paid Pro tier. Pro subscriptions are billed
                 monthly ($7/month) or annually ($59/year) through <strong>Stripe</strong>. You can
-                cancel your Pro subscription at any time through Stripe; access continues until
-                the end of your billing period.
+                cancel your Pro subscription or update your payment card at any time from{" "}
+                <strong>Manage billing</strong> in your account menu. When you cancel, you are not
+                charged again and Pro access continues until the end of the period you already paid
+                for. Unsubscribing from all emails also cancels your Pro subscription. If you cannot
+                access your account, email hello@btctoday.co and we will cancel it for you.
               </p>
             </Section>
 

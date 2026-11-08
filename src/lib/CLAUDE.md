@@ -20,7 +20,7 @@ Code shared between the Trigger.dev pipeline and the Next.js website. Edits here
 ## Subscription / auth
 - [tier.ts](tier.ts) — `getSubscriberTier()` reads session cookie → checks tier. Used by Server Components.
 - [session.ts](session.ts) — `COOKIE_NAME = "btc-session"`, `setSessionCookie()`, `clearSessionCookie()`. **Always import from here**, never construct cookies inline.
-- [stripe.ts](stripe.ts) — `verifyStripeWebhook()` validates Stripe signatures.
+- [stripe.ts](stripe.ts) — `verifyStripeWebhook()` validates Stripe signatures; `createBillingPortalSession()` (Manage billing); `cancelAllSubscriptions()` (used by unsubscribe, checks Stripe directly, cancel at period end).
 - [founding.ts](founding.ts) — `getFoundingMemberStatus()` checks `is_founding_member` and `FOUNDING_MEMBER_LIMIT`.
 - [constants.ts](constants.ts) — `FOUNDING_MEMBER_LIMIT` and other compile-time constants.
 - [url.ts](url.ts) — `getBaseUrl()` resolves the site URL; never falls back to localhost.

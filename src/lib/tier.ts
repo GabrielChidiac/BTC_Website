@@ -12,6 +12,8 @@ interface SubscriberInfo {
   email: string | null;
   name: string | null;
   isFoundingMember: boolean;
+  /** True when a Stripe customer is on file, i.e. "Manage billing" has something to show. */
+  hasBilling: boolean;
 }
 
 export async function getSubscriberTier(): Promise<SubscriberInfo> {
@@ -20,6 +22,7 @@ export async function getSubscriberTier(): Promise<SubscriberInfo> {
     email: null,
     name: null,
     isFoundingMember: false,
+    hasBilling: false,
   };
 
   try {
@@ -50,12 +53,20 @@ export async function getSubscriberTier(): Promise<SubscriberInfo> {
     // Get subscriber tier and name
     const { data: subscriber } = await supabase
       .from("subscribers")
-      .select("tier, status, name, is_founding_member")
+      .select("tier, status, name, is_founding_member, stripe_customer_id")
       .eq("email", email)
       .maybeSingle();
 
     if (!subscriber || subscriber.status !== "active") {
-      return { tier: "free", email, name: null, isFoundingMember: false };
+      // Billing access must survive unsubscribing, so an unsubscribed
+      // payer can still reach the portal to cancel or fix their card.
+      return {
+        tier: "free",
+        email,
+        name: null,
+        isFoundingMember: false,
+        hasBilling: !!subscriber?.stripe_customer_id,
+      };
     }
 
     return {
@@ -63,6 +74,7 @@ export async function getSubscriberTier(): Promise<SubscriberInfo> {
       email,
       name: subscriber.name ?? null,
       isFoundingMember: subscriber.is_founding_member === true,
+      hasBilling: !!subscriber.stripe_customer_id,
     };
   } catch {
     return FREE;

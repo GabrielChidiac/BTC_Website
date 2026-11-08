@@ -99,6 +99,7 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 - Stored in `subscribers.tier` (`'free'` | `'pro'`); status in `subscribers.status` (`'active'` | `'inactive'` | `'pending'`).
 - `getSubscriberTier()` ([src/lib/tier.ts](src/lib/tier.ts)) reads the session cookie → checks tier.
 - Stripe handles payments via webhook at `/api/webhooks/stripe`; `verifyStripeWebhook()` ([src/lib/stripe.ts](src/lib/stripe.ts)) validates Stripe webhook signatures. Webhook handles `checkout.session.completed` (→ pro) / `customer.subscription.deleted` (→ free) and auto-creates the subscriber if missing.
+- **Self-serve billing:** "Manage billing" (UserMenu/MobileNav, shown when `stripe_customer_id` set) → `/api/billing/portal` → Stripe Customer Portal (cancel, change card, invoices). `/api/unsubscribe` calls `cancelAllSubscriptions()` (cancel at period end) **before** unsubscribing and fails closed if Stripe errors, because unsubscribed accounts cannot log in. Never weaken either path.
 - All existing active subscribers were gifted Pro tier at launch.
 - **Founding members:** `is_founding_member` boolean on `subscribers`; `FOUNDING_MEMBER_LIMIT` in [src/lib/constants.ts](src/lib/constants.ts); `getFoundingMemberStatus()` ([src/lib/founding.ts](src/lib/founding.ts)) checks remaining spots. Founding members get `founding-welcome.tsx`; other Pro subscribers get `pro-welcome.tsx`.
 
@@ -121,7 +122,7 @@ All keys live in `.env.example`. Services: Anthropic, Perplexity, Kie.ai (Claude
 - `lightning_tips` — Lightning tip invoices generated via CoinOS. `payment_hash` (unique), `bolt11`, `amount_sats`, optional `message` + `briefing_date`, `paid` flag flipped on poll confirmation. No FK on briefing_date (decoupled from briefing lifecycle).
 
 ## API Routes
-Routes in [src/app/api/](src/app/api/): subscribe + subscribe/verify, unsubscribe, revalidate (ISR), auth/verify-send + auth/verify-check, logout, webhooks/stripe. `/pdf/[date]` is a **page** route at [src/app/pdf/[date]](src/app/pdf/[date]/) (renders via `@react-pdf/renderer`), not an API handler. Public routes go through `checkRateLimit()` + `getClientIp()` from [src/lib/rate-limit.ts](src/lib/rate-limit.ts) — the limiter fails **open** on errors, with HMAC/auth as a second layer.
+Routes in [src/app/api/](src/app/api/): subscribe + subscribe/verify, unsubscribe, billing/portal, revalidate (ISR), auth/verify-send + auth/verify-check, logout, webhooks/stripe. `/pdf/[date]` is a **page** route at [src/app/pdf/[date]](src/app/pdf/[date]/) (renders via `@react-pdf/renderer`), not an API handler. Public routes go through `checkRateLimit()` + `getClientIp()` from [src/lib/rate-limit.ts](src/lib/rate-limit.ts) — the limiter fails **open** on errors, with HMAC/auth as a second layer.
 
 **Middleware:** [src/proxy.ts](src/proxy.ts) (Next.js 16 renamed `middleware.ts` → `proxy.ts`) sets `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, and HSTS on every non-static response. Edit here, not per-route, for global security headers.
 
@@ -218,4 +219,4 @@ collectors (news + market, parallel via batch.triggerAndWait)
 - **Email editor's note** fires on fallback days AND when any enrichment section returned empty/unsourced, listing what was withheld.
 
 ## Deployment
-See [docs/deployment.md](docs/deployment.md). Production TODOs: env vars in Vercel; Stripe env vars (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_MONTHLY_URL`, `NEXT_PUBLIC_STRIPE_ANNUAL_URL`); webhook URL in Stripe dashboard → `https://btctoday.co/api/webhooks/stripe`.
+See [docs/deployment.md](docs/deployment.md). Production TODOs: env vars in Vercel; Stripe env vars (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_MONTHLY_URL`, `NEXT_PUBLIC_STRIPE_ANNUAL_URL`); webhook URL in Stripe dashboard → `https://btctoday.co/api/webhooks/stripe`; Customer Portal must be saved in live mode (Settings → Billing → Customer portal) or `/api/billing/portal` errors.

@@ -27,12 +27,14 @@ interface UnsubscribeConfirmationEmailProps {
   email?: string;
   name?: string;
   siteUrl?: string;
+  billingCancelled?: boolean;
 }
 
 export default function UnsubscribeConfirmationEmail({
   email = "subscriber@example.com",
   name,
   siteUrl = "https://btctoday.co",
+  billingCancelled = false,
 }: UnsubscribeConfirmationEmailProps) {
   const greeting = name ? `Hi ${name},` : "Hi,";
   return (
@@ -62,6 +64,13 @@ export default function UnsubscribeConfirmationEmail({
               been removed from all BTC Today emails. You will no longer receive
               daily briefings or weekly recaps.
             </Text>
+
+            {billingCancelled && (
+              <Text style={styles.bodyText}>
+                Your Pro subscription has been cancelled and you will not be
+                charged again.
+              </Text>
+            )}
 
             <Section style={styles.highlightBox}>
               <Text style={styles.highlightText}>

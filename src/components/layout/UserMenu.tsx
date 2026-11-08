@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import type { SubscriberTier } from "@/lib/types";
 
-export function UserMenu({ displayName, tier = "free" }: { displayName: string | null; tier?: SubscriberTier }) {
+export function UserMenu({ displayName, tier = "free", hasBilling = false }: { displayName: string | null; tier?: SubscriberTier; hasBilling?: boolean }) {
   const [open, setOpen] = useState(false);
   const [confirmUnsubscribe, setConfirmUnsubscribe] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,6 +46,22 @@ export function UserMenu({ displayName, tier = "free" }: { displayName: string |
     }
   }
 
+  async function handleManageBilling() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/billing/portal", { method: "POST" });
+      const body = await res.json().catch(() => null);
+      if (res.ok && body?.url) {
+        window.location.href = body.url;
+        return;
+      }
+      alert(body?.error ?? "Billing is unavailable right now. Email hello@btctoday.co.");
+    } catch {
+      alert("Network error. Please try again.");
+    }
+    setLoading(false);
+  }
+
   async function handleUnsubscribe() {
     setLoading(true);
     try {
@@ -53,7 +69,8 @@ export function UserMenu({ displayName, tier = "free" }: { displayName: string |
       if (res.ok) {
         window.location.href = "/";
       } else {
-        alert("Unsubscribe failed. Please try again.");
+        const body = await res.json().catch(() => null);
+        alert(body?.error ?? "Unsubscribe failed. Please try again.");
         setLoading(false);
       }
     } catch {
@@ -102,6 +119,15 @@ export function UserMenu({ displayName, tier = "free" }: { displayName: string |
               >
                 Log out
               </button>
+              {hasBilling && (
+                <button
+                  onClick={handleManageBilling}
+                  disabled={loading}
+                  className="w-full px-3 py-2 text-left text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-base)] transition-colors disabled:opacity-50"
+                >
+                  {loading ? "Opening billing..." : "Manage billing"}
+                </button>
+              )}
               <div className="mx-2 my-1 h-px bg-[var(--color-border)]" />
               <button
                 onClick={() => setConfirmUnsubscribe(true)}
@@ -113,7 +139,9 @@ export function UserMenu({ displayName, tier = "free" }: { displayName: string |
           ) : (
             <div className="px-3 py-2">
               <p className="text-xs text-[var(--color-text-secondary)]">
-                Stop all emails and deactivate your account?
+                {hasBilling
+                  ? "Stop all emails, cancel Pro billing, and deactivate your account?"
+                  : "Stop all emails and deactivate your account?"}
               </p>
               <div className="mt-2 flex gap-2">
                 <button

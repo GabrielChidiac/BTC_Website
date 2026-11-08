@@ -99,7 +99,7 @@ export default async function PricingPage() {
             name: "What happens if I cancel?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "You keep Pro access until the end of your billing period. Then you revert to the free tier. No data is lost.",
+              text: "Cancel anytime from Manage billing in your account menu, where you can also update your card. You are not charged again, you keep Pro access until the end of your billing period, and then you revert to the free tier. No data is lost.",
             },
           },
           {
@@ -314,7 +314,7 @@ export default async function PricingPage() {
                   <div>
                     <p className="text-sm font-medium text-[var(--color-text-primary)]">What happens if I cancel?</p>
                     <p className="mt-1 text-sm text-[var(--color-text-secondary)] leading-relaxed">
-                      You keep Pro access until the end of your billing period. Then you revert to the free tier. No data is lost.
+                      Cancel anytime from Manage billing in your account menu, where you can also update your card. You are not charged again, you keep Pro access until the end of your billing period, and then you revert to the free tier. No data is lost.
                     </p>
                   </div>
                   <div>

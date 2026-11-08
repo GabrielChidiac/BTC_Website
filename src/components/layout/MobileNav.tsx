@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { NAV_LINKS, SECTION_LINKS, SECTION_TAB_MAP, isActiveLink } from "@/lib/constants";
 import type { SubscriberTier } from "@/lib/types";
 
-export function MobileNav({ signedInEmail, displayName, tier = "free" }: { signedInEmail?: string | null; displayName?: string | null; tier?: SubscriberTier }) {
+export function MobileNav({ signedInEmail, displayName, tier = "free", hasBilling = false }: { signedInEmail?: string | null; displayName?: string | null; tier?: SubscriberTier; hasBilling?: boolean }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const isHome = pathname === "/";
@@ -129,17 +129,43 @@ export function MobileNav({ signedInEmail, displayName, tier = "free" }: { signe
                 >
                   Log out
                 </button>
+                {hasBilling && (
+                  <>
+                    <span className="h-3 w-px bg-[var(--color-border)]" />
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch("/api/billing/portal", { method: "POST" });
+                          const body = await res.json().catch(() => null);
+                          if (res.ok && body?.url) {
+                            window.location.href = body.url;
+                          } else {
+                            alert(body?.error ?? "Billing is unavailable right now. Email hello@btctoday.co.");
+                          }
+                        } catch {
+                          alert("Network error. Please try again.");
+                        }
+                      }}
+                      className="cursor-pointer text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+                    >
+                      Manage billing
+                    </button>
+                  </>
+                )}
                 <span className="h-3 w-px bg-[var(--color-border)]" />
                 <button
                   onClick={async () => {
-                    if (confirm("Stop all emails and deactivate your account?")) {
+                    if (confirm(hasBilling
+                      ? "Stop all emails, cancel Pro billing, and deactivate your account?"
+                      : "Stop all emails and deactivate your account?")) {
                       try {
                         const res = await fetch("/api/unsubscribe", { method: "POST" });
                         if (res.ok) {
                           setOpen(false);
                           window.location.href = "/";
                         } else {
-                          alert("Unsubscribe failed. Please try again.");
+                          const body = await res.json().catch(() => null);
+                          alert(body?.error ?? "Unsubscribe failed. Please try again.");
                         }
                       } catch {
                         alert("Network error. Please try again.");

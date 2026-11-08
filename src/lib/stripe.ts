@@ -30,6 +30,79 @@ export function verifyStripeWebhook(
   }
 }
 
+/**
+ * Create a Stripe Customer Portal session where the subscriber can cancel,
+ * switch plans, update their card, and download invoices. Requires the
+ * portal to be configured in the Stripe Dashboard (Settings -> Billing ->
+ * Customer portal) for the live/test mode in use, otherwise Stripe errors.
+ */
+export async function createBillingPortalSession(
+  customerId: string
+): Promise<{ data: { url: string }; error: null } | { data: null; error: string }> {
+  try {
+    const session = await getStripe().billingPortal.sessions.create({
+      customer: customerId,
+      return_url: getBaseUrl(),
+    });
+    return { data: { url: session.url }, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: err instanceof Error ? err.message : "Stripe error",
+    };
+  }
+}
+
+/** Subscription statuses that can still produce a future charge. */
+const BILLABLE_STATUSES = new Set<Stripe.Subscription.Status>([
+  "active",
+  "trialing",
+  "past_due",
+  "unpaid",
+  "incomplete",
+  "paused",
+]);
+
+/**
+ * Stop all future billing for a customer: every subscription that could
+ * still charge them is set to cancel at period end (they keep what they
+ * already paid for, matching the pricing-page promise). Checks Stripe
+ * directly rather than trusting the DB's single subscription id, so
+ * duplicate subscriptions are caught too. Idempotent.
+ *
+ * Returns the number of subscriptions newly scheduled for cancellation.
+ */
+export async function cancelAllSubscriptions(
+  customerId: string
+): Promise<{ data: { cancelled: number }; error: null } | { data: null; error: string }> {
+  try {
+    const stripe = getStripe();
+    let cancelled = 0;
+    for await (const sub of stripe.subscriptions.list({
+      customer: customerId,
+      status: "all",
+      limit: 100,
+    })) {
+      if (!BILLABLE_STATUSES.has(sub.status)) continue;
+      if (sub.status === "incomplete") {
+        // No successful first payment yet; cancel outright so it cannot complete later.
+        await stripe.subscriptions.cancel(sub.id);
+        cancelled++;
+        continue;
+      }
+      if (sub.cancel_at_period_end) continue;
+      await stripe.subscriptions.update(sub.id, { cancel_at_period_end: true });
+      cancelled++;
+    }
+    return { data: { cancelled }, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: err instanceof Error ? err.message : "Stripe error",
+    };
+  }
+}
+
 export interface CreateTipCheckoutInput {
   tipId: string;
   amountCents: number;

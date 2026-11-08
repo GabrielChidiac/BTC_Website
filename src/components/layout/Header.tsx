@@ -7,7 +7,7 @@ import { getSubscriberTier } from "@/lib/tier";
 import { formatBriefingDate } from "@/lib/utils";
 
 export async function Header({ date }: { date?: string }) {
-  const { tier, email: signedInEmail, name } = await getSubscriberTier();
+  const { tier, email: signedInEmail, name, hasBilling } = await getSubscriberTier();
   const displayName = name?.split(/\s+/)[0] ?? null;
 
   return (
@@ -35,7 +35,7 @@ export async function Header({ date }: { date?: string }) {
           )}
           {signedInEmail ? (
             <div className="hidden md:flex items-center">
-              <UserMenu displayName={displayName} tier={tier} />
+              <UserMenu displayName={displayName} tier={tier} hasBilling={hasBilling} />
             </div>
           ) : (
             <Link
@@ -45,7 +45,7 @@ export async function Header({ date }: { date?: string }) {
               Login
             </Link>
           )}
-          <MobileNav signedInEmail={signedInEmail} displayName={displayName} tier={tier} />
+          <MobileNav signedInEmail={signedInEmail} displayName={displayName} tier={tier} hasBilling={hasBilling} />
         </div>
       </Container>
       {/* Glow border */}
